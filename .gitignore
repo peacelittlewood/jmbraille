@@ -38,7 +38,6 @@ Icon
 *.dylib
 
 # Executables
-*.exe
 *.out
 
 # Linker output
