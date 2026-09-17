@@ -1,0 +1,403 @@
+% Time-stamp: <2026-09-13 00:18:48 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@nonbraille_rectbox
+%% \brl@nonbraille_ovalbox
+%%
+%% box
+%%
+%% 
+
+\newbox\brl@nonbraille_rectbox@titlebox
+\def\brl@nonbraille_rectbox#1{%
+  \brl@orig@noindent%
+  \bgroup%
+    \setbox\brl@nonbraille_rectbox@titlebox\hbox{\space#1\space}%
+    \dimen\z@\ht\brl@nonbraille_rectbox@titlebox%
+    \advance\dimen\z@\dp\brl@nonbraille_rectbox@titlebox%
+    \dimen\@ne\linewidth%
+    \advance\dimen\@ne-20pt%
+    \setbox\z@\vbox\bgroup%
+      \brl@orig@vskip.5\dimen\z@%
+      \brl@orig@vskip9.6pt%
+      \hbox to\dimen\@ne\bgroup%
+        \brl@orig@begin{minipage}{\dimen\@ne}% \linewidth-20pt
+}%
+
+\def\endbrl@nonbraille_rectbox{%
+        \brl@orig@end{minipage}%
+      \egroup%
+      \brl@orig@vskip9.6pt%
+    \egroup%
+    \setbox\@ne=\vbox{%
+      \offinterlineskip%
+      \brl@orig@vskip.5\dimen\z@%
+      \hbox to\linewidth{%
+        \vbox{\hbox to 10pt{\leaders\brl@orig@hrule\@height .8pt\brl@orig@hfill}}%
+        \vbox to .8pt{\vss\box\brl@nonbraille_rectbox@titlebox\vss}%
+        \leaders\brl@orig@hrule\@height .8pt\brl@orig@hfill%
+      }%
+      \hbox to\linewidth{%
+        \brl@orig@vrule\@width .8pt%
+        \brl@orig@hskip -.8pt%
+        \brl@orig@hfil%
+        \box\z@%
+        \brl@orig@hfil%
+        \brl@orig@hskip -.8pt%
+        \brl@orig@vrule\@width .8pt%
+      }%
+      \brl@orig@hrule\@height .8pt%
+    }%
+    \hbox{\box\@ne}%
+  \egroup%
+}
+
+\def\brl@nonbraille_ovalbox#1{%
+  \brl@orig@noindent%
+  \bgroup%
+    \setbox\brl@nonbraille_rectbox@titlebox\hbox{\space#1\space}%
+    \dimen\z@\dp\brl@nonbraille_rectbox@titlebox%
+    \advance\dimen\z@\dp\brl@nonbraille_rectbox@titlebox%
+    \dimen\@ne\linewidth%
+    \advance\dimen\@ne-20pt%
+    \setbox\z@\vbox\bgroup%
+      \brl@orig@vskip.5\dimen\z@%
+      \hbox to\dimen\@ne\bgroup%
+        \brl@orig@begin{minipage}{\dimen\@ne}%
+}%
+
+
+\def\endbrl@nonbraille_ovalbox{%
+        \brl@orig@end{minipage}%
+      \egroup%
+    \egroup%
+    \thicklines%
+    \setbox\@ne\vbox{%
+      \offinterlineskip%
+      \brl@orig@vskip.5\dimen\z@%
+      \hbox to\linewidth{%
+        \vbox to -9.6pt{\hbox to 10.4pt{\brl@orig@hfill\oval(20,20)[tl]}}%
+        \vbox{\hbox to 9.6pt{\leaders\brl@orig@hrule\@height .8pt\brl@orig@hfill}}%
+        \vbox to .8pt{\vss\box\brl@nonbraille_rectbox@titlebox\vss}%
+        \leaders\brl@orig@hrule\@height .8pt\brl@orig@hfil%
+        \vbox to -9.6pt{\hbox to 10.4pt{\oval(20,20)[tr]}}%
+      }%
+      \brl@orig@vskip-0.8pt%
+      \hbox to\linewidth{%
+        \brl@orig@vrule\@width .8pt%
+        \brl@orig@hskip -.8pt%
+        \brl@orig@hfil%
+        \box\z@%
+        \brl@orig@hfil%
+        \brl@orig@hskip -.8pt%
+        \brl@orig@vrule\@width .8pt%
+      }%
+      \hbox to\linewidth{%
+        \vbox to 9.6pt{\hbox to 10.4pt{\brl@orig@hfill\oval(20,20)[bl]}}%
+        \leaders\brl@orig@hrule\@height\z@\@depth .8pt\brl@orig@hfil%
+        \vbox to 9.6pt{\hbox to 10.4pt{\oval(20,20)[br]}}%
+      }%
+    }%
+  \hbox{\box\@ne}%
+  \egroup%
+}
+
+\let\rectbox\brl@nonbraille_rectbox
+\let\endrectbox\endbrl@nonbraille_rectbox
+
+\let\ovalbox\brl@nonbraille_ovalbox
+\let\endovalbox\endbrl@nonbraille_ovalbox
+
+
+%%
+%% output: original pages
+%%
+%%
+%% {page}{source lineno}
+%%
+%% e.g.  
+%% {}{208}{1}{336}{2}{451}{3}
+%%
+%%    〜207 page {}
+%% 208〜335 page 1
+%% 336〜450 page 2
+%% 451〜    page 3
+%%
+%%
+%% Caution: this is not exact because a pagebreak occurs after texts are boxed.
+%%
+%%
+\newtoks\brl@nonbraille@toks
+\def\brl@nonbraille_appendtoks#1{\global\brl@nonbraille@toks\expandafter{\the\brl@nonbraille@toks#1}}
+
+\newwrite\brl@nonbraille@file
+
+\def\brl@nonbraille_linepage{%
+  \xdef\brl@nonbraille@inputlineno{{}{\the\inputlineno}}%
+  \expandafter\brl@nonbraille_appendtoks\expandafter{\brl@nonbraille@inputlineno}%
+  \let\brl@nonbraille_linepage\brl@nonbraille_linepage_next%
+}
+
+\def\brl@nonbraille_linepage_next{%
+  \xdef\brl@nonbraille@inputlineno{{\thepage}{\the\inputlineno}}%
+}
+
+
+
+\let\brl@orig@shipout\shipout
+%
+\def\brl@nonbraille_linepage_output{%
+  %
+  \expandafter\brl@nonbraille_appendtoks\expandafter{\brl@nonbraille@inputlineno}%
+}
+\def\brl@nonbraille_linepage_output_final{%
+  \expandafter\brl@nonbraille_appendtoks\expandafter{\brl@nonbraille@inputlineno}%
+  \global\let\brl@nonbraille_linepage_output\empty%
+}
+
+\protected\long\expandafter\def\expandafter\shipout\expandafter{%
+  \expandafter\brl@nonbraille_linepage_output%
+  \brl@orig@shipout}
+
+
+%\show\everypar
+% \let\brl@orig@everypar\everypar
+% \newtoks\everypar
+% \let\brl@nonbraille@everypar\everypar
+% \everypar\brl@orig@everypar
+% \brl@orig@everypar{\brl@nonbraille_linepage\the\brl@nonbraille@everypar}
+
+%\PushPostHook{par}{\brl@nonbraille_linepage\the\brl@nonbraille@everypar}
+% \everypar\expandafter{\the\everypar\brl@nonbraille_linepage\the\brl@nonbraille@everypar}
+
+
+\let\brl@orig@dispeq\[
+\def\[{\brl@nonbraille_linepage\brl@orig@dispeq}
+\AtBeginDocument{%
+  \everypar\expandafter{\the\everypar\brl@nonbraille_linepage}%
+  \def\begin{\brl@nonbraille_linepage\brl@orig@begin}%
+}
+
+
+\AddToHook{enddocument/afterlastpage}{%
+  \ifx\brl@nonbraille_linepage_output\empty%
+  \else% not yet finished
+    \brl@nonbraille_linepage_output_final%
+  \fi%
+  %
+  %
+  \if@filesw%
+    \immediate\write\@auxout{\gdef\noexpand\brl@document@nonbraillelinepage{\the\brl@nonbraille@toks}}% cs only using @.
+  \fi%
+  % \immediate\openout\brl@nonbraille@file=\jobname.nbp\relax%
+  % \immediate\write\brl@nonbraille@file{\the\brl@nonbraille@toks}%
+  % \immediate\closeout\brl@nonbraille@file%
+}
+
+
+\AtEndDocument{%
+  \xdef\brl@nonbraille@inputlineno{{\thepage}}%
+%
+  \let\brl@nonbraille_linepage_output\brl@nonbraille_linepage_output_final% this is the final
+}
+
+\ifbrl@option@overfull
+\newread\brl@nonbraille@logfile
+\newwrite\brl@nonbraille@overfullfile
+\newcount\brl@nonbraille@overfullnum
+
+\def\brl@nonbraille_logread{%
+  \brl@nonbraille@flushlog%
+  \immediate\openin\brl@nonbraille@logfile=\jobname.log\relax%
+  \brl@nonbraille_loop%
+  \immediate\closein\brl@nonbraille@logfile%
+}
+
+\def\brl@nonbraille_loop{%
+  \ifeof\brl@nonbraille@logfile%
+    \expandafter\brl@nonbraille_logend%
+  \else%
+    \immediate\read\brl@nonbraille@logfile to\brl@nonbraille@logtext%
+    \brl@nonbraille@overfullnum\z@%
+    \expandafter\brl@nonbraille_logparse\brl@nonbraille@logtext\brl@end%
+    \expandafter\brl@nonbraille_loop%
+  \fi%
+}
+
+\@namedef{brl@nonbraille_logoverfull0}{O}
+\@namedef{brl@nonbraille_logoverfull1}{v}
+\@namedef{brl@nonbraille_logoverfull2}{e}
+\@namedef{brl@nonbraille_logoverfull3}{r}
+\@namedef{brl@nonbraille_logoverfull4}{f}
+\@namedef{brl@nonbraille_logoverfull5}{u}
+\@namedef{brl@nonbraille_logoverfull6}{l}
+\@namedef{brl@nonbraille_logoverfull7}{l}
+\@namedef{brl@nonbraille_logoverfull8}{\hbox}
+
+
+
+\long\def\brl@nonbraille_logparse#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end% end of the line
+    \let\brl@nonbraille_next\relax%
+  \else%
+    \expandafter\ifx\csname brl@nonbraille_logoverfull\the\brl@nonbraille@overfullnum\endcsname\brl@tmp%
+      \advance\brl@nonbraille@overfullnum\@ne%
+      \ifnum9=\brl@nonbraille@overfullnum%
+        \def\brl@nonbraille_next{\brl@nonbraille_overfull}% overfull
+      \else%
+        \def\brl@nonbraille_next{\brl@nonbraille_logparse}% may be overfull
+      \fi%
+    \else% not overfull
+      \def\brl@nonbraille_next{\brl@nonbraille_skip}%
+    \fi%
+  \fi%
+  \brl@nonbraille_next%
+}
+
+\newtoks\brl@nonbraille@logtoks
+\def\brl@nonbraille_appendlogtoks#1{\brl@nonbraille@logtoks\expandafter{\the\brl@nonbraille@logtoks#1}}
+
+
+\def\brl@nonbraille_skip#1\brl@end{}
+
+\def\brl@nonbraille_overfull#1line#2\brl@end{%
+  \brl@nonbraille_appendlogtoks{line#2^^J}%
+  \def\brl@tmp{#2}%
+}
+
+% \def\lm{1234567890}
+% buffer of log seems 4096.
+% so if 4096 letters are output in the log, the log is flushed.
+\def\brl@nonbraille@lm{- flush log -}% 13
+\def\brl@nonbraille@llm{\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm\brl@nonbraille@lm}% 130
+\def\brl@nonbraille@lllm{\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm\brl@nonbraille@llm}% 1300
+
+\def\brl@nonbraille@flushlog{%
+  \immediate\write-1{%
+    \brl@nonbraille@lllm\brl@nonbraille@lllm\brl@nonbraille@lllm\brl@nonbraille@lllm%
+  }% 5200
+}
+
+\def\brl@nonbraille_logend{%
+  \immediate\openout\brl@nonbraille@overfullfile=\jobname.ovfl\relax%
+  \immediate\write\brl@nonbraille@overfullfile{\the\brl@nonbraille@logtoks}%
+  \immediate\closeout\brl@nonbraille@overfullfile%
+}
+
+
+\AtEndDocument{\brl@nonbraille_logread}
+
+\fi% overfull
+
+
+\let\BrailleBreak\empty
+\ifdefined\frontmatter
+\else
+  \let\frontmatter\empty
+  \let\mainmatter\empty
+  \let\backmatter\empty
+\fi
+
+%% only in the preamble
+\let\BrailleSetFont\@gobble
+\let\BrailleSetFontSize\@gobble
+\let\BrailleSetFigureFontSize\@gobble
+\let\BrailleSetMeaningFontSize\@gobble
+\let\BrailleSetMeaningColor\@gobble
+\let\BrailleSetOriginalColor\@gobble
+\let\BrailleSetAmbiguityColor\@gobble
+\let\BrailleSetWarningColor\@gobble
+\let\BrailleSetTransparentColor\@gobble
+\let\BrailleSetAlphabet\@gobble
+\let\BrailleSetAlphabetUnit\@gobble
+\let\BrailleSetWord\@gobble
+\let\BrailleSetOutputDevice\@gobble
+\let\BrailleSetOutputBaudrate\@gobble
+\let\BrailleSetOutputLanguage\@gobble
+
+\def\BrailleSetReading{%
+  \@ifnextchar[{\BrailleSetReading_}{\BrailleSetReading_[]}%
+}
+\def\BrailleSetReading_[#1]{%
+  \@ifnextchar<{\BrailleSetReading__}{\BrailleSetReading__<>}%
+}
+\def\BrailleSetReading__<#1>#2{}
+
+\let\BrailleSetMathBraille\@gobbletwo
+\let\BrailleSetJapaneseBraille\@gobbletwo
+\let\BrailleSetEnglishBraille\@gobbletwo
+\let\BrailleSetMathCharacter\@gobblethree
+\def\BrailleSetMathFont#1#2#3#4#5{}
+\let\BrailleSetTextFont\@gobblefour
+
+
+\let\BrailleSetFillColor\@gobblefour
+
+\let\BrailleSetTerminology\@gobblefour
+%% allowed in the document
+
+\let\BrailleFigureAutoSettingOn\empty
+\let\BrailleFigureAutoSettingOff\empty
+
+\let\BrailleSetFigureScale\@gobble
+\let\BrailleSetFigureArrowScale\@gobble
+\let\BrailleSetFigureLinewidthScale\@gobble
+\let\BrailleSetFigurePindisplayScale\@gobble
+\let\BrailleSetBSEWidth\@gobble
+
+
+\let\BrailleFigureSpecial\@gobble
+\let\BrailleVerbatimSpecial\@gobble
+\let\BrailleFigureSpreadOn\empty
+\let\BrailleFigureSpreadOff\empty
+\let\BrailleFigureLandscapeOn\empty
+\let\BrailleFigureLandscapeOff\empty
+\let\BrailleFigurePlotOn\empty
+\let\BrailleFigurePlotOff\empty
+\let\BrailleSetFigureDensity\@gobble
+\let\BrailleSetFigurePindisplayStep\@gobble
+\let\BrailleSetPredominantQuotationMarks\@gobble
+\let\BrailleNewpage\empty
+\let\BraillePar\empty
+\long\def\BrailleAlternative#1#2{#1}
+\let\BrailleAltColonOn\empty
+\let\BrailleAltColonOff\empty
+\let\BrailleTabularRuleOn\empty
+\let\BrailleTabularRuleOff\empty
+\let\BrailleEnglishOn\empty
+\let\BrailleEnglishOff\empty
+\let\BrailleTerminology\@gobble
+\let\BrailleSetJpContext\@gobble
+\let\BrailleSetEnContext\@gobble
+
+
+\protected\def\BrailleReading{%
+  \@ifnextchar[{\BrailleReading_}{\BrailleReading_[]}%
+}
+\def\BrailleReading_[#1]{%
+  \@ifnextchar<{\BrailleReading__}{\BrailleReading__<>}%
+}
+\def\BrailleReading__<#1>#2{%
+  #2%
+}
+\let\BrailleRemark\@gobble
+
+
+
+
+
+\def\proofname{証明}
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

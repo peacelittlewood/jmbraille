@@ -1,0 +1,65 @@
+display [ d ##
+display ] e ##
+display ^ fe
+display a fa
+display b fb
+display c fc
+#display @ fd
+display @ d1
+display @ d2
+#display @ d3
+
+noback pass2 @d245be @d-245-be
+noback pass2 @d1be @d-1-be
+noback pass2 @d12be @d-12-be
+noback pass2 @d14be @d-14-be
+noback pass2 @d145be @d-145-be
+noback pass2 @d15be @d-15-be
+noback pass2 @d124be @d-124-be
+noback pass2 @d1245be @d-1245-be
+noback pass2 @d125be @d-125-be
+noback pass2 @d24be @d-24-be
+
+noback pass3 @ae @fe-fa-e
+noback pass3 @be @fe-fb-e
+noback pass3 @ce @fe-fc-e
+noback pass3 @0-0 @0-23
+noback pass3 @0 @0-2
+
+#sign \x007f f ##  added as a cs
+
+sign \xe05e d-35-ae # ^ superscript
+match %[^_a] \xe05e - 56-d-35-ae
+
+sign \xe063 d1 # cs
+
+sign \xe06d d2 # math
+
+#litdigit \xe06e d3 # num
+#noback pass2 @3456-d3 @d3
+
+#sign \xe06e d3 # num
+#match - \xe06e %# d3-3456
+#numericmodechars \xe06e
+
+sign \xe028 d-126-be # bgroup
+sign \xe029 d-345-be # egroup
+
+noback correct "---" "―" # \x2015
+noback correct "--" "—"  # \x2014
+
+noback sign \x2016 d-6-456-ae ‖   second variant vertical line segment
+
+punctuation \x2039 236 ‹ # quote
+punctuation \x203a 356 › # quote
+
+
+sign \x21a6 d-56-1256-1256-135-ae ↦ ##  11.6.2
+sign \x21b0 d-56-1256-256-256-346-ae ↱ ##  11.6.2
+sign \x21b1 d-56-1256-356-356-346-ae ↰ ##  11.6.2
+sign \x21b2 d-56-1256-256-256-146-ae ↲ ##  11.6.2
+sign \x21b3 d-56-1256-356-356-146-ae ↳ ##  11.6.2
+sign \x2194 d-56-1256-2456-1235-135-ae ↔ ##  11.6.2
+sign \x21d0 d-56-1256-2356-2356-246-ae ⇐ ##  11.6.2
+sign \x21d2 d-56-1256-2356-2356-135-ae ⇒ ##  11.6.2
+sign \x21d4 d-56-1256-2456-2356-2356-1235-135-ae ⇔ ##  11.6.2

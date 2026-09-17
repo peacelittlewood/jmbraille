@@ -1,0 +1,948 @@
+% Time-stamp: <2026-09-16 22:39:41 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+%% \brl@def_cmdonly
+%% cs which invokes \document.
+
+
+\brl@def_cmdonly{\{}%
+\brl@def_cmdonly{\}}%
+\brl@def_cmdonly{\$}%
+\brl@def_cmdonly{\_}%
+\brl@def_cmdonly{\&}%
+\brl@def_cmdonly{\#}%
+\brl@def_cmdonly{\%}%
+\brl@def_cmdonly{\textbackslash}
+\brl@def_cmdonly{\textasciitilde}
+\brl@def_cmdonly{\textasciicircum}
+\brl@def_cmdonly{\yen}
+\brl@def_cmdonly{\dots}
+
+\brl@def_cmdonly{\!}
+\brl@def_cmdonly{\,}
+\brl@def_cmdonly{\>}
+\brl@def_cmdonly{\:}
+\brl@def_cmdonly{\;}
+\brl@def_cmdonly{\ }
+\brl@def_cmdonly{~}
+\brl@def_cmdonly{\quad}
+\brl@def_cmdonly{\qquad}
+
+\brl@def_cmdonly{\[}%\]
+\brl@def_cmdonly{\]}
+
+\brl@def_cmdonly{\qedsymbol}
+\brl@def_cmdonly{\qed}
+\brl@def_cmdonly{\\}
+\brl@def_cmdonly{\ref}
+\brl@def_cmdonly{\eqref}
+\brl@def_cmdonly{\cite}
+\brl@def_cmdonly{\pageref}
+\brl@def_cmdonly{\verb}
+\brl@def_cmdonly{\bf}
+\brl@def_cmdonly{\mc}
+\brl@def_cmdonly{\em}
+\brl@def_cmdonly{\it}
+\brl@def_cmdonly{\tt}
+\brl@def_cmdonly{\rm}
+\brl@def_cmdonly{\sf}
+\brl@def_cmdonly{\sc}
+\brl@def_cmdonly{\underline}
+\brl@def_cmdonly{\mathversion}
+
+\brl@def_cmdonly{\footnotetext}
+\brl@def_cmdonly{\footnotemark}
+\brl@def_cmdonly{\footnote}
+
+
+\brl@def_cmdonly{\BrailleDirect}
+\brl@def_cmdonly{\BrailleReading}
+\brl@def_cmdonly{\BrailleRemark}
+
+\brl@def_cmdonly{\text}
+
+
+\ifbrl@uplatex% in xelatex, unicode is treated as one character.
+%%
+%% U+0080 ^^c2^^80
+%% U+00C0 ^^c3^^80
+%% U+0100 ^^c4^^80
+%% U+0140 ^^c5^^80
+%% U+0180 ^^c6^^80
+%% U+01C0 ^^c7^^80
+%% U+0200 ^^c8^^80
+\brl@def_cmdonly{^^c2}
+\brl@def_cmdonly{^^c3}
+\brl@def_cmdonly{^^c4}
+\brl@def_cmdonly{^^c5}
+\brl@def_cmdonly{^^c6}
+\brl@def_cmdonly{^^c7}
+\brl@def_cmdonly{^^c8}
+\fi%
+
+
+% accent
+\brl@def_cmdonly{\^}
+\brl@def_cmdonly{\~}
+\brl@def_cmdonly{\=}
+\brl@def_cmdonly{\u}
+\brl@def_cmdonly{\v}
+\brl@def_cmdonly{\c}
+\brl@def_cmdonly{\"}
+\brl@def_cmdonly{\'}
+\brl@def_cmdonly{\`}
+\brl@def_cmdonly{\.}
+\brl@def_cmdonly{\H}
+\brl@def_cmdonly{\b}
+\brl@def_cmdonly{\d}
+\brl@def_cmdonly{\t}
+
+
+%% undefined greeks
+\brl@def_cmdonly{\Alpha}
+\brl@def_cmdonly{\Beta}
+\brl@def_cmdonly{\Zeta}
+\brl@def_cmdonly{\Eta}
+\brl@def_cmdonly{\Iota}
+\brl@def_cmdonly{\Kappa}
+\brl@def_cmdonly{\Mu}
+\brl@def_cmdonly{\Nu}
+\brl@def_cmdonly{\Omicron}
+\brl@def_cmdonly{\Tau}
+\brl@def_cmdonly{\Epsilon}
+\brl@def_cmdonly{\Rho}
+\brl@def_cmdonly{\Chi}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% interior command
+%
+
+
+\brl@def_cmdint{\brl@text_cmd_letter}
+\brl@def_cmdint{\brl@text_cmd_number}
+
+\brl@def_cmdint{\brl@text_cmd_dollar}
+\brl@def_cmdint{\brl@text_cmd_unit}
+\brl@def_cmdint{\brl@text_cmd_glue}
+\brl@def_cmdint{\brl@text_cmd_env}
+\brl@def_cmdint{\brl@text_cmd_label}
+
+\brl@def_cmdint{\brl@text_cmd_firstindopen}
+\brl@def_cmdint{\brl@text_cmd_firstindclose}
+\brl@def_cmdint{\brl@text_cmd_secondindopen}
+\brl@def_cmdint{\brl@text_cmd_secondindclose}
+\brl@def_cmdint{\brl@text_cmd_thirdindopen}
+\brl@def_cmdint{\brl@text_cmd_thirdindclose}
+
+\brl@def_cmdint{\brl@text_cmd_commamath}
+\brl@def_cmdint{\brl@text_cmd_desci}
+\brl@def_cmdint{\brl@text_cmd_descii}
+\brl@def_cmdint{\brl@text_cmd_transopen}
+\brl@def_cmdint{\brl@text_cmd_transclose}
+\brl@def_cmdint{\brl@text_cmd_eqquote}
+\brl@def_cmdint{\brl@text_cmd_ambb}
+\brl@def_cmdint{\brl@text_cmd_ambe}
+\brl@def_cmdint{\brl@text_cmd_unkb}
+\brl@def_cmdint{\brl@text_cmd_unke}
+\brl@def_cmdint{\brl@text_cmd_phrase}
+\brl@def_cmdint{\brl@text_cmd_alphabet}
+\brl@def_cmdint{\brl@text_cmd_info}
+\brl@def_cmdint{\brl@text_cmd_noun}
+\brl@def_cmdint{\brl@text_cmd_breakable}
+\brl@def_cmdint{\brl@text_cmd_space}
+\brl@def_cmdint{\brl@text_cmd_footnotemark}
+\brl@def_cmdint{\brl@text_cmd_empty}% {}, this is to separate some chars and the text, i.e., behave as {}
+\brl@def_cmdint{\brl@text_cmd_comma}% {}, this is to separate some chars and the text, i.e., behave as `,'
+
+\brl@def_cmdint{\brl@text_cmd_virtualchar}% \virtualchar{X} -> X : X is brailled chars defined in brl_text.tex because this is never executed or expanded except save as cache. 
+\brl@def_cmdint{\brl@text_cmd_rmopen}
+\brl@def_cmdint{\brl@text_cmd_bfopen}
+\brl@def_cmdint{\brl@text_cmd_emopen}
+\brl@def_cmdint{\brl@text_cmd_itopen}
+\brl@def_cmdint{\brl@text_cmd_sfopen}
+\brl@def_cmdint{\brl@text_cmd_ttopen}
+\brl@def_cmdint{\brl@text_cmd_ulopen}
+\brl@def_cmdint{\brl@text_cmd_scopen}
+\brl@def_cmdint{\brl@text_cmd_rmclose}
+\brl@def_cmdint{\brl@text_cmd_bfclose}
+\brl@def_cmdint{\brl@text_cmd_emclose}
+\brl@def_cmdint{\brl@text_cmd_itclose}
+\brl@def_cmdint{\brl@text_cmd_sfclose}
+\brl@def_cmdint{\brl@text_cmd_ttclose}
+\brl@def_cmdint{\brl@text_cmd_ulclose}
+\brl@def_cmdint{\brl@text_cmd_scclose}
+
+\brl@def_cmdint{\brl@text_cmd_qed}% used in UEB
+\brl@def_cmdint{\brl@text_cmd_verb}
+
+\brl@def_cmdint{\brl@document_math@end}
+
+\brl@def_cmdint{\brl@document@end}
+\brl@def_cmdint{\brl@document@enddoc}
+\brl@def_cmdint{\brl@document@endtext}
+
+\brl@def_cmdint{\brl@info_cmd_altsp}
+\brl@def_cmdint{\brl@info_cmd_par}
+
+
+\brl@def_cmdint{\brl@math_cmd_underbracesub}
+\brl@def_cmdint{\brl@math_cmd_overbracesup}
+
+\brl@def_cmdint{\brl@math_cmd_brace}
+\brl@def_cmdint{\brl@math_cmd_endbrace}
+
+\brl@def_cmdint{\brl@math_cmd_sqrtm}
+\brl@def_cmdint{\brl@math_cmd_space}
+\brl@def_cmdint{\brl@math_cmd_env}
+\brl@def_cmdint{\brl@math_cmd_label}
+
+
+\brl@def_cmdint{\brl@math_cmd_prime}
+\brl@def_cmdint{\brl@math_cmd_dot}
+\brl@def_cmdint{\brl@math_cmd_accent}
+\brl@def_cmdint{\brl@math_cmd_sup}% only sup is needed to pick up \prime
+\brl@def_cmdint{\brl@math_cmd}
+
+
+\brl@def_cmdint{\brl@array_cmd_hline}
+\brl@def_cmdint{\brl@array_cmd_cline}
+\brl@def_cmdint{\brl@array_cmd_nline}
+\brl@def_cmdint{\brl@array_cmd_multicolumn}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% math version
+%
+
+
+\def\brl@document_math_setfont_normal{%
+  \protected\gdef\brl@math_cmd_normalfont{\def\brl@math@fontprefix{n}}%
+  \protected\gdef\brl@math_cmd_rm{\def\brl@math@fontprefix{r}}%
+}
+
+\def\brl@document_math_setfont_bold{%
+  \protected\gdef\brl@math_cmd_normalfont{\def\brl@math@fontprefix{b}}%
+  \protected\gdef\brl@math_cmd_rm{\def\brl@math@fontprefix{b}}%
+}
+
+\protected\def\brl@math_cmd_bf{\def\brl@math@fontprefix{b}}%
+\protected\def\brl@math_cmd_cal{\def\brl@math@fontprefix{c}}%
+\protected\def\brl@math_cmd_frak{\def\brl@math@fontprefix{f}}%
+\brl@document_math_setfont_normal% default
+
+%%
+%% symbols to be replaced with long elements in arrays.
+%%
+
+\@namedef{brl@array@matsym_1}{\brl@math_cmd{ord}{Alpha}}
+\@namedef{brl@array@matsym_2}{\brl@math_cmd{ord}{Beta}}
+\@namedef{brl@array@matsym_3}{\brl@math_cmd{ord}{Mu}}
+\@namedef{brl@array@matsym_4}{\brl@math_cmd{ord}{Nu}}
+\@namedef{brl@array@matsym_5}{\brl@math_cmd{ord}{Kappa}}
+
+
+
+\def\brl@document_footnote@footnote{\if@english footnote\else 脚注\fi}%
+\def\brl@document_footnote@arrayelement{\if@english array data\else 配列要素\fi}%
+
+\brl@env_secdef{chapter}{8}{\thechapter}
+\brl@env_secdef{section}{8}{\thesection}
+\brl@env_secdef{subsection}{6}{\thesubsection}
+\brl@env_secdef{subsubsection}{4}{\thesubsubsection}
+
+
+
+%% mecab
+\let\brl@mecab@prog\empty
+\let\brl@mecab@sysdic\empty
+\let\brl@mecab@userdic\empty
+
+
+%% Font
+%%
+
+% \BrailleSetFont{HorizontalLine}
+% \BrailleSetFont{Plain}
+\BrailleSetFont{ShortLine}
+% \BrailleSetFont{SmallBlackDot}
+% \BrailleSetFont{SmallWhiteDot}
+% \BrailleSetFont{WhiteDot}
+
+
+\BrailleSetMeaningFontSize{6.5pt}
+\BrailleSetFigureFontSize{20pt}
+\BrailleSetFontSize{20pt}
+
+\BrailleSetMeaningColor{green!50!black}
+\BrailleSetOriginalColor{blue}
+\BrailleSetAmbiguityColor{red}
+\BrailleSetWarningColor{red}
+\BrailleSetTransparentColor{red!30}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\brl@document@rheadform{\thepage}
+\let\brl@document@rhead\brl@document@rheadform
+\def\thepage{\arabic{page}}
+
+
+%%
+%% default indent = 2 cells
+%%
+\def\brl@document@indent_default{2}
+\def\brl@document@noindent_default{0}
+\def\brl@document@leftmargin_default{0}
+\let\brl@document@leftmargin\brl@document@leftmargin_default
+
+
+\edef\brl@rectbox@titlewidth{\the\numexpr\brl@bse@width-8\relax}% width-(left:4+right:4)
+\edef\brl@frame@titlewidth{\the\numexpr\brl@bse@width-14\relax}% width-(left:4+right:4+framenum:6)
+%\def\brl@char_bcline@width{0.1}
+
+\ifbrl@option@nospread
+  \edef\brl@array_maxwidth{\the\numexpr\brl@bse@width-\thr@@\relax}% bse@width-3 ("==" + mathnewline)
+  \let\brl@format@allowspreadtrue\brl@format@allowspreadfalse
+\else%
+  \edef\brl@array_maxwidth{\the\numexpr\brl@bse@width_double-\thr@@\relax}% bse@width*2-3 ("==" + mathnewline)
+\fi
+
+%% braille
+%%
+%% 1 4  1'4'
+%% 2 5  2'5'
+%% 3 6  3'6'
+%%
+%% 1-4  2.13mm
+%% 4-1' 3.27mm
+%%
+%% B5 182/5.4 = 33.7 letters
+%% ET 167/5.4 = 30.9 letters
+
+%% A4 : 210x297 (-21.5 -21.5 -25 -25) 167x247 (EasyTactix)
+%% B5 : 182x257
+
+% 1bp = 1/72 inch = 0.3528mm
+% 1pt = 1/72.27 inch = 0.35146mm
+%
+%% A4 : 473.356 x 700.113 (bp)
+%% A3 : 946.712 x 700.113 (bp)
+%%
+%% A4 full 
+% \edef\brl@figure@singlepage{\textwidth}% 
+% \edef\brl@figure@doublepage{\the\dimexpr\tw@\textwidth\relax}%
+
+% EasyTactix
+% \edef\brl@figure@singlepage{\the\dimexpr167truemm-20pt\relax}% 
+% \edef\brl@figure@doublepage{\the\dimexpr334truemm-20pt\relax}%
+
+% \edef\brl@figure@singlepage{\the\dimexpr167truemm\relax}% 
+% \edef\brl@figure@doublepage{\the\dimexpr334truemm\relax}%
+% \edef\brl@figure@textheight{\the\dimexpr247truemm\relax}
+
+\edef\brl@figure@topmargin{\the\dimexpr25truemm\relax}
+\edef\brl@figure@oddsidemargin{\the\dimexpr21.5truemm\relax}
+
+\edef\brl@figure@singlepage{\the\dimexpr\brl@@paperwidth-\brl@figure@oddsidemargin*2\relax}
+\edef\brl@figure@textheight{\the\dimexpr\brl@@paperheight-\brl@figure@topmargin*2\relax}
+\edef\brl@figure@doublepage{\the\dimexpr\brl@figure@singlepage*2\relax}
+
+\edef\brl@figure@alltopmargin{\the\dimexpr-1truein+\brl@figure@topmargin\relax}
+\edef\brl@figure@alloddsidemargin{\the\dimexpr-1truein+\brl@figure@oddsidemargin\relax}
+
+\edef\brl@figure@textwidth_bp{\expandafter\brl@@strip@pt\the\dimexpr\brl@@ptparbp\dimexpr\brl@figure@singlepage\relax\relax}
+\edef\brl@figure@textheight_bp{\expandafter\brl@@strip@pt\the\dimexpr\brl@@ptparbp\dimexpr\brl@figure@textheight\relax\relax}
+
+
+
+%% globally offinterlineskip
+\lineskip\z@%
+\baselineskip-1000\p@%
+\lineskiplimit\maxdimen%
+
+\brl@braille_setfontdimen%
+
+\textheight\brl@bse@height\dimexpr\brl@braille@charheight+\brl@braille@depth\relax% after \brl@braille_setfontdimen
+\textwidth\brl@bse@width\brl@braille@width%
+
+\edef\brl@@topmargin{\the\dimexpr-1truein+(\brl@@paperwidth-\textwidth)/2\relax}
+\edef\brl@@oddsidemargin{\the\dimexpr-1truein+(\brl@@paperheight-\textheight)/2\relax}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% the leftsidemargin in draw tabular.
+%%
+%\def\brl@env_draw_tabular@leftsidemargin{12pt}
+
+
+
+%% scale 80% is tolerable.
+%%
+\def\brl@env_check@tolerance{0.8}
+
+
+%% pgf init
+%%
+\brl@pgf_setdash{}{0.0pt}%
+\brl@pgf_setlinewidth{0.1pt}
+%
+% if the radius of a closed path is less than \leastdist, then it is replaced by a big dot.
+\@namedef{brl@pgf_modify@leastdist9}{729}% 27^2. 
+\@namedef{brl@pgf_modify@leastdist8}{625}% 25^2. 
+\@namedef{brl@pgf_modify@leastdist7}{529}% 23^2. 
+\@namedef{brl@pgf_modify@leastdist6}{441}% 21^2. 
+\@namedef{brl@pgf_modify@leastdist5}{361}% 19^2. 
+\@namedef{brl@pgf_modify@leastdist4}{289}% 17^2. 
+\@namedef{brl@pgf_modify@leastdist3}{225}% 15^2. 
+\@namedef{brl@pgf_modify@leastdist2}{169}% 13^2.
+\@namedef{brl@pgf_modify@leastdist1}{121}% 11^2.
+
+% default filldef pattern in draw. pattern is arbitrary.
+%
+% rectangle pattern
+% \def\brl@pgf_filldef@drawpattern{-0.5 -0.5 1 1 re f}% pattern of fill in draw
+% \def\brl@pgf_filldef@drawunit{3}% unitlength of fill in draw
+
+% circle pattern
+\def\brl@pgf_filldef@drawpattern{1 0 m 1 0.552285 0.552285 1 0 1 c -0.552285 1 -1 0.552285 -1 0 c -1 -0.552285 -0.552285 -1 0 -1 c 0.552285 -1 1 -0.552285 1 0 c h f}
+\edef\brl@pgf_filldef@drawunit{5}% unitlength of fill in draw
+
+
+
+% change linewidth scale
+\def\brl@figure@linewidthscale{1}% 
+\def\brl@env_draw@linewidthscale{2}% default of draw.
+
+\edef\brl@env_draw@content{{0 -\brl@figure@textheight_bp\brl@@space \brl@figure@textwidth_bp\brl@@space \brl@figure@textheight_bp\brl@@space re W n}}
+
+
+
+
+
+%
+% the following are nonwords. 
+%
+% units
+\BrailleSetAlphabetUnit{cal}
+\BrailleSetAlphabetUnit{kB}
+\BrailleSetAlphabetUnit{kHz}
+\BrailleSetAlphabetUnit{kJ}
+\BrailleSetAlphabetUnit{kW}
+\BrailleSetAlphabetUnit{kcal}
+\BrailleSetAlphabetUnit{kg}
+\BrailleSetAlphabetUnit{kl}
+\BrailleSetAlphabetUnit{km}
+\BrailleSetAlphabetUnit{kt}
+\BrailleSetAlphabetUnit{GB}
+\BrailleSetAlphabetUnit{GHz}
+\BrailleSetAlphabetUnit{Hz}
+\BrailleSetAlphabetUnit{MB}
+\BrailleSetAlphabetUnit{MHz}
+\BrailleSetAlphabetUnit{TB}
+\BrailleSetAlphabetUnit{cc}
+\BrailleSetAlphabetUnit{cm}
+\BrailleSetAlphabetUnit{dB}
+\BrailleSetAlphabetUnit{db}
+\BrailleSetAlphabetUnit{dl}
+\BrailleSetAlphabetUnit{ft}
+\BrailleSetAlphabetUnit{ha}
+\BrailleSetAlphabetUnit{hpa}
+\BrailleSetAlphabetUnit{mA}
+\BrailleSetAlphabetUnit{mV}
+\BrailleSetAlphabetUnit{mW}
+\BrailleSetAlphabetUnit{mg}
+\BrailleSetAlphabetUnit{ml}
+\BrailleSetAlphabetUnit{mm}
+\BrailleSetAlphabetUnit{mol}
+\BrailleSetAlphabetUnit{pa}
+\BrailleSetAlphabetUnit{ppm}
+
+
+\BrailleSetAlphabet{a}
+\BrailleSetAlphabet{b}
+\BrailleSetAlphabet{c}
+\BrailleSetAlphabet{d}
+\BrailleSetAlphabet{e}
+\BrailleSetAlphabet{f}
+\BrailleSetAlphabet{g}
+\BrailleSetAlphabet{h}
+\BrailleSetAlphabet{i}
+\BrailleSetAlphabet{j}
+\BrailleSetAlphabet{k}
+\BrailleSetAlphabet{l}
+\BrailleSetAlphabetUnit{m}
+\BrailleSetAlphabet{n}
+\BrailleSetAlphabet{o}
+\BrailleSetAlphabet{p}
+\BrailleSetAlphabet{q}
+\BrailleSetAlphabet{r}
+\BrailleSetAlphabet{s}
+\BrailleSetAlphabet{t}
+\BrailleSetAlphabet{u}
+\BrailleSetAlphabet{v}
+\BrailleSetAlphabet{w}
+\BrailleSetAlphabet{x}
+\BrailleSetAlphabet{y}
+\BrailleSetAlphabet{z}
+\BrailleSetAlphabet{A}
+\BrailleSetAlphabet{B}
+\BrailleSetAlphabet{C}
+\BrailleSetAlphabet{D}
+\BrailleSetAlphabet{E}
+\BrailleSetAlphabet{F}
+\BrailleSetAlphabet{G}
+\BrailleSetAlphabet{H}
+\BrailleSetAlphabet{I}
+\BrailleSetAlphabet{J}
+\BrailleSetAlphabetUnit{K}
+\BrailleSetAlphabetUnit{L}
+\BrailleSetAlphabet{M}
+\BrailleSetAlphabet{N}
+\BrailleSetAlphabet{O}
+\BrailleSetAlphabet{P}
+\BrailleSetAlphabet{Q}
+\BrailleSetAlphabet{R}
+\BrailleSetAlphabet{S}
+\BrailleSetAlphabet{T}
+\BrailleSetAlphabet{U}
+\BrailleSetAlphabetUnit{V}
+\BrailleSetAlphabetUnit{W}
+\BrailleSetAlphabet{X}
+\BrailleSetAlphabet{Y}
+\BrailleSetAlphabet{Z}
+
+\BrailleSetAlphabet{ii}
+\BrailleSetAlphabet{iii}
+\BrailleSetAlphabet{iv}
+\BrailleSetAlphabet{vi}
+\BrailleSetAlphabet{vii}
+\BrailleSetAlphabet{viii}
+\BrailleSetAlphabet{ix}
+\BrailleSetAlphabet{xi}
+\BrailleSetAlphabet{xii}
+\BrailleSetAlphabet{II}
+\BrailleSetAlphabet{III}
+\BrailleSetAlphabet{IV}
+\BrailleSetAlphabet{VI}
+\BrailleSetAlphabet{VII}
+\BrailleSetAlphabet{VIII}
+\BrailleSetAlphabet{IX}
+\BrailleSetAlphabet{XI}
+\BrailleSetAlphabet{XII}
+
+
+\BrailleSetAlphabet{i.}
+\BrailleSetAlphabet{ii.}
+\BrailleSetAlphabet{iii.}
+\BrailleSetAlphabet{iv.}
+\BrailleSetAlphabet{vi.}
+\BrailleSetAlphabet{vii.}
+\BrailleSetAlphabet{viii.}
+\BrailleSetAlphabet{ix.}
+\BrailleSetAlphabet{xi.}
+\BrailleSetAlphabet{xii.}
+\BrailleSetAlphabet{II.}
+\BrailleSetAlphabet{III.}
+\BrailleSetAlphabet{IV.}
+\BrailleSetAlphabet{VI.}
+\BrailleSetAlphabet{VII.}
+\BrailleSetAlphabet{VIII.}
+\BrailleSetAlphabet{IX.}
+\BrailleSetAlphabet{XI.}
+\BrailleSetAlphabet{XII.}
+
+
+\BrailleSetAlphabet{A.}
+\BrailleSetAlphabet{B.}
+\BrailleSetAlphabet{C.}
+\BrailleSetAlphabet{D.}
+\BrailleSetAlphabet{E.}
+\BrailleSetAlphabet{F.}
+\BrailleSetAlphabet{G.}
+\BrailleSetAlphabet{H.}
+\BrailleSetAlphabet{I.}
+\BrailleSetAlphabet{J.}
+\BrailleSetAlphabet{K.}
+\BrailleSetAlphabet{L.}
+\BrailleSetAlphabet{M.}
+\BrailleSetAlphabet{N.}
+\BrailleSetAlphabet{O.}
+\BrailleSetAlphabet{P.}
+\BrailleSetAlphabet{Q.}
+\BrailleSetAlphabet{R.}
+\BrailleSetAlphabet{S.}
+\BrailleSetAlphabet{T.}
+\BrailleSetAlphabet{U.}
+\BrailleSetAlphabet{V.}
+\BrailleSetAlphabet{W.}
+\BrailleSetAlphabet{X.}
+\BrailleSetAlphabet{Y.}
+\BrailleSetAlphabet{Z.}
+
+\BrailleSetAlphabet{Dr.}
+\BrailleSetAlphabet{Jr.}
+
+%
+\BrailleSetAlphabet{URL}
+\BrailleSetAlphabet{SNS}
+\BrailleSetAlphabet{OK}
+
+
+
+%%
+
+%% 
+%% choose one of the following:
+% \BrailleSetFigureDensity{sparse}
+% \BrailleSetFigureDensity{loose}
+\BrailleSetFigureDensity{natural}
+% \BrailleSetFigureDensity{dense}
+% \BrailleSetFigureDensity{continuous}
+
+%%
+\BrailleSetFigureScale{3}
+\BrailleSetFigureArrowScale{3}
+\BrailleSetFigurePindisplayScale{1}
+\BrailleSetFigurePindisplayStep{1}
+
+\BrailleSetOutputBaudrate{9600}
+\BrailleSetOutputLanguage{python}
+
+\BrailleTabularRuleOn% default 
+
+\BrailleEnglishOff% default : japanese context.
+
+
+\BrailleSetTerminology{math}{53}{階}{2}% かい
+\BrailleSetTerminology{math}{38}{巾}{2}% べき
+\BrailleSetTerminology{math}{38}{束}{2}% そく
+\BrailleSetTerminology{math}{53}{束}{2}% そく
+\BrailleSetTerminology{math}{38}{空}{2}% くう
+\BrailleSetTerminology{math}{38}{種}{2}% しゅ
+\BrailleSetTerminology{math}{38}{元}{2}% げん 
+\BrailleSetTerminology{math}{40}{空}{2}% くう
+\BrailleSetTerminology{math}{38}{実体}{2}% じつたい
+\BrailleSetTerminology{math}{38}{根}{2}% こん
+\BrailleSetTerminology{math}{38}{底}{2}% てい
+\BrailleSetTerminology{math}{38}{基}{2}% き
+\BrailleSetTerminology{math}{38}{偽}{2}% ぎ
+\BrailleSetTerminology{math}{38}{体}{2}% たい
+\BrailleSetTerminology{math}{51}{場}{2}% 
+\BrailleSetTerminology{math}{51}{物}{2}%
+
+\BrailleSetTerminologyScience{math}
+% predominant quotation marks
+\BrailleSetPredominantQuotationMarks{auto}
+%
+% physics
+\BrailleSetTerminology{phys}{38}{空}{3}% そら
+\BrailleSetTerminology{phys}{38}{殻}{2}% かく
+\BrailleSetTerminology{phys}{53}{階}{2}% かい
+\BrailleSetTerminology{phys}{51}{場}{2}%
+\BrailleSetTerminology{phys}{51}{物}{2}%
+
+%\BrailleSetTerminology{phys}{38}{類}{2}
+\BrailleSetTerminologyScience{phys}
+
+\BrailleTerminology{math}% default
+
+%\BrailleAltColonOn% : means colon.
+\BrailleAltColonOff
+
+
+
+%% debug
+% \def\search{\makeatletter\catcode`\_=11\relax\futurelet\brl@tmp\search_}
+% \def\search_{\show\brl@tmp\afterassignment\search\let\brl@tmp}
+% \def\exit{\let\search\empty}
+% \def\init{\catcode`\_=11\relax\makeatletter}
+
+
+
+%% 2015 
+%% via file
+%% par -> orig@par
+%% \def\brl@mecab@cmd_tab{^^I}
+%% \endlinechar=-1
+%% the number of the elements of \contentsline differs.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% defined after \begin{document}
+%%
+
+\AtBeginDocument{%
+
+\def\mathbf#1{{\bf#1}}%
+\def\mathrm#1{{\rm#1}}%
+\def\mathit#1{{\it#1}}%
+\def\mathfrak#1{{\frak#1}}%
+\def\mathcal#1{{\cal#1}}%
+\def\rmfamily{\rm}%
+\def\sffamily{\sf}%
+\def\ttfamily{\tt}%
+\def\gtfamily{\bf}%
+\def\mcfamily{\mc}%
+\def\bfseries{\bf}%
+\def\itshape{\it}%
+\def\scshape{\sc}%
+\def\slshape{\sl}%
+\def\textrm#1{{\rm#1}}
+\def\texttt#1{{\tt#1}}
+\def\textit#1{{\it#1}}
+\def\textbf#1{{\bf#1}}
+\def\textsf#1{{\sf#1}}
+\def\textsc#1{{\sc#1}}
+\def\emph#1{{\em#1}}
+\def\mathbb{\mathbf}% alias bb -> bf
+\def\bb{\bf}% alias bb -> bf
+\def\boldsymbol{\mathbf}%
+\def\bm{\mathbf}
+\def\pmb{\textbf}
+\def\operatorname{\mathrm}%
+
+
+
+% aliases
+\def\ae{æ}
+\def\AE{Æ}
+\def\oe{œ}
+\def\OE{Œ}
+\def\ss{ß}
+\def\AA{Å}
+\def\aa{å}
+\def\O{Ø}
+\def\o{ø}
+\def\l{ł}
+\def\L{Ł}
+\def\ll{<<}
+\def\gg{>>}
+\def\iff{\Leftrightarrow}
+\def\newline{\\}
+\def\Vert{\|}
+\def\vert{|}
+\def\lbrace{\{}
+\def\rbrace{\}}
+\def\lbrack{[}
+\def\rbrack{]}
+\def\ast{*}
+\def\url{\texttt}
+\def\alert{\emph}
+\def\structure{\underline}
+\def\S{§}
+\def\P{¶}
+\def\pounds{£}
+\def\copyright{©}
+\def\dag{†}
+\def\ddag{‡}
+%for ueb
+\def\labelitemi{•}
+\def\labelitemii{–}
+\def\labelitemiii{*}
+\def\labelitemiv{·}
+
+
+\def\widehat{\hat}
+\def\dfrac{\frac}%
+\def\tfrac{\frac}%
+\def\setminus{\backslash}%
+\def\ell{l}%
+\def\hbar{\bar{h}}
+\def\geqq{\geq}%
+\def\leqq{\leq}%
+\def\ne{\neq}%
+\def\ge{\geq}%
+\def\le{\leq}%
+\def\ldots{\dots}%
+\def\cdots{\dots}%
+\def\dbinom{\binom}
+\def\dotsb{\dots}
+\def\dotsc{\dots}
+\def\dotsm{\dots}
+\def\dotsi{\dots}
+\def\dotso{\dots}
+\def\notag{\nonumber}
+\def\longleftarrow{\leftarrow}%
+\def\longrightarrow{\rightarrow}%
+\def\longleftrightarrow{\leftrightarrow}%
+\def\longmapsto{\mapsto}%
+\def\Longleftarrow{\Leftarrow}%
+\def\Longrightarrow{\Rightarrow}%
+\def\Longleftrightarrow{\Leftrightarrow}%
+\def\vec{\overrightarrow}%
+\def\to{\rightarrow}%
+\def\bot{\perp}%
+\def\varlimsup{\overline{\lim}}%
+\def\varliminf{\underline{\lim}}%
+\def\varprojlim{\lim _{\leftarrow}}%
+\def\varinjlim{\lim _{\rightarrow}}%
+\def\shortintertext{\intertext}%
+\def\({$}
+\def\){$}
+
+\def\Downarrow{\downarrow}
+\def\Uparrow{\uparrow}
+\def\updownarrow{\uparrow\downarrow}
+\def\Updownarrow{\uparrow\downarrow}
+
+\def\overset#1#2{#2^{#1}}
+\def\underset#1#2{#2_{#1}}
+\def\stackrel#1#2{#2^{#1}}
+\def\pod#1{(#1)}
+\def\pmod#1{(\bmod #1)}
+\def\widetilde#1{\tilde{#1}}
+\def\textcircled#1{(#1)}
+
+
+
+%% ignore
+\let\lefteqn\brl@@asis
+\let\leftline\brl@@asis
+\let\centerline\brl@@asis
+\let\rightline\brl@@asis
+\let\fbox\brl@@asis
+\def\parbox{\@ifnextchar[{\brl@patch_parbox}{\brl@patch_parbox[]}}
+\def\brl@patch_parbox[#1]#2#3{#3}
+
+% Notice: these primitives should not be \empty.
+% They are used in tabular in the case of lualatex. (I dont know the reason.)
+% These commands are replaced by empty in \brl@document.
+%
+%
+% \let\displaystyle\empty%
+% \let\scriptstyle\empty
+% \let\scriptscriptstyle\empty
+% \let\textstyle\empty
+
+
+\let\big\empty%
+\let\bigl\empty%
+\let\bigm\empty%
+\let\bigr\empty%
+\let\bigg\empty%
+\let\biggl\empty%
+\let\biggm\empty%
+\let\biggr\empty%
+\let\Big\empty%
+\let\Bigl\empty%
+\let\Bigm\empty%
+\let\Bigr\empty%
+\let\Bigg\empty%
+\let\Biggl\empty%
+\let\Biggm\empty%
+\let\Biggr\empty%
+\let\limits\empty
+\let\nolimits\empty
+
+
+\let\raggedright\empty
+\let\raggedleft\empty
+\let\enlargethispage\@gobble
+\let\propshape\empty
+
+\let\newpage\empty
+\let\clearpage\empty
+\let\leavevmode\empty%
+\let\color\@gobble%
+\let\colorbox\@secondoftwo
+\let\textcolor\@secondoftwo
+\let\raisebox\@secondoftwo
+\let\centering\empty
+\let\setlength\@gobbletwo
+%
+% space-like
+%
+% \smallskip,\medskip,\bigskip = \vspace **
+
+% \protected\def\vskip{\skip\z@}
+% \protected\def\hskip{\skip\z@}
+%
+\protected\def\hspace#1{%
+  \ifx*#1%
+    \expandafter\@gobble%
+  \fi%
+}
+\let\vspace\hspace
+
+\let\nobreak\empty
+\let\mbox\brl@@asis
+
+
+\let\large\empty
+\let\Large\empty
+\let\LARGE\empty
+\let\huge\empty
+\let\Huge\empty
+\let\small\empty
+\let\normalsize\empty
+\let\footnotesize\empty
+\let\scriptsize\empty
+\let\tiny\empty
+
+\def\TeX{TeX\BrailleRemark{TeX のロゴ}}
+\def\LaTeX{LaTeX\BrailleRemark{LaTeX のロゴ}}
+%\let\quote\relax
+\renewenvironment{quote}{\brl@orig@begin{ovalbox}{\if@english Quotation\else 引用\fi}}{\brl@orig@end{ovalbox}\global\brl@document@indentfalse}
+\renewenvironment{abstract}{\brl@orig@begin{ovalbox}{\abstractname}}{\brl@orig@end{ovalbox}\global\brl@document@indenttrue}
+
+\protected\def\begin{\relax\brl@document\begin}%
+\protected\def\end{\brl@orig@end}%
+\protected\def\indent{\global\brl@document@indenttrue}
+\protected\def\noindent{\global\brl@document@indentfalse}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% defined before \begin{document}
+%%
+
+%%
+%% defaults
+
+\def\thepart{\arabic{part}}
+\def\thechapter{\prechaptername\arabic{chapter}\postchaptername}
+\def\thesection{\presectionname\arabic{section}\postsectionname}
+\def\thesubsection{\thesection.\arabic{subsection}.\ }
+\def\thesubsubsection{\thesubsection.\arabic{subsubsection}.\ }  
+\def\theequation{\arabic{equation}}
+\def\theenumi{\@arabic\c@enumi}
+\def\theenumii{\@alph\c@enumii}
+\def\theenumiii{\@roman\c@enumiii}
+\def\theenumiv{\@Alph\c@enumiv}
+\def\thefootnote{\arabic{footnote}}
+\def\labelenumi{\theenumi.\ }
+\def\labelenumii{(\theenumii)}
+\def\labelenumiii{\theenumiii.\ }
+\def\labelenumiv{\theenumiv.\ }
+
+\def\proofname{\if@english proof\else 証明\fi}
+\def\prepartname{\if@english Part\ \else 第\fi}
+\def\postpartname{\if@english\else 部\ \fi}
+\def\prechaptername{\if@english Chapter\ \else 第\fi}
+\def\postchaptername{\if@english\else 章\ \fi}
+\def\presectionname{}% 第
+\def\postsectionname{}% 節
+
+%\def\tagform@#1{\brl@text_cmd_eqquote{#1}}
+\def\tagform@#1{(#1)}
+
+%
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

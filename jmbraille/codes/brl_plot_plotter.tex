@@ -1,0 +1,437 @@
+% Time-stamp: <2026-09-11 16:36:05 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@plot
+%%
+%% input: 
+%%
+%% \brl@pgf@minxaty_\brl@pgf@curry : minx at y
+%% \brl@pgf@maxxaty_\brl@pgf@curry : maxx at y
+%% \brl@pgf@size_\brl@pgf@currx_\brl@pgf@curry : size
+%%
+%% output: edel form
+
+\def\brl@plot@papersize{B5}
+\def\brl@plot@maxlinex_single{480}% 15*32
+\def\brl@plot@maxlinex_double{960}% 15*64
+\def\brl@plot@maxliney{684}%  (the max of edel : the max of ESA721 is 726)
+\def\brl@plot@headsep{0}% 
+\def\brl@plot@leftsidemargin{0}%
+
+\def\brl@plot@braillewidth{15}%
+\def\brl@plot@brailleheight{31}% important notice : the height of a char of ESA721 is 33.
+\def\brl@plot@braillebaseline{22}%
+
+
+\newwrite\brl@plot@file% for the right page
+\newwrite\brl@plot@rfile% for the right page
+
+\newtoks\brl@plot@rtoks% for file of the right page
+\def\brl@plot_appendrtoks#1{\brl@plot@rtoks\expandafter{\the\brl@plot@rtoks#1}}
+
+\def\brl@plot{%
+  %
+  %
+  \brl@plot_init%
+  \the\brl@pgf@invoketoks%
+  % 
+  % treat nodes
+  %
+  \let\brl@bc\brl@bc_plot% make empty box in do_show
+  \let\brl@ebc\brl@ebc_plot%
+  \let\brl@dbc\brl@dbc_plot% either ebc or dbc works depending on option@hires.
+  % \brl@do = \brl@do_show
+  \def\brl@pgf@pointsize{2}% the size of dots for letters is 2.
+  \let\brl@char@cmd_direct\brl@@asis% may include \label
+  \def\brl@pgf@radius{1}%
+  \global\setbox\brl@plot@nodebox\hbox{\the\brl@pgf@nodetoks}%
+  % 
+  \brl@env_plot_grid% make grid. This should be here. after making nodeboxes and before making header. this gives the correct minx, maxx, miny, maxy of the picture.    
+  % 
+  % treat header
+  % 
+  % 
+  \global\setbox\brl@plot@headerbox\hbox{%
+    \let\brl@pgf_orient\brl@pgf_orient_portrait% force portrait
+    % 
+    % 
+    \brl@pgf_hbox{\numexpr\brl@pgf@minx+356\relax}{\numexpr\brl@pgf@maxy+17\relax}{\brl@plot@page}% 15 * 24 - 4 spaces = 356, 31 * 1 = 31 (1 lineskip) 31-14 (height)     
+    % \@namedef{brl@bc_plot@x0}{4}
+    % \@namedef{brl@bc_plot@y0}{14}
+    % 
+    % 
+  }%
+  % 
+  % 
+  % 
+  \edef\brl@plot@boundingboxx{\the\numexpr\brl@plot@maxlinex+\brl@pgf@minx-\brl@plot@leftsidemargin\relax}%
+  \edef\brl@plot@boundingboxy{\the\numexpr\brl@pgf@maxy+\brl@plot@headsep-\brl@plot@maxliney\relax}%
+  % 
+  \brl@plot@liney\brl@pgf@maxy\relax%
+  % 
+  % 
+  % 
+  % 
+  % 
+  % 
+  \brl@@pdf_bcontent%
+  \brl@@pdf_invoke{q 0 G 0 g 0 w}%
+  \brl@@pdf_invoke{q 1 0 0 1 \the\numexpr\brl@plot@leftsidemargin-\brl@pgf@minx\relax\brl@@space%
+    \the\numexpr-\brl@pgf@maxy-\brl@plot@headsep\relax\brl@@space cm}%
+  % 
+  % init of writeps
+  % 
+  \def\brl@plot@currsize{0}%
+  \edef\brl@tmp{{EDEL\brl@plot@papersize,\brl@plot@headsep,%
+      \the\numexpr\brl@pgf@maxy-\brl@pgf@miny+\brl@plot@headsep\relax%
+    }}%
+  \brl@plot@toks\brl@tmp% header of EDEL
+  % 
+  % 
+  \ifbrl@figure@spread%
+    \def\brl@plot@rcurrsize{0}%
+    \brl@plot@rtoks\brl@tmp% rheader of EDEL
+    \let\brl@plot_writepts_subroutine\brl@plot_writepts_double%
+    \immediate\openout\brl@plot@file=\jobname-\brl@figure@figurenum_plot-l.edl\relax%
+    \immediate\openout\brl@plot@rfile=\jobname-\brl@figure@figurenum_plot.edl\relax%
+  \else%
+    \immediate\openout\brl@plot@file=\jobname-\brl@figure@figurenum_plot.edl\relax%
+  \fi%
+  % 
+  % 
+  \brl@plot_writepts%
+  \immediate\write\brl@plot@file{\the\brl@plot@toks}% treat the rest
+  \immediate\closeout\brl@plot@file%
+  % 
+  \brl@@pdf_invoke{Q 1 0 0 1 -0.5 -0.5 cm}% i.e. -0.5 -- 479.5 etc.
+  % 
+  {\brl@orig@color{\brl@char@warncolor}%
+    \brl@@pdf_invoke{0 5 \brl@plot@maxlinex_single\brl@@space-\the\numexpr\brl@plot@maxliney+5\relax\brl@@space re S}%  +5 means the radius of the top dots of the header
+    % 
+    % 
+    \ifbrl@figure@spread%
+      \immediate\write\brl@plot@rfile{\the\brl@plot@rtoks}% treat the rest
+      \immediate\closeout\brl@plot@rfile%
+      % 
+      \brl@@pdf_invoke{\brl@plot@maxlinex_single\brl@@space 5 \brl@plot@maxlinex_single\brl@@space-\the\numexpr\brl@plot@maxliney+5\relax\brl@@space re S}% 
+    \fi%
+  }%
+  \brl@@pdf_invoke{Q}%
+  \brl@@pdf_econtent%
+  % 
+}
+
+
+
+\def\brl@plot_writepts{%
+  \ifcsname brl@pgf@minxaty_\the\brl@plot@liney\endcsname%
+    \edef\brl@plot@maxxaty{\csname brl@pgf@maxxaty_\the\brl@plot@liney\endcsname}%
+    \brl@plot@linex\csname brl@pgf@minxaty_\the\brl@plot@liney\endcsname\relax%
+    %
+    \global\expandafter\let\csname brl@pgf@minxaty_\the\brl@plot@liney\endcsname\@undefined% clear
+    %
+    \ifnum\brl@plot@boundingboxy<\brl@plot@liney%
+      % 
+      \begingroup%
+        \count@\numexpr\brl@pgf@maxy-\brl@plot@liney+\brl@plot@headsep\relax% upside down
+        \brl@plot@liney\count@%
+        \divide\count@26\relax%
+        \lccode`\!=\numexpr\count@+64\relax%
+        \lccode`\?=\numexpr\brl@plot@liney-\count@*26+64\relax%
+        \lowercase{\gdef\brl@plot@lineychar{!?}}%
+      \endgroup%
+      \brl@plot_writepts_loop%
+    \else%
+      \brl@plot_writepts_outy_loop%
+    \fi%
+  \fi%
+  %
+  %
+  %
+  %
+  \ifnum\brl@pgf@miny<\brl@plot@liney%
+    \advance\brl@plot@liney\m@ne%
+    \expandafter\brl@plot_writepts%
+  \fi%
+}
+
+
+\def\brl@plot_writepts_outy_loop{%
+  \ifcsname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname%
+    %
+    %
+    \brl@@pdf_invoke{q 1 0 0 1 \the\brl@plot@linex\brl@@space\the\brl@plot@liney\brl@@space cm}%
+    \brl@plot@circle{\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname r}% draw circle
+    \brl@@pdf_invoke{Q}%
+    % 
+    %
+    \global\expandafter\let\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname\@undefined% clear
+    %
+  \fi%
+  %
+  %
+  %
+  \ifnum\brl@plot@maxxaty>\brl@plot@linex%
+    \advance\brl@plot@linex\@ne%
+    \expandafter\brl@plot_writepts_outy_loop%
+  \fi%
+}
+
+
+\def\brl@plot_writepts_loop{%
+  \ifcsname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname%
+    % whether out of range or not 
+    \brl@@pdf_invoke{q 1 0 0 1 \the\brl@plot@linex\brl@@space\the\brl@plot@liney\brl@@space cm}%
+    %
+    \edef\brl@tmp{\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname}% size
+    %
+    \ifnum\brl@plot@boundingboxx>\brl@plot@linex%
+      \brl@plot@circle{\brl@tmp}% draw circle
+      \count@\numexpr\brl@plot@linex-\brl@pgf@minx+\brl@plot@leftsidemargin\relax% x pos
+      % 
+      \brl@plot_writepts_subroutine% use \brl@tmp = size, \count@
+    \else%
+      \brl@plot@circle{\brl@tmp r}% draw circle
+    \fi%
+    % 
+    \brl@@pdf_invoke{Q}%
+    % 
+    %
+    \global\expandafter\let\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname\@undefined% clear
+    %
+  \fi%
+  %
+  %
+  %
+  \ifnum\brl@plot@maxxaty>\brl@plot@linex%
+    \advance\brl@plot@linex\@ne%
+    \expandafter\brl@plot_writepts_loop%
+  \fi%
+}
+
+
+\def\brl@plot_writepts_double{%
+  \ifnum\brl@plot@maxlinex_single>\count@%
+    % 
+    % 
+    \ifnum\brl@tmp=\brl@plot@currsize\relax% within the single page
+    \else% different size
+      %
+      \let\brl@plot@currsize\brl@tmp%
+      \immediate\write\brl@plot@file{\the\brl@plot@toks}%
+      \brl@plot@toks\expandafter{\brl@plot@currsize}%
+    \fi%
+    \begingroup%
+      \brl@plot@linex\count@%
+      \divide\count@26\relax%
+      \lccode`\!=\numexpr\count@+64\relax%
+      \lccode`\?=\numexpr\brl@plot@linex-\count@*26+64\relax%
+      \lowercase{\xdef\brl@tmp{{!?\brl@plot@lineychar}}}%
+    \endgroup%
+    %
+    \expandafter\brl@plot_appendtoks\brl@tmp%
+    % 
+  \else%
+    % 
+    % 
+    \ifnum\brl@tmp=\brl@plot@rcurrsize\relax% in the right page
+    \else% different size
+      %
+      \let\brl@plot@rcurrsize\brl@tmp%
+      \immediate\write\brl@plot@rfile{\the\brl@plot@rtoks}%
+      \brl@plot@rtoks\expandafter{\brl@plot@rcurrsize}%
+    \fi%
+    \begingroup%
+      \advance\count@-\brl@plot@maxlinex_single\relax%
+      \brl@plot@linex\count@%
+      \divide\count@26\relax%
+      \lccode`\!=\numexpr\count@+64\relax%
+      \lccode`\?=\numexpr\brl@plot@linex-\count@*26+64\relax%
+      \lowercase{\xdef\brl@tmp{{!?\brl@plot@lineychar}}}%
+    \endgroup%
+    % 
+    \expandafter\brl@plot_appendrtoks\brl@tmp%
+    %
+  \fi%
+}
+
+% default
+\def\brl@plot_writepts_subroutine{%
+  %
+  \ifnum\brl@tmp=\brl@plot@currsize\relax% within the single page
+  \else% different size
+    %
+    \let\brl@plot@currsize\brl@tmp%
+    \immediate\write\brl@plot@file{\the\brl@plot@toks}%
+    \brl@plot@toks\expandafter{\brl@plot@currsize}%
+  \fi%
+  \begingroup%
+    \brl@plot@linex\count@%
+    \divide\count@26\relax%
+    \lccode`\!=\numexpr\count@+64\relax%
+    \lccode`\?=\numexpr\brl@plot@linex-\count@*26+64\relax%
+    \lowercase{\xdef\brl@tmp{{!?\brl@plot@lineychar}}}%
+  \endgroup%
+  \expandafter\brl@plot_appendtoks\brl@tmp%
+  % 
+}
+
+
+
+\ifbrl@lualatex%
+  %
+\expandafter\newbox\csname brl@plot@circle1_\endcsname
+\expandafter\newbox\csname brl@plot@circle1r_\endcsname
+\expandafter\newbox\csname brl@plot@circle2_\endcsname
+\expandafter\newbox\csname brl@plot@circle2r_\endcsname
+\expandafter\newbox\csname brl@plot@circle3_\endcsname
+\expandafter\newbox\csname brl@plot@circle3r_\endcsname
+\def\brl@plot_resource{%
+  %
+  \setbox\@ne\hbox{}\wd\@ne\p@\ht\@ne\p@%
+  \setbox\z@\hbox{%
+    \pdfextension literal{0 g \brl@@cira}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-1 -1 1 1]}\z@%
+  \setbox\z@\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\csname brl@plot@circle1_\endcsname\box\z@%  
+  %
+  \setbox\z@\hbox{%
+    \pdfextension literal{1 0 0 rg \brl@@cira}%
+    \copy\@ne%                             
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-1 -1 1 1]}\z@%
+  \setbox\z@\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\csname brl@plot@circle1r_\endcsname\box\z@%  
+  %
+  \setbox\z@\hbox{%
+    \pdfextension literal{0 g \brl@@cirb}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-2 -2 2 2]}\z@%
+  \setbox\z@\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\csname brl@plot@circle2_\endcsname\box\z@%  
+  %
+  \setbox\z@\hbox{%
+    \pdfextension literal{1 0 0 rg \brl@@cirb}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-2 -2 2 2]}\z@%
+  \setbox\z@\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\csname brl@plot@circle2r_\endcsname\box\z@%  
+  %
+  \setbox\z@\hbox{%
+    \pdfextension literal{0 g \brl@@circ}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-3 -3 3 3]}\z@%
+  \setbox\z@\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\csname brl@plot@circle3_\endcsname\box\z@%  
+  %
+  \setbox\z@\hbox{%
+    \pdfextension literal{1 0 0 rg \brl@@circ}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-3 -3 3 3]}\z@%
+  \setbox\z@\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\csname brl@plot@circle3r_\endcsname\box\z@%  
+  %
+}
+\def\brl@plot@circle#1{%
+  \copy\csname brl@plot@circle#1_\endcsname% draw circle
+}%
+
+\else%
+
+\def\brl@plot_resource{%
+  \AtBeginDvi{%
+    \special{pdf:bxobj @circle1 bbox -1 -1 1 1}%
+    \special{pdf:code 0 g \brl@@cira}%
+    \special{pdf:exobj}%
+    % 
+    \special{pdf:bxobj @circle1r bbox -1 -1 1 1}%
+    \special{pdf:code 1 0 0 rg \brl@@cira}%
+    \special{pdf:exobj}%
+    % 
+    \special{pdf:bxobj @circle2 bbox -2 -2 2 2}%
+    \special{pdf:code 0 g \brl@@cirb}%
+    \special{pdf:exobj}%
+    % 
+    \special{pdf:bxobj @circle2r bbox -2 -2 2 2}%
+    \special{pdf:code 1 0 0 rg \brl@@cirb}%
+    \special{pdf:exobj}%
+    % 
+    \special{pdf:bxobj @circle3 bbox -3 -3 3 3}%
+    \special{pdf:code 0 g \brl@@circ}%
+    \special{pdf:exobj}%
+    % 
+    \special{pdf:bxobj @circle3r bbox -3 -3 3 3}%
+    \special{pdf:code 1 0 0 rg \brl@@circ}%
+    \special{pdf:exobj}%
+    % 
+  }%
+}
+
+
+\def\brl@plot@circle#1{%
+  \special{pdf:uxobj @circle#1}% draw circle
+}%
+
+\fi
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,620 @@
+% Time-stamp: <2026-09-12 15:29:17 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%% A4 : 210x297 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% globally used constants
+%%
+\def\brl@@tikzpicture{tikzpicture}
+\def\brl@@ast{*}
+\def\brl@@empty{{}}
+\def\brl@@ptparbp{0.996264}% pt/pb
+\def\brl@@bpparpt{1.00375}% pb/pt
+\edef\brl@@sharp{\string#}
+\edef\brl@@dollar{\string$}%$
+\edef\brl@@ampersand{\string&}
+\edef\brl@@lbrace{\string{}
+\edef\brl@@rbrace{\string}}
+\edef\brl@@circum{\string^}
+\edef\brl@@tilde{\string~}
+\edef\brl@@ul{\string _}
+{\catcode`\!=12\relax
+  \lccode`\!=`\%\lowercase{\gdef\brl@@percent{!}}
+  \lccode`\!=`\\\lowercase{\gdef\brl@@bs{!}}
+}
+
+\def\brl@@space{ }
+\def\brl@@logseg{------------------------------}
+
+%% check whther a letter is in a...j
+\let\brl@@letteraj_a\empty
+\let\brl@@letteraj_b\empty
+\let\brl@@letteraj_c\empty
+\let\brl@@letteraj_d\empty
+\let\brl@@letteraj_e\empty
+\let\brl@@letteraj_f\empty
+\let\brl@@letteraj_g\empty
+\let\brl@@letteraj_h\empty
+\let\brl@@letteraj_i\empty
+\let\brl@@letteraj_j\empty
+
+\def\brl@@error{%
+  \PackageError{jmbraille}{Either the input or jmbraille is wrong}{}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% globally used macros
+%%
+%%
+\def\brl@@asis#1{#1}
+\def\brl@@gobblethree#1#2#3{}
+\def\brl@@gobblefour#1#2#3#4{}
+\def\brl@@gobblefive#1#2#3#4#5{}
+\def\brl@@gobblesix#1#2#3#4#5#6{}
+\def\brl@@firstofthree#1#2#3{#1}%
+\def\brl@@secondofthree#1#2#3{#2}%
+\def\brl@@thirdofthree#1#2#3{#3}%
+%% strip pt in dimen
+{
+  \catcode`P=12
+  \catcode`T=12
+  \lowercase{
+    \gdef\brl@@strip@pt#1PT{#1}%
+  }
+}
+
+%% paper initialization
+\def\brl@@paperwidth{210truemm}
+\def\brl@@paperheight{297truemm}
+\edef\brl@@paperdoublewidth{\the\dimexpr\brl@@paperwidth*2\relax}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%% 
+%% detect the engine and initialization
+%%
+\newif\ifbrl@uplatex
+\newif\ifbrl@xelatex
+\newif\ifbrl@lualatex
+
+\ifdefined\directlua%
+  % LuaLaTeX
+  \edef\brl@print@psingle{\global\pagewidth=\brl@@paperwidth\global\pageheight=\brl@@paperheight}
+  \edef\brl@print@pdouble{\global\pagewidth=\brl@@paperdoublewidth\global\pageheight=\brl@@paperheight}
+  \edef\brl@print@lsingle{\global\pagewidth=\brl@@paperheight\global\pageheight=\brl@@paperwidth}
+  \edef\brl@print@ldouble{\global\pagewidth=\brl@@paperheight\global\pageheight=\brl@@paperdoublewidth}
+  \def\brl@@pdf_invoke#1{\pdfextension literal{#1}}
+  \def\brl@@pdf_bcontent{\pdfextension save\relax}%
+  \def\brl@@pdf_econtent{\pdfextension restore\relax}%
+  \usepackage{inputnormalization}% NFD -> NFC in mac.
+  \brl@lualatextrue%
+  \chardef\pdfshellescape% excerpt from 'shellesc.sty'
+  \directlua{tex.sprint((status.shell_escape or os.execute()) .. " ")}
+  \def\brl@option@exec#1{\directlua{os.execute([==[#1]==])}}
+  %
+\else%
+  \edef\brl@print@psingle{\special{pdf:pagesize width \brl@@paperwidth\brl@@space height \brl@@paperheight}}
+  \edef\brl@print@pdouble{\special{pdf:pagesize width \brl@@paperdoublewidth\brl@@space height \brl@@paperheight}}
+  \edef\brl@print@lsingle{\special{pdf:pagesize width \brl@@paperheight\brl@@space height \brl@@paperwidth}}
+  \edef\brl@print@ldouble{\special{pdf:pagesize width \brl@@paperheight\brl@@space height \brl@@paperdoublewidth}}
+  \def\brl@@pdf_invoke#1{\special{pdf:code #1}}%
+  \def\brl@@pdf_bcontent{\special{pdf:bcontent}}%
+  \def\brl@@pdf_econtent{\special{pdf:econtent}}%
+  \ifdefined\kanjiskip%
+    \ifnum\jis"2121="3000
+      % upLaTeX
+      \brl@uplatextrue%
+    \else%
+      % pLaTeX
+      \PackageError{jmbraille}{jmbraille is not available in pLaTeX. Use upLaTeX, XeLaTeX or LuaLaTeX instead}{}%
+    \fi%
+  \else%
+      % (pdf)LaTeX, XeLaTeX, HiLaTeX
+    \let\pdfshellescape\shellescape%
+    \XeTeXinputnormalization=\@ne% NFD -> NFC in mac.
+    \brl@xelatextrue%
+  \fi%
+  \def\brl@option@exec#1{\immediate\write18{#1}}
+\fi
+
+%%
+%% jmbraille requires the option ``-shell-escape -8bit''
+%%
+\ifnum\pdfshellescape=\@ne\else%
+  \PackageError{jmbraille}{shell-escape is not available. Compile with the option ``-shell-escape -8bit''}{}%
+\fi%
+
+
+
+
+%%
+%% detect os
+%%
+
+% echo %OS%
+% windows  : Windows_NT etc.
+% other os : %OS%
+%
+% \x27
+% mac      : '
+% other os : \x27
+%
+\def\brl@init@@sq{'}%
+\ifx\brl@option@os\empty% not specified by user
+  \edef\brl@init@osvar{\brl@@percent OS\brl@@percent}% 
+  \def\brl@init_os#1!#2!{\gdef\brl@init@os{#1}\gdef\brl@init@sq{#2}}%
+  {\catcode`\%=12\relax\expandafter\brl@init_os\@@input{|echo \brl@init@osvar!\brl@@bs\brl@@bs x27!}}% assume the os name does not contain `!'
+  \ifx\brl@init@os\brl@init@osvar% not windows
+    \ifx\brl@init@sq\brl@init@@sq% mac
+      \def\brl@option@os{mac}%
+      \brl@option@osmactrue%
+    \else%
+      \def\brl@option@os{lin}%
+      \brl@option@oslintrue%
+    \fi%
+  \else%
+    \def\brl@option@os{win}%
+    \brl@option@oswintrue\brl@option@filetrue%
+  \fi%
+\fi%
+
+% \ifbrl@option@oslin%
+%   \def\brl@init_arch#1!{\edef\brl@option@os{lin_#1}}%
+%   \expandafter\brl@init_arch\@@input{|echo `uname -m`!}%
+% \fi%
+
+
+
+
+% old system
+%
+% \ifbrl@option@oswin% in echo of windows
+%   \edef\brl@ueb@backslash{\brl@@bs}%
+%   \edef\brl@ueb@prog{.\brl@@bs jmbraille\brl@@bs ueb\brl@@bs brl_translate .\brl@@bs jmbraille\brl@@bs ueb\brl@@bs brl_en-ueb-\brl@option@ueb.ctb}%
+% \else% in echo of unix
+%   \edef\brl@ueb@backslash{\brl@@bs\brl@@bs}%
+%   \edef\brl@ueb@prog{./jmbraille/ueb/brl_translate_\brl@option@os\brl@@space ./jmbraille/ueb/brl_en-ueb-\brl@option@ueb.ctb}%
+% \fi%
+
+% \ifbrl@option@oswin%
+%   \def\brl@atbegdoc_setmecabprog{%
+%     \edef\brl@mecab@prog{"C:\brl@@bs Mecab\brl@@bs bin\brl@@bs mecab.exe" }%
+%     \IfFileExists{\brl@mecab@prog}{}%
+%     {\edef\brl@mecab@prog{"C:\brl@@bs Program Files\brl@@bs mecab\brl@@bs bin\brl@@bs mecab.exe" }%
+%       \IfFileExists{\brl@mecab@prog}{}%
+%       {\PackageError{jmbraille}{mecab.exe can not be found. Specify it by \string\BrailleSetMecabProgram{"C:\brl@@bs path\brl@@bs to\brl@@bs mecab.exe"}}{}%
+%       }%
+%     }%
+%   }%
+%   \def\brl@atbegdoc_setmecabsysdir{%
+%     \edef\brl@mecab@sysdic{-d .\brl@@bs jmbraille\brl@@bs dic }%
+%   }%
+% \else%
+%   \def\brl@atbegdoc_setmecabprog{%
+%     \def\brl@mecab@prog{mecab }%
+%   }%
+%   \def\brl@atbegdoc_setmecabsysdir{%
+%     \def\brl@mecab@sysdic{-d ./jmbraille/dic }%
+%   }%
+% \fi%
+
+
+% \ifbrl@option@file% in file.
+%   \edef\brl@mecab@backslash{\brl@@bs}%
+% \else% in echo of unix
+%   \edef\brl@mecab@backslash{\brl@@bs\brl@@bs}%
+% \fi%
+
+
+\ifbrl@option@oswin% in echo of windows
+  \edef\brl@ueb@backslash{\brl@@bs}%
+  \let\brl@option@separator\brl@@bs%
+  \def\brl@option@serverstart{start /b }%
+  \let\brl@option@serverend\empty%
+  \def\brl@option@maketxt{makecab \jobname.txt \jobname.txt.cab}%
+\else% in echo of unix
+  \edef\brl@ueb@backslash{\brl@@bs\brl@@bs}%
+  \def\brl@option@separator{/}%
+  \def\brl@option@maketxt{zip \jobname.txt.zip \jobname.txt}%
+  \let\brl@option@serverstart\empty%
+  \def\brl@option@serverend{&}%
+\fi%
+
+\ifbrl@option@file%
+  \def\brl@option@serverflag{ -m "-r ./jmbraille/dic/mecabrc -Obraille-file -p"}%
+  \def\brl@mecab@clientflag{ < \jobname.mcb > \jobname.mrt}
+\else
+  \let\brl@option@serverflag\empty%
+  \let\brl@mecab@clientflag\empty%
+\fi%
+
+
+\edef\brl@mecab@translator{.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator client_\brl@option@os\brl@@space J \brl@mecab@clientflag}
+
+\edef\brl@option@startserver{\brl@option@serverstart.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator server_\brl@option@os\brl@@space -t 1 \brl@option@serverflag\brl@option@serverend}
+
+\edef\brl@ueb@translator{.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator client_\brl@option@os\brl@@space\brl@option@ueb}
+
+\edef\brl@option@endserver{echo | .\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator client_\brl@option@os\brl@@space X}
+
+\brl@option@exec{\brl@option@startserver}
+
+%%
+%% use cache
+%%
+\ifbrl@option@cache
+\IfFileExists{\jobname.brd}{%
+  {%
+    \endlinechar\m@ne%
+    \@@input{\jobname.brd}%
+  }%
+}{}
+\newwrite\brl@text@file
+\immediate\openout\brl@text@file=\jobname.brd\relax%
+\fi%
+
+
+
+%% ESA721 initialization
+%% bse
+%%
+\def\brl@bse@width{32}% width
+\def\brl@bse@height{22}% height
+\edef\brl@bse@height_virtual{\the\numexpr\brl@bse@height*10\relax}% virtual height : 10 times of real height to construct, for example, a big matrix in several page
+\edef\brl@bse@width_double{\the\numexpr\brl@bse@width*2\relax}% the width of a spread page.
+
+%% dbc
+%%
+\def\brl@dbc@width{15}% char width : 15 dots
+\def\brl@dbc@height{33}% char height : 33 dots
+
+
+
+
+%% resources for circles and transparent patters.
+\def\brl@@cira{1 0 m 1 0.552285 0.552285 1 0 1 c -0.552285 1 -1 0.552285 -1 0 c -1 -0.552285 -0.552285 -1 0 -1 c 0.552285 -1 1 -0.552285 1 0 c h f}
+\def\brl@@cirb{2 0 m 2 1.10457 1.10457 2 0 2 c -1.10457 2 -2 1.10457 -2 0 c -2 -1.10457 -1.10457 -2 0 -2 c 1.10457 -2 2 -1.10457 2 0 c h f}
+\def\brl@@circ{3 0 m 3 1.65685 1.65685 3 0 3 c -1.65685 3 -3 1.65685 -3 0 c -3 -1.65685 -1.65685 -3 0 -3 c 1.65685 -3 3 -1.65685 3 0 c h f}
+
+\def\brl@@transparent{%
+  /ExtGState <</brl_transparent << /ca 0.7 >> /brl_transparent_gridM << /CA 0.5 >> /brl_transparent_gridm << /CA 0.1 >> >>%
+}
+
+\def\brl@@patterns_list{}
+\def\brl@@patterns{%
+  /Pattern << \brl@@patterns_list >>
+}
+
+
+
+
+%% In some engine, the behavior of scalebox is strange.
+%% A simple re-implementation of scalebox.
+%%
+%% input : scale, hbox
+%% output : \brl@@scalebox@box hbox
+\newbox\brl@@scalebox@box% hbox
+\def\brl@@scalebox#1#2{%
+  \setbox\z@\vbox{#2}%
+  \setbox\tw@\copy\z@%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\brl@@scalebox@box\hbox{%
+    \brl@@pdf_bcontent%
+    \brl@@pdf_invoke{#1 0 0 #1 0 0 cm}%
+    \box\z@%
+    \brl@@pdf_econtent%
+  }%
+  \wd\brl@@scalebox@box#1\wd\tw@%
+  \ht\brl@@scalebox@box\z@%
+  \dp\brl@@scalebox@box#1\dimexpr\ht\tw@+\dp\tw@\relax%
+}
+
+
+
+%%
+%% futurelet ignoring spaces
+%%
+\def\brl@futurelet#1#2{%
+  \def\brl@futurelet@a{#1}%
+  \def\brl@futurelet@b{#2}%
+  \futurelet\brl@futurelet@c\brl@futurelet_%
+}
+
+\def\brl@futurelet_{%
+  \ifx\brl@futurelet@c\@sptoken%
+    \expandafter\brl@futurelet__%
+  \else%
+    \expandafter\let\brl@futurelet@a\brl@futurelet@c%
+    \expandafter\brl@futurelet@b%
+  \fi%
+}
+
+\expandafter\def\expandafter\brl@futurelet__\brl@@space{%
+  \futurelet\brl@futurelet@c\brl@futurelet_%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@def
+%%
+%% usage : #1 -> \AAA, #2-> \BBB
+%%
+%% \brl@def{AAA}{BBB}...{...}\brl@end{%
+%%   \def... #1 ... #2
+%% }
+
+\def\brl@def_appendtoks#1{\brl@def@toks\expandafter{\the\brl@def@toks#1}}
+\newtoks\brl@def@toks%
+
+\def\brl@def{%
+  \brl@def@toks{}%
+  \count@\z@%
+  \brl@def_%
+}
+\def\brl@def_#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \expandafter\brl@def__%
+  \else%
+    \expandafter\brl@def_appendtoks\expandafter{\csname#1\endcsname}%
+    \advance\count@\@ne%
+    \expandafter\brl@def_%
+  \fi%
+}
+\def\brl@def__{%
+  \afterassignment\brl@def___\toks@%
+}
+\def\brl@def___{%
+  \edef\brl@tmp{\unexpanded{\def\brl@tmp}\csname brl@def@var_\the\count@\endcsname{\the\toks@}\noexpand\brl@tmp\the\brl@def@toks}%
+  \brl@tmp%
+}
+
+\@namedef{brl@def@var_1}{####1}
+\@namedef{brl@def@var_2}{####1####2}
+\@namedef{brl@def@var_3}{####1####2####3}
+\@namedef{brl@def@var_4}{####1####2####3####4}
+\@namedef{brl@def@var_5}{####1####2####3####4####5}
+\@namedef{brl@def@var_6}{####1####2####3####4####5####6}
+\@namedef{brl@def@var_7}{####1####2####3####4####5####6####7}
+\@namedef{brl@def@var_8}{####1####2####3####4####5####6####7####8}
+\@namedef{brl@def@var_9}{####1####2####3####4####5####6####7####8####9}
+
+%%
+%% \brl@def_cmdonly : replace it by \brl@document\XXX (also works as a unique mark)
+
+\def\brl@def_cmdonly#1{%
+  \AtBeginDocument{\protected\def#1{\relax\brl@document#1}}%
+}
+
+\def\brl@def_cmdint#1{%
+  \protected\def#1{\brl@@error#1}%
+}
+
+
+%%
+%% \brl@def_origenv : preserve its original environment to \brl@orig@XXX an \endbrl@orig@XXX
+%%
+\def\brl@def_origenv#1{%
+  \edef\brl@tmp{\let\expandafter\noexpand\csname brl@orig@#1\endcsname\expandafter\noexpand\csname#1\endcsname\let\expandafter\noexpand\csname endbrl@orig@#1\endcsname\expandafter\noexpand\csname end#1\endcsname}%
+  \brl@tmp%
+}
+
+\brl@def_origenv{tikzpicture}
+\brl@def_origenv{tabular}
+\brl@def_origenv{tabular*}
+\brl@def_origenv{picture}
+
+%%
+%% \brl@def_protectedlet\XXX\YYY : behaves as \protected\let\XXX\YYY
+%%
+\def\brl@def_protectedlet#1#2{%
+  \protected\edef#1{\unexpanded\expandafter{#2}}%
+}
+
+%% \brl@def_fill#1#2#3
+%%
+%% #1 : the number to fill
+%% #2 : cs to be defined
+%% #3 : sth to fill 
+%%
+%% e.g. \brl@def_fill{3}{\cs}{a} -> \cs = `aaa'
+%%
+%% note that #3 is expanded
+\def\brl@def_fill#1#2#3{%
+  \def\brl@def@tmp{#3}%
+  {%
+    \count@#1\relax%
+    \aftergroup\edef%
+    \aftergroup#2%
+    \aftergroup{%
+    \brl@def_fill_loop%
+    \aftergroup}%
+  }%
+}
+\def\brl@def_fill_loop{%
+  \ifnum\count@>\z@%
+    \aftergroup\brl@def@tmp%
+    \advance\count@\m@ne%
+    \expandafter\brl@def_fill_loop%
+  \fi%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@orig
+%%
+
+
+\let\brl@orig@eq$%$
+\let\brl@orig@label\label% AtEndDocument, \label is once defined as null.
+
+%\let\brl@orig@cdots\cdots
+%\let\brl@orig@ldots\ldots
+
+
+\let\brl@orig@newpage\newpage
+\let\brl@orig@clearpage\clearpage
+%\let\brl@orig@leavevmode\leavevmode
+\let\brl@orig@color\color
+%\let\brl@orig@colorbox\colorbox
+%\let\brl@orig@textcolor\textcolor
+\let\brl@orig@raisebox\raisebox
+\let\brl@orig@centering\centering
+\let\brl@orig@setlength\setlength
+\let\brl@orig@includegraphics\includegraphics
+%\let\brl@orig@hrulefill\hrulefill
+%\let\brl@orig@text\text
+
+% \let\brl@orig@rmfamily\rmfamily
+% \let\brl@orig@sffamily\sffamily
+% \let\brl@orig@ttfamily\ttfamily
+% \let\brl@orig@gtfamily\gtfamily
+% \let\brl@orig@mcfamily\mcfamily
+% \let\brl@orig@bfseries\bfseries
+% \let\brl@orig@itshape\itshape
+% \let\brl@orig@scshape\scshape
+% \let\brl@orig@slshape\slshape
+% \let\brl@orig@normalfont\normalfont
+
+\let\brl@orig@hspace\hspace
+\let\brl@orig@vspace\vspace
+
+
+
+% \let\brl@orig@large\large
+% \let\brl@orig@Large\Large
+% \let\brl@orig@LARGE\LARGE
+% \let\brl@orig@huge\huge
+% \let\brl@orig@Huge\Huge
+% \let\brl@orig@small\small
+% \let\brl@orig@normalsize\normalsize
+% \let\brl@orig@footnotesize\footnotesize
+% \let\brl@orig@scriptsize\scriptsize
+% \let\brl@orig@tiny\tiny
+
+
+
+%\let\brl@orig@longrightarrow\longrightarrow
+%\let\brl@orig@longleftarrow\longleftarrow
+%\let\brl@orig@longleftrightarrow\longleftrightarrow
+%\let\brl@orig@mapsto\mapsto
+\let\brl@orig@rcurvearrowse\rcurvearrowse
+\let\brl@orig@rcurvearrowne\rcurvearrowne
+\let\brl@orig@lcurvearrowse\lcurvearrowse
+\let\brl@orig@lcurvearrowne\lcurvearrowne
+% \let\brl@orig@nearrow\nearrow
+% \let\brl@orig@searrow\searrow
+% \let\brl@orig@nwarrow\nwarrow
+% \let\brl@orig@swarrow\swarrow
+% \let\brl@orig@downarrow\downarrow
+% \let\brl@orig@uparrow\uparrow
+
+% \let\brl@orig@rightarrow\rightarrow
+% \let\brl@orig@leftarrow\leftarrow
+% \let\brl@orig@leftrightarrow\leftrightarrow
+% \let\brl@orig@Rightarrow\Rightarrow
+% \let\brl@orig@Leftarrow\Leftarrow
+% \let\brl@orig@Leftrightarrow\Leftrightarrow
+
+
+% \let\brl@orig@overrightarrow\overrightarrow
+% \let\brl@orig@overleftarrow\overleftarrow
+% \let\brl@orig@overleftrightarrow\overleftrightarrow
+% \let\brl@orig@underrightarrow\underrightarrow
+% \let\brl@orig@underleftarrow\underleftarrow
+% \let\brl@orig@underleftrightarrow\underleftrightarrow
+
+% \def\brl@orig@longrightarrow{\relbar\joinrel\brl@orig@rightarrow}
+% \def\brl@orig@longleftarrow{\brl@orig@leftarrow\joinrel\relbar}
+% \def\brl@orig@longleftrightarrow{\brl@orig@leftarrow\joinrel\brl@orig@rightarrow}
+
+% \def\brl@orig@Longrightarrow{\Relbar\joinrel\brl@orig@Rightarrow}
+% \def\brl@orig@Longleftarrow{\brl@orig@Leftarrow\joinrel\Relbar}
+% \def\brl@orig@Longleftrightarrow{\brl@orig@Leftarrow\joinrel\brl@orig@Rightarrow}
+
+% \def\brl@orig@longmapsto{\mapstochar\brl@orig@longrightarrow}
+% \def\brl@orig@mapsto{\mapstochar\brl@orig@rightarrow}
+
+% \def\brl@orig@hookrightarrow{\lhook\joinrel\brl@orig@rightarrow}
+% \def\brl@orig@hookleftarrow{\brl@orig@leftarrow\joinrel\rhook}
+
+
+% \let\brl@orig@lbrace\lbrace
+% \let\brl@orig@rbrace\rbrace
+% \let\brl@orig@lbrack\lbrack
+% \let\brl@orig@rbrack\rbrack
+
+% \let\brl@orig@csexclamation\!%
+% \let\brl@orig@cscomma\,%
+% \let\brl@orig@csgreater\>%
+% \let\brl@orig@cscolon\:%
+% \let\brl@orig@cssemicolon\;%
+% \let\brl@orig@csspace\ %
+% \let\brl@orig@cstilde~
+
+% \let\brl@orig@S\S
+% \let\brl@orig@P\P
+% \let\brl@orig@pounds\pounds
+% \let\brl@orig@copyright\copyright
+% \let\brl@orig@dag\dag
+% \let\brl@orig@ddag\ddag
+
+\let\brl@orig@set@color\set@color
+\let\brl@orig@fbox\fbox
+
+\brl@def_protectedlet\brl@orig@csgrave\`
+\brl@def_protectedlet\brl@orig@csacute\'
+\brl@def_protectedlet\brl@orig@cscircumflex\^
+\brl@def_protectedlet\brl@orig@cstilde\~
+\brl@def_protectedlet\brl@orig@csmacron\=
+\brl@def_protectedlet\brl@orig@csbreve\u
+\brl@def_protectedlet\brl@orig@cscaron\v
+\brl@def_protectedlet\brl@orig@cscedilla\c
+\brl@def_protectedlet\brl@orig@csumlaut\"
+\brl@def_protectedlet\brl@orig@cshumlaut\H
+\brl@def_protectedlet\brl@orig@csring\r
+\brl@def_protectedlet\brl@orig@cstie\t
+\brl@def_protectedlet\brl@orig@csdotover\.
+\brl@def_protectedlet\brl@orig@csogonek\k
+\brl@def_protectedlet\brl@orig@csbarunder\b
+\brl@def_protectedlet\brl@orig@csdotunder\d
+
+\brl@def_protectedlet\brl@orig@ae\ae
+\brl@def_protectedlet\brl@orig@AE\AE
+\brl@def_protectedlet\brl@orig@oe\oe
+\brl@def_protectedlet\brl@orig@OE\OE
+\brl@def_protectedlet\brl@orig@ss\ss
+\brl@def_protectedlet\brl@orig@o\o
+\brl@def_protectedlet\brl@orig@O\O
+\brl@def_protectedlet\brl@orig@l\l
+\brl@def_protectedlet\brl@orig@L\L
+
+
+\ifdefined\RawParEnd%
+  \catcode`\:=11\relax
+  \let\brl@orig@par\tex_par:D%
+  \let\brl@orig@everypar\tex_everypar:D%
+  \catcode`\:=12\relax
+\else%
+  \let\brl@orig@par\par
+  \let\brl@orig@everypar\everypar
+\fi%
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

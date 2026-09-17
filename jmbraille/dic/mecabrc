@@ -1,0 +1,14 @@
+;
+; Configuration file of MeCab
+
+dicdir = ./jmbraille/dic
+
+; userdic = /home/foo/bar/user.dic
+
+; output-format-type = wakati
+; input-buffer-size = 8192
+
+; node-format = %m\n
+; bos-format = %S\n
+; eos-format = EOS\n
+

@@ -1,0 +1,232 @@
+% Time-stamp: <2024-09-20 14:21:07 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+\def\brl@env_plot_tikzpicture{%
+  %
+  % minipage is replaced by the following.
+  % in \tikz@do@fig, \minipage...\leavevmode\hbox{} prepends unnecessary hbox.
+  % 
+  \let\pgfutil@minipage\brl@plot@pgfutil@minipage% 
+  \let\pgfutil@endminipage\brl@plot@pgfutil@endminipage%
+  %
+  \global\advance\brl@figure@figurenum\@ne%
+  %
+  \brl@env_insert_pageref%
+  %
+  %\let\brl@print_par\empty% does not do \par at the end of print, which was need
+  \let\brl@print_allsclines_start\brl@print_allsclines_plot_start% only prints brailles.
+  \let\brl@document_tikz\brl@document_plot_tikz%
+  \brl@pgfsys_init% replace all pgfsys by those for plot.
+  %   
+  %
+  % check before
+  % 
+  % if the figure is out of range in the previous compilation,
+  % use the recommended setting \ifbrl@figure@autosetting.
+  %
+  \brl@env_check_before%
+  % 
+  %
+  \ifbrl@figure@landscape%
+    \let\brl@pgf_orient\brl@pgf_orient_landscape%
+  \else%
+    \let\brl@pgf_orient\brl@pgf_orient_portrait%
+  \fi%
+  \ifbrl@figure@spread% is this figure spread ?
+    \let\brl@plot@maxlinex\brl@plot@maxlinex_double%
+  \else%
+    \let\brl@plot@maxlinex\brl@plot@maxlinex_single%
+  \fi%
+  %
+  %
+  % 
+  % 
+  \setbox\z@\hbox\bgroup%
+    %
+    % for the end procedure of this tikz.
+    \let\brl@env_inplot_endcmd\brl@env_inplot_endcmd_tikz%
+    % 
+    % for each entry.
+    % \let\brl@document_end\brl@document_end_plot_tikz% if \brl@document encounters \begin{tikzpicture or tabular}, then \brl@document should continue.
+    % 
+    \edef\brl@figure@arrowscale{\brl@figure@plotarrowscale}%
+    %
+    \the\brl@figure@special%
+    % 
+    % 
+    % change font size
+    \brl@braille@fontsize\brl@figure@scaleinv\brl@braille@figurefontsize%
+    \brl@braille_setfontdimen%
+    % 
+    \brl@pgf_init%
+    \brl@orig@tikzpicture%
+}
+
+
+\def\brl@env_plot_endtikzpicture{%
+    \brl@env_plot_grid_init% make grid
+    \endbrl@orig@tikzpicture%
+  \egroup% discard \box\z@
+  %
+  %
+  \setbox\brl@print@onepage\vbox{%
+    \edef\brl@figure@figurenum_plot{\the\brl@figure@figurenum}% for the edl filename.
+    \brl@orig@label{fig:brl@figure\the\brl@figure@figurenum}%
+    %
+    {% during \bf etc., page no. is bold.
+      \let\brl@document@currprependfont\empty%
+      \let\brl@document@currappendfont\empty%
+      \brl@document\pageref{fig:brl@figure\the\brl@figure@figurenum}\brl@document@endtext%
+      \xdef\brl@plot@page{\the\brl@text@toks}%
+    }%
+    % 
+    \setbox\z@\hbox{\brl@plot}% \brl@env_plot_grid is inside. 
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    \box\z@% inside \brl@print@onepage
+    %
+    % nodes
+    % 
+    \setbox\z@\hbox{\raise\numexpr-\brl@pgf@maxy-\brl@plot@headsep\relax bp\hbox{\brl@orig@hskip\numexpr-\brl@pgf@minx+\brl@plot@leftsidemargin\relax bp\box\brl@plot@headerbox}}%
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    \box\z@%
+    %
+    % 
+    \let\protect\noexpand% from the original \@outputpage
+    \unvbox\brl@print@outbox% exec label etc.
+  }% \box\brl@print@onepage
+  %
+  %
+  % 
+  % check after
+  %
+  \def\brl@env_check_rec_scale{\brl@env_check_rec_scale_plot}%
+  \def\brl@env_check_after_init{\brl@env_check_after_init_plot}%
+  \brl@env_check_after%
+  % 
+  \global\advance\brl@figure@floatpnum\@ne%
+  % 
+  \ifcsname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \else%
+    \expandafter\newbox\csname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \fi%
+  %
+  %
+  \setbox\@ne\box\brl@plot@nodebox%
+  % 
+  \wd\@ne\z@%
+  \ht\@ne\z@%
+  \dp\@ne\z@%
+  \ifbrl@figure@landscape%
+    \setbox\z@\hbox{\raise\numexpr\brl@pgf@minx-\brl@plot@leftsidemargin\relax bp\hbox{\brl@orig@hskip\numexpr-\brl@pgf@maxy-\brl@plot@headsep\relax bp\box\@ne}}%
+  \else
+    \setbox\z@\hbox{\raise\numexpr-\brl@pgf@maxy-\brl@plot@headsep\relax bp\hbox{\brl@orig@hskip\numexpr-\brl@pgf@minx+\brl@plot@leftsidemargin\relax bp\box\@ne}}%
+  \fi%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  %
+  %
+  % 
+  \ifbrl@figure@landscape%
+    \@tempdima\brl@figure@alltopmargin\relax%
+    \@tempdimb\brl@figure@alloddsidemargin\relax%
+  \else%
+    \@tempdima\brl@figure@alloddsidemargin\relax%
+    \@tempdimb\brl@figure@alltopmargin\relax%
+  \fi%
+  % 
+  \global\setbox\csname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \vbox{%
+    \brl@orig@vskip\@tempdimb%
+    \hbox{%
+      \brl@orig@hskip\@tempdima%
+      %
+      \ifbrl@figure@landscape%
+        %
+        \brl@orig@hskip\brl@figure@textheight%
+        {\rotatebox{-90}{\box\brl@print@onepage}}% use \box\z@
+        \hbox to\z@{%
+          \brl@orig@hskip-\brl@plot@brailleheight bp\relax%
+          \box\brl@env_grid@box%
+          \hss%
+        }%
+      \else%
+        \vbox to\z@{%
+          \unvbox\brl@print@onepage%
+          \brl@orig@vskip\brl@plot@brailleheight bp\relax%
+          % \@namedef{brl@bc_plot@x0}{4}
+          % \@namedef{brl@bc_plot@y0}{14}
+          \box\brl@env_grid@box%
+          \vss%
+        }%
+      \fi%
+      \box\z@%
+    }%
+  }%
+  \ifbrl@figure@spread%
+    \ifbrl@figure@landscape%
+      \let\brl@tmp\brl@print@ldouble%
+    \else%
+      \let\brl@tmp\brl@print@pdouble%
+    \fi%
+  \else%
+    \ifbrl@figure@landscape%
+      \let\brl@tmp\brl@print@lsingle%
+    \else%
+      \let\brl@tmp\brl@print@psingle%
+    \fi%
+  \fi%
+  \global\expandafter\let\csname brl@figure@floatp_page\the\brl@figure@floatpnum\endcsname\brl@tmp%
+  % 
+  \expandafter\brl@document_appendmattoks\expandafter{\the\brl@text@mattoks}%
+  \global\brl@text@mattoks{}%
+  % 
+  \brl@document_footnote%
+  \global\brl@document@indentfalse%
+}%
+
+\def\brl@env_plot_grid_init{%
+  % 
+  % we assume \pgf@yx=\pgf@xy=0
+  %
+  \pgf@x\brl@plot@draw_ratio\pgf@xx% change the paper size from B5 to Easytactix
+  \pgf@y\brl@plot@draw_ratio\pgf@yy%
+  \pgf@x\brl@@bpparpt\pgf@x% plot 1pt as 1bp in \brl@pgfsys
+  \pgf@y\brl@@bpparpt\pgf@y%
+  %
+  \brl@env_grid_init%
+}
+
+\def\brl@env_plot_grid{%
+  \ifbrl@figure@landscape%
+    \pgf@picminx\brl@pgf@miny bp\relax%
+    \pgf@picminy-\brl@pgf@maxx bp\relax%
+    \pgf@picmaxx\brl@pgf@maxy bp\relax%
+    \pgf@picmaxy-\brl@pgf@minx bp\relax%
+    % 
+  \else%
+    \pgf@picminx\brl@pgf@minx bp\relax%
+    \pgf@picminy\brl@pgf@miny bp\relax%
+    \pgf@picmaxx\brl@pgf@maxx bp\relax%
+    \pgf@picmaxy\brl@pgf@maxy bp\relax%
+    % 
+  \fi%    
+  %
+  \brl@env_grid%
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

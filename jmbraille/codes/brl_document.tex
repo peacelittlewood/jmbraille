@@ -1,0 +1,4243 @@
+% Time-stamp: <2026-09-15 16:24:59 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%
+%% \brl@document : completely expand and execute a paragraph.
+%%
+%% lastchar is either. ． 。 , ， 、 or the other
+%%
+%%
+%% \[...\] -> \brl@text_cmd_env{gather*}{...}{lastchar}
+%% $$...$$ -> \brl@text_cmd_env{gather*}{...}{lastchar}
+%% $...$ -> \brl@text_cmd_dollar{...}{lastchar} or
+%%          \brl@text_cmd_number{...} if ... is a pure number. 
+%%
+%% \BrailleDirect{...} -> \BrailleDirect{...} (the catcode "_" is changed to 11.)
+%% \verb!...!  -> \brl@text_cmd_verb{...}
+%% \verb*!...! -> \brl@text_cmd_verb{...}
+%% \begin{...} *** \end{...} -> \brl@text_cmd_env{...}{***}{lastchar} (... = gather, align)
+%% \begin{...} *** \end{...} -> \brl@math_cmd_env{...}{***} (... = pmatrix, array, etc., in mathmode.)
+%% " " -> \brl@text_cmd_glue in textmode
+%%        ignored in mathmode
+%%
+%% \ref, \eqref, \cite: expanded and \cmd_noun
+%%
+%% \brl@document -> \brl@mecab -> \brl@text_direct -> \brl@print
+%%                  ---------- \brl@text ---------
+%%
+%% \cmd_noun: sentence \documented
+%% \BrailleDirect: sentence \mecabed -> \text_direct  
+%%
+%% \brl@document ... \brl@document@enddoc  : \documented
+%% \brl@document ... \brl@document@endtext : \text_directed
+%% \brl@document ... \brl@document@end, natural end : \printed
+%%
+%% implies
+%%
+%% \brl@document@enddoc with \cmd_noun and \brl@text if it is a noun as a whole.
+%% \brl@document@enddoc with \brl@text if it is a sentence.
+%% \brl@document@endtext with \appendtoks
+
+
+%%
+%% \brl@text : nothing is expanded.
+%%
+%%
+%%
+%% \text : \brl@documented
+%% \BrailleRemark : \brl@documented
+%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@document
+%%
+%%
+%%
+%%
+%%
+
+
+\protected\def\brl@document_appendtoks#1{\brl@document@toks\expandafter{\the\brl@document@toks#1}}
+\newtoks\brl@document@toks
+
+\def\brl@document_appendfoottoks#1{\global\brl@document@foottoks\expandafter{\the\brl@document@foottoks#1}}
+\newtoks\brl@document@foottoks
+
+\protected\def\brl@document_appendmathtoks#1{\brl@document@mathtoks\expandafter{\the\brl@document@mathtoks#1}}
+\newtoks\brl@document@mathtoks
+
+\def\brl@document_appendmathenvtoks#1{\brl@document@mathenvtoks\expandafter{\the\brl@document@mathenvtoks#1}}
+\newtoks\brl@document@mathenvtoks
+
+\protected\def\brl@document_appendmattoks#1{\global\brl@document@mattoks\expandafter{\the\brl@document@mattoks#1}}
+\newtoks\brl@document@mattoks%
+
+\protected\def\brl@document_appendplottoks#1{\brl@document@plottoks\expandafter{\the\brl@document@plottoks#1}}
+\newtoks\brl@document@plottoks
+
+  
+\def\brl@document_numdef#1{%
+  \@namedef{brl@document_dospecial_checkalldigit@#1}{}%
+}
+
+\brl@document_numdef{1}
+\brl@document_numdef{2}
+\brl@document_numdef{3}
+\brl@document_numdef{4}
+\brl@document_numdef{5}
+\brl@document_numdef{6}
+\brl@document_numdef{7}
+\brl@document_numdef{8}
+\brl@document_numdef{9}
+\brl@document_numdef{0}
+\brl@document_numdef{$}%$
+
+\newif\ifbrl@document@indent
+
+\def\brl@document_prependfont#1{% font close
+  \edef\brl@document@currprependfont{#1\brl@document@currprependfont}%
+}%
+\def\brl@document_appendfont#1{% font open
+  \edef\brl@document@currappendfont{\brl@document@currappendfont#1}%
+}%
+
+
+% clear all fonts
+\let\brl@document@prependfont\empty
+\let\brl@document@appendfont\empty
+\let\brl@document@currprependfont\empty%
+\let\brl@document@currappendfont\empty%
+
+
+%%
+%% \brl@document_gettextchar\exit\exitb\exite XYZZZZZ
+%
+%% \brl@document_gettextchar XYZZZZZ
+%% input : \brl@document_gettextchar@insertsp
+%% 
+%% output : \brl@document@textchar : \string X
+%% expand XXXXX until it is expanded to
+%% either a primitive, brl_command, char, {, }
+%% if brl_command which is dospecial, then reserve it in \textdo.
+%%
+
+
+
+\def\brl@document_gettextchar_exit{\brl@document_text_}%
+\def\brl@document_gettextchar_exitb{\brl@document_text_bgroup}%
+\def\brl@document_gettextchar_exite{\brl@document_text_egroup}%
+
+
+% \def\brl@document_gettextchar#1#2#3{%
+%   \def\brl@document_gettextchar_exit{#1}%
+%   \def\brl@document_gettextchar_exitb{#2}%
+%   \def\brl@document_gettextchar_exite{#3}%
+\def\brl@document_gettextchar{%
+  \let\brl@document_gettextchar@prevchar0% anything which is not a cs.
+  \let\brl@document_textdo\empty%
+  % \let\brl@document_gettextchar@mayinsertsp\empty% may append glue
+  \brl@document_gettextchar_loop%
+}
+\def\brl@document_gettextchar_loop{%
+  \futurelet\brl@document_gettextchar@char\brl@document_gettextchar_space%
+}
+
+\def\brl@document_gettextchar_loop_skipsp{%
+  \let\brl@document_gettextchar_loop\brl@document_gettextchar_loop_orig%
+  \futurelet\brl@document_gettextchar@char\brl@document_gettextchar_skipspace_loop%
+}
+
+\let\brl@document_gettextchar_loop_orig\brl@document_gettextchar_loop%
+
+
+\def\brl@document_gettextchar_space{%
+  \ifx\brl@document_gettextchar@char\@sptoken% check space.
+    %
+    % \def\brl@document_gettextchar@mayinsertsp{\brl@document_appendtoks{\brl@text_cmd_glue}}%
+    %
+    \brl@document_appendtoks{\brl@text_cmd_glue}%
+    %
+    \expandafter\brl@document_gettextchar_skipspace%
+  \else%
+    \expandafter\brl@document_gettextchar_group%
+  \fi%
+}
+\let\brl@document_gettextchar_space_orig\brl@document_gettextchar_space
+
+\expandafter\def\expandafter\brl@document_gettextchar_skipspace\brl@@space{%
+  \futurelet\brl@document_gettextchar@char\brl@document_gettextchar_skipspace_loop%
+}
+
+\def\brl@document_gettextchar_skipspace_loop{%
+  \ifx\brl@document_gettextchar@char\@sptoken% check space.
+    \expandafter\brl@document_gettextchar_skipspace%
+  \else%
+    \expandafter\brl@document_gettextchar_group%
+  \fi%
+}
+
+\def\brl@document_gettextchar_group{%
+  %
+  %\brl@document_gettextchar@mayinsertsp%
+  %
+  %
+  \ifx\brl@document_gettextchar@char\egroup% check }.
+    \def\brl@document_next{\brl@document_gettextchar_exite}%
+  \else%
+    \ifx\brl@document_gettextchar@char\bgroup% check {.
+      \def\brl@document_next{\brl@document_gettextchar_exitb}%
+    \else%
+      \def\brl@document_next{\brl@document_gettextchar_char}%
+    \fi%
+  \fi%
+  \brl@document_next%
+}
+
+\long\def\brl@document_gettextchar_char#1{%
+  %\def\brl@tmp{#1}\show\brl@tmp
+  \def\brl@document_next{\brl@document_gettextchar_exit#1}%
+  \edef\brl@document@textchar{\string#1}%
+  %
+  \ifcsname brl@document_dospecial_\brl@document@textchar\endcsname% dospecial -> exit
+    \edef\brl@document_textdo{\expandafter\noexpand\csname brl@document_dospecial_\brl@document@textchar\endcsname}%
+  \else%
+    \ifcat\relax\noexpand#1% non cs -> exit
+      \ifcsname brl@code_text_\brl@document@textchar\endcsname% char -> exit
+      \else%
+        \ifx\brl@document@textchar\brl@document_gettextchar@prevchar% primitive
+          \PackageError{jmbraille}{\brl@document@textchar\brl@@space can not be expanded. \brl@document@textchar\brl@@space may be a primitive}{}%
+        \else%
+          \let\brl@document_gettextchar@prevchar\brl@document@textchar% macro
+          \def\brl@document_next{\expandafter\brl@document_gettextchar_loop#1}% cs & non primitive
+        \fi%
+      \fi%
+    \fi%
+  \fi%
+  \brl@document_next%
+}
+
+%% start ignoring spaces
+
+\protected\def\brl@document_skipsp{%
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  \let\brl@document@prevtext\empty%
+  %
+  %
+  \edef\brl@tmp{{\brl@document@appendfont\brl@document@currappendfont}}%
+  \expandafter\brl@document@toks\brl@tmp%
+  % 
+  \brl@document_text_skipsp%
+}
+
+\protected\def\brl@document_text_skipsp{%
+  % \let\brl@document_gettextchar@insertsp\empty%
+  \def\brl@document_gettextchar_loop{\brl@document_gettextchar_loop_skipsp}%
+  %
+  \brl@document_gettextchar%
+}
+
+
+%% start with a space
+
+\protected\def\brl@document{%
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  \let\brl@document@prevtext\empty%
+  %
+  %
+  \edef\brl@tmp{{\brl@document@appendfont\brl@document@currappendfont}}%
+  \expandafter\brl@document@toks\brl@tmp%
+  %
+  \brl@document_text%
+}
+
+\protected\def\brl@document_text{%
+  %\def\brl@document_gettextchar@insertsp{\brl@document_appendtoks{\brl@text_cmd_glue}}%
+  %
+  \brl@document_gettextchar%
+}
+
+\long\def\brl@document_text_#1{%
+  % \brl@document_gettextchar@mayinsertsp%
+  \ifx\brl@document_textdo\empty%
+    \gdef\brl@document@lastchar{#1}%
+    \brl@document_appendtoks{#1}%
+    \expandafter\brl@document_text%
+  \else%
+    \expandafter\brl@document_textdo% do special
+  \fi%
+}
+
+
+%% in tikz, footnote, \brl@document_text_egroup is replaced by \brl@document_text_egroup_XXX
+%%
+%%
+
+\def\brl@document_text_egroup{% We are inside { }.
+  \brl@document_text_egroup_sub%
+  \aftergroup\brl@document_text_egroup_cont%
+}
+
+\def\brl@document_text_egroup_cont{% We are outside { }.
+  \brl@tmpcmd% defined in \brl@document_text_egroup_sub
+  \brl@document_text%
+}
+
+
+\def\brl@document_ifequal#1#2#3#4{%
+  %
+  {\let\brl@text_cmd_empty\empty% {\it {\sc}} -> {\it \cmd_empty} 
+    \edef\brl@ifequal@tmpa{#1}%
+    \xdef\brl@ifequal@tmpa{\brl@ifequal@tmpa}% expand twice because this includes \the\toks
+    \xdef\brl@ifequal@tmpb{#2}%
+  }%
+  %
+  %
+  \ifx\brl@ifequal@tmpa\brl@ifequal@tmpb% i.e., nothing is added.
+    #3%
+  \else%
+    #4%
+  \fi%
+}
+
+
+%% We are inside {}.
+%%
+\def\brl@document_text_egroup_sub{%
+  %
+  % Caution : now {...} as the reading is obsolete.
+  %
+  %
+  \brl@document_ifequal{\the\brl@document@toks}{\brl@document@currappendfont}{% if the contents are only fonts i.e. {\rm} etc.
+    \def\brl@tmp{{\brl@text_cmd_empty}}% {}
+  }{%
+    \edef\brl@tmp{{\the\brl@document@toks\brl@document@currprependfont}}% 
+  }%
+  %
+  % {\rm \bf abc ...} -> \rmopen \bfopen abc ... \bfclose \rmclose
+  % or
+  % {\bf ...
+  % 
+  % } <- This line is regarded as {}. Thus we do not need to use prependfont (finish the fonts).
+  %   
+  %   
+  %
+  \ifx\brl@document@prevtext\empty%
+    % there was another paragraph in this group
+    % and \brl@document@toks was already treated there.
+    % Thus prevtext and toks are cleared.
+    \xdef\brl@tmpcmd{\let\noexpand\brl@document@prevtext\noexpand\empty\brl@document@toks\brl@tmp}%
+  \else%
+    \xdef\brl@tmpcmd{\brl@document_appendtoks\brl@tmp}%
+  \fi%
+}
+
+
+
+% { } may include several paragraphs
+%
+% {....
+% \vskip ..
+% ....
+% }
+
+\def\brl@document_text_bgroup{%
+  \afterassignment\brl@document_text_bgroup_cont%
+  \let\brl@tmp% gobble \bgroup
+}
+  
+\def\brl@document_text_bgroup_cont{%
+  \bgroup%
+    \edef\brl@document@prependfont{\brl@document@currprependfont\brl@document@prependfont}%
+    \edef\brl@document@appendfont{\brl@document@appendfont\brl@document@currappendfont}%
+    \let\brl@document@currprependfont\empty%
+    \let\brl@document@currappendfont\empty%
+    \edef\brl@document@prevtext{\brl@document@prevtext\the\brl@document@toks}%
+    \brl@document@toks{}%
+    \brl@document_text%
+}
+
+
+
+
+
+%%
+%% various dospecial 
+%%
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% fonts
+%%
+\@namedef{brl@document_dospecial_\string\rm}{%
+  \brl@document_prependfont{\brl@text_cmd_rmclose}%
+  \brl@document_appendfont{\brl@text_cmd_rmopen}%
+  \brl@document_appendtoks{\brl@text_cmd_rmopen}%
+  \brl@document_text%
+}
+\@namedef{brl@document_dospecial_\string\bf}{%
+  \brl@document_prependfont{\brl@text_cmd_bfclose}%%
+  \brl@document_appendfont{\brl@text_cmd_bfopen}%
+  \brl@document_appendtoks{\brl@text_cmd_bfopen}%
+  \brl@document_text%
+}
+\@namedef{brl@document_dospecial_\string\em}{%
+  \brl@document_prependfont{\brl@text_cmd_emclose}%%
+  \brl@document_appendfont{\brl@text_cmd_emopen}%
+  \brl@document_appendtoks{\brl@text_cmd_emopen}%
+  \brl@document_text%
+}
+\@namedef{brl@document_dospecial_\string\it}{%
+  \brl@document_prependfont{\brl@text_cmd_itclose}%%
+  \brl@document_appendfont{\brl@text_cmd_itopen}%
+  \brl@document_appendtoks{\brl@text_cmd_itopen}%
+  \brl@document_text%
+}
+\@namedef{brl@document_dospecial_\string\sf}{%
+  \brl@document_prependfont{\brl@text_cmd_sfclose}%%
+  \brl@document_appendfont{\brl@text_cmd_sfopen}%
+  \brl@document_appendtoks{\brl@text_cmd_sfopen}%
+  \brl@document_text%
+}
+\@namedef{brl@document_dospecial_\string\tt}{%
+  \brl@document_prependfont{\brl@text_cmd_ttclose}%%
+  \brl@document_appendfont{\brl@text_cmd_ttopen}%
+  \brl@document_appendtoks{\brl@text_cmd_ttopen}%
+  \brl@document_text%
+}
+
+\@namedef{brl@document_dospecial_\string\brl@text_cmd_ulopen}{%
+  \brl@document_prependfont{\brl@text_cmd_ulclose}%
+  \brl@document_appendfont{\brl@text_cmd_ulopen}%
+  \brl@document_appendtoks{\brl@text_cmd_ulopen}%
+  \brl@document_text%
+}
+
+\@namedef{brl@document_dospecial_\string\sc}{%
+  \brl@document_prependfont{\brl@text_cmd_scclose}%
+  \brl@document_appendfont{\brl@text_cmd_scopen}%
+  \brl@document_appendtoks{\brl@text_cmd_scopen}%
+  \brl@document_text%
+}
+
+\@namedef{brl@document_dospecial_\string\mathversion}#1{%
+  \csname brl@document_math_setfont_#1\endcsname%
+  \brl@document_text%
+}
+
+
+\@namedef{brl@document_dospecial_\string\underline}#1{% underline is local, that is, the same as  {\ul ....}.
+  \brl@document_text{\brl@text_cmd_ulopen#1}%
+}
+
+\@namedef{brl@document_dospecial_\string\BrailleDirect}{%
+  \catcode`\_=11\relax%
+  \makeatletter%
+  \brl@document_dospecial_BrailleDirect%
+}
+
+\def\brl@document_dospecial_BrailleDirect#1{%
+  \brl@document_appendtoks{\BrailleDirect{#1}}%
+  \makeatother%
+  \catcode`\_=8\relax%
+  \brl@document_text%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% verb
+%%
+
+\@namedef{brl@document_dospecial_\string\verb}{%
+  \bgroup%
+    \brl@env_activate_symbols%
+    %
+    \@ifnextchar*{\brl@document_dospecial_verbstar}{\brl@document_dospecial_verb}%
+}%
+\def\brl@document_dospecial_verb#1{%
+  \def\brl@document_dospecial_verbarg##1#1{\xdef\brl@tmp{{\unexpanded{\brl@text_cmd_verb}{##1}}}\brl@document_dospecial_verb_}%
+  \brl@document_dospecial_verbarg%
+}
+
+\def\brl@document_dospecial_verbstar*#1{%
+  \def\ {\brl@info_cmd_altsp}%
+  \def\brl@document_dospecial_verbarg##1#1{\xdef\brl@tmp{{\unexpanded{\brl@text_cmd_verb}{##1}}}\brl@document_dospecial_verb_}%
+  \brl@document_dospecial_verbarg%
+}
+
+\protected\def\brl@document_dospecial_verb_{%
+  \egroup%
+  %
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+%%
+%% \vskip is treated in the vertical mode.
+%%
+\@namedef{brl@document_dospecial_\string\hskip}{%
+  \afterassignment\brl@document_text%
+  \skip\z@%
+}
+
+\@namedef{brl@document_dospecial_\string\kern}{%
+  \afterassignment\brl@document_text%
+  \skip\z@%
+}
+
+
+% in the case \hskip-1mm\},
+% \} is expanded as \relax\brl@document\}
+% thus need to gobble \relax\brl@document.
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\@namedef{brl@document_dospecial_\string\cite}{% * ?
+  \@ifnextchar[{\@tempswatrue\brl@document_dospecial_cite}{\@tempswafalse\brl@document_dospecial_cite[]}%
+}
+
+\def\brl@document_dospecial_cite[#1]#2{%
+  \let\brl@document_dospecial_cite@refs\empty%
+  \let\brl@document_dospecial_cite@citea\empty%
+  \brl@document_dospecial_cite_#2,\brl@end,%
+  {%
+    \brl@document[\brl@document_dospecial_cite@refs\if@tempswa, #1\fi]\brl@document@enddoc%
+    \xdef\brl@tmp{{\brl@text_cmd_noun{\the\brl@document@toks}}}%
+  }%
+  %
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+\def\brl@document_dospecial_cite_#1,{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \edef\brl@document_dospecial_cite@citeb{\expandafter\@firstofone\brl@tmp\@empty}%
+    \if@filesw\immediate\write\@auxout{\string\citation{\brl@document_dospecial_cite@citeb}}\fi%
+    \@ifundefined{b@\brl@document_dospecial_cite@citeb}%
+    {\def\brl@tmp{??}%
+      \G@refundefinedtrue\@latex@warning{Citation `\brl@document_dospecial_cite@citeb' on page \thepage\brl@@space undefined}}%
+    {\edef\brl@tmp{\csname b@\brl@document_dospecial_cite@citeb\endcsname}}%
+    \edef\brl@document_dospecial_cite@refs{\brl@document_dospecial_cite@refs\brl@document_dospecial_cite@citea\brl@tmp}%
+    \def\brl@document_dospecial_cite@citea{, }%
+    \expandafter\brl@document_dospecial_cite_%
+  \fi%
+}
+
+
+\def\brl@document@firstoftwo#1#2#3\brl@end{#1}% 2023 label consists 5 elements
+\def\brl@document@secondoftwo#1#2#3\brl@end{#2}% 2023 label consists 5 elements
+
+\@namedef{brl@document_dospecial_\string\pageref}#1{%
+  \brl@document_dospecial_pageref{#1}% output : \brl@tmp
+  \expandafter\brl@document_appendtoks\expandafter{\brl@tmp}%
+  \ifcsname brl@@r@#1\endcsname%
+    \expandafter\let\expandafter\brl@tmp\csname brl@@r@#1\endcsname%
+    \edef\brl@tmp{{\brl@text_cmd_transopen\expandafter\brl@document@secondoftwo\brl@tmp\brl@end\brl@text_cmd_transclose}}%
+    \expandafter\brl@document_appendtoks\brl@tmp%
+  \fi%
+  \brl@document_text%
+}
+
+%%
+%% note : this is also called by \brl@env_insert_pageref.
+%% Thus brl@tmp is of the form {..} and not {{..}}
+%% output : \brl@tmp
+\def\brl@document_dospecial_pageref#1{%
+  \ifcsname r@#1\endcsname%
+    \expandafter\let\expandafter\brl@tmp\csname r@#1\endcsname%
+    % 
+    \edef\brl@tmp{\expandafter\brl@document@secondoftwo\brl@tmp\brl@end}%
+    % \show\brl@tmp
+  \else%
+    \def\brl@tmp{\brl@text_cmd_noun{\brl@text_cmd_transopen ??\brl@text_cmd_transclose}}%
+  \fi%
+}
+
+\@namedef{brl@document_dospecial_\string\ref}#1{%
+  \ifcsname r@#1\endcsname%
+    \expandafter\let\expandafter\brl@tmp\csname r@#1\endcsname%
+    %
+    \edef\brl@tmp{\expandafter\brl@document@firstoftwo\brl@tmp\brl@end}%
+    {%
+      \expandafter\brl@document\brl@tmp\brl@document@enddoc%
+      \xdef\brl@tmp{{\brl@text_cmd_noun{\the\brl@document@toks}}}%
+    }%
+  \else%
+    \def\brl@tmp{{\brl@text_cmd_noun{\brl@text_cmd_transopen ??\brl@text_cmd_transclose}}}%
+  \fi%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+\@namedef{brl@document_dospecial_\string\eqref}#1{%
+  \ifcsname r@#1\endcsname%
+    \expandafter\let\expandafter\brl@tmp\csname r@#1\endcsname%
+    %
+    \edef\brl@tmp{\expandafter\brl@document@firstoftwo\brl@tmp\brl@end}%
+    {%
+      \expandafter\brl@document\brl@tmp\brl@document@enddoc%
+%      \xdef\brl@tmp{{\brl@text_cmd_eqquote{\the\brl@document@toks}}}%
+      \xdef\brl@tmp{{\brl@text_cmd_noun{\tagform@{\the\brl@document@toks}}}}%
+    }%
+  \else%
+    \def\brl@tmp{{\brl@text_cmd_noun{\brl@text_cmd_transopen ??\brl@text_cmd_transclose}}}%
+  \fi%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%
+% [omittable]<omittable>{..} : if both are omitted, then use the predefined.
+%
+\newif\ifbrl@document@pos
+
+
+\@namedef{brl@document@unk_人名}{名詞,固有名詞,人名,*}
+\@namedef{brl@document@unk_組織}{名詞,固有名詞,組織,*}
+\@namedef{brl@document@unk_地域}{名詞,固有名詞,地域,*}
+\@namedef{brl@document@unk_一般}{名詞,一般,*,*}
+\@namedef{brl@document@unk_}{*,*,*,*}
+
+
+\@namedef{brl@document_dospecial_\string\BrailleReading}{%
+  \@ifnextchar[{\brl@document@postrue\brl@document_dospecial_BrailleReading}{\brl@document@posfalse\brl@document_dospecial_BrailleReading[]}%
+}
+
+\def\brl@document_dospecial_BrailleReading[#1]{%
+  \def\brl@tmp{#1}%
+  \ifcsname brl@document@unk_#1\endcsname%
+    \edef\brl@tmp{\csname brl@document@unk_#1\endcsname}%
+  \else%
+    \PackageError{jmbraille}{#1 should be one of `人名', `組織', `地域', `一般', or omitted}{}%
+  \fi%
+  \@ifnextchar<{%
+    \bgroup%
+    \catcode`\ \active%
+    \brl@document_dospecial_BrailleReading_}{\brl@document_dospecial_BrailleReading__}%
+}%
+
+\def\brl@document_dospecial_BrailleReading_<#1>#2{% the reading is given here.
+    \xdef\brl@tmp{{\BrailleReading{\brl@tmp}{#1}{#2}}}%
+  \egroup%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+\def\brl@document_dospecial_BrailleReading__#1{%
+  \ifbrl@document@pos% only the pos is given here.
+    \edef\brl@tmp{{\BrailleReading{\brl@tmp}{*}{#1}}}%
+  \else% neither is given.
+    \edef\brl@tmp{#1}%
+    \edef\brl@tmp{brl@mecab_reading@\detokenize\expandafter{\brl@tmp}}%
+    \ifcsname\brl@tmp\endcsname%
+      \edef\brl@tmp{{\BrailleReading\csname\brl@tmp\endcsname{#1}}}%
+    \else%
+      \edef\brl@tmp{{\BrailleReading{*,*,*,*}{*}{#1}}}%
+    \fi%
+  \fi%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  %
+  \brl@document_text%
+}
+
+
+
+
+
+
+%% latex commands which do not yield outputs.
+%% executed here.
+
+\def\brl@document_commanddef#1{%
+  \@namedef{brl@document_dospecial_\string#1}{%
+    \let\BrailleResult\empty%
+    #1%
+    \edef\brl@tmp{\BrailleResult}% if the command yields BrailleResult, then show it.
+    \ifx\brl@tmp\empty%
+    \else%
+      \expandafter\brl@document_appendtoks\expandafter{\brl@tmp}%
+    \fi%
+    \brl@document_text%
+  }
+}
+\def\brl@document_commandidef#1{%
+  \@namedef{brl@document_dospecial_\string#1}##1{%
+    \let\BrailleResult\empty%
+    #1{##1}%
+    \edef\brl@tmp{\BrailleResult}% if the command yields BrailleResult, then show it.
+    \ifx\brl@tmp\empty%
+    \else%
+      \expandafter\brl@document_appendtoks\expandafter{\brl@tmp}%
+    \fi%
+    \brl@document_text%
+  }
+}
+\def\brl@document_commandiidef#1{%
+  \@namedef{brl@document_dospecial_\string#1}##1##2{%
+    \let\BrailleResult\empty%
+    #1{##1}{##2}%
+    \edef\brl@tmp{\BrailleResult}% if the command yields BrailleResult, then show it.
+    \ifx\brl@tmp\empty%
+    \else%
+      \expandafter\brl@document_appendtoks\expandafter{\brl@tmp}%
+    \fi%
+    \brl@document_text%
+  }
+}
+
+
+\brl@document_commanddef{\indent}
+\brl@document_commanddef{\noindent}
+\brl@document_commanddef{\BrailleFigureAutoSettingOn}
+\brl@document_commanddef{\BrailleFigureAutoSettingOff}
+\brl@document_commanddef{\BrailleFigureSpreadOn}
+\brl@document_commanddef{\BrailleFigureSpreadOff}
+\brl@document_commanddef{\BrailleFigureLandscapeOn}
+\brl@document_commanddef{\BrailleFigureLandscapeOff}
+\brl@document_commanddef{\BrailleFigurePlotOn}
+\brl@document_commanddef{\BrailleFigurePlotOff}
+\brl@document_commanddef{\BrailleAltColonOn}
+\brl@document_commanddef{\BrailleAltColonOff}
+\brl@document_commanddef{\BrailleTabularRuleOn}
+\brl@document_commanddef{\BrailleTabularRuleOff}
+\brl@document_commanddef{\BrailleEnglishOn}
+\brl@document_commanddef{\BrailleEnglishOff}
+
+\brl@document_commandidef{\BrailleSetFigurePindisplayStep}
+
+\brl@document_commandidef{\stepcounter}
+\brl@document_commandidef{\BrailleSetFigureScale}
+\brl@document_commandidef{\BrailleSetFigureArrowScale}
+\brl@document_commandidef{\BrailleSetFigureLinewidthScale}
+\brl@document_commandidef{\BrailleSetFigurePindisplayScale}
+\brl@document_commandidef{\BrailleFigureSpecial}
+\brl@document_commandidef{\BrailleVerbatimSpecial}
+\brl@document_commandidef{\BrailleTerminology}
+
+\brl@document_commandiidef{\setcounter}
+\brl@document_commandiidef{\addtocounter}
+\brl@document_commandiidef{\tdplotsetmaincoords}
+\brl@document_commandiidef{\BrailleSetContext}
+
+
+\@namedef{brl@document_dospecial_\string\label}#1{%
+  \begingroup%
+    \let\protect\@unexpandable@protect%
+    \xdef\brl@tmp{{\brl@text_cmd_label{#1}{\@currentlabel}}}%
+  \endgroup%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+\long\@namedef{brl@document_dospecial_\string\BrailleAlternative}#1#2{%
+  \brl@document_text#2%
+}
+
+\@namedef{brl@document_dospecial_\string\@latex@error}{%
+  \@latex@error%
+}
+
+
+
+%%
+%% primitives : cs which is not dospecial'ed.
+%% These are allowed to appear in the top level of the document.
+%% Here the top level means the positions outside parentheses etc.
+%% The others should be expanded at the point.
+%%
+\def\brl@document_primitivedef#1{%
+  \@namedef{brl@document_dospecial_\string#1}{%
+    \brl@document_appendtoks{#1}%
+    \brl@document_text%
+  }
+}
+
+\brl@document_primitivedef{\{}
+\brl@document_primitivedef{\}}
+\brl@document_primitivedef{\$}
+\brl@document_primitivedef{\_}
+\brl@document_primitivedef{\&}
+\brl@document_primitivedef{\#}
+\brl@document_primitivedef{\%}
+\brl@document_primitivedef{\textbackslash}
+\brl@document_primitivedef{\textasciitilde}
+\brl@document_primitivedef{\textasciicircum}
+\brl@document_primitivedef{\yen}
+\brl@document_primitivedef{\dots}
+
+\brl@document_primitivedef{\!}
+\brl@document_primitivedef{\,}
+\brl@document_primitivedef{\>}
+\brl@document_primitivedef{\:}
+\brl@document_primitivedef{\;}
+\brl@document_primitivedef{\ }
+\brl@document_primitivedef{~}
+\brl@document_primitivedef{\quad}
+\brl@document_primitivedef{\qquad}
+
+% in env_secdef, enumerate, itemize
+\brl@document_primitivedef{\brl@text_cmd_space}% env 
+\brl@document_primitivedef{\brl@text_cmd_comma}% 
+\brl@document_primitivedef{\brl@text_cmd_desci}% \begin{description}
+\brl@document_primitivedef{\brl@text_cmd_descii}% \begin{description} 
+
+%%
+%% \cs{..}
+%%
+\def\brl@document_primitiveiedef#1{% primitive with an argument which is expanded.
+  \@namedef{brl@document_dospecial_\string#1}##1{%
+    {%
+      \let\brl@document@prependfont\empty%
+      \let\brl@document@appendfont\empty%
+      \let\brl@document@currprependfont\empty%
+      \let\brl@document@currappendfont\empty%
+      \brl@document##1\brl@document@enddoc%
+      \xdef\brl@tmp{{#1{\the\brl@document@toks}}}%
+    }%
+    \expandafter\brl@document_appendtoks\brl@tmp%
+    \brl@document_text%
+  }
+}
+
+
+%% \cs
+
+\brl@document_primitiveiedef{\BrailleRemark}%
+
+
+
+%% Latin
+%%
+%% 
+%% \brl@text_cmd_letter{â}{\^}{a}
+%%
+
+%% accent
+%%
+%%
+
+%%
+%% \`{XXX} -> \cmd_letter{â}{\^}{a} if known
+%%         -> \cmd_letter{.}{\`}{XXX} if unknown
+
+\def\brl@document_accentdef#1#2{%
+  % % for ueb
+  %\protected
+  \@namedef{brl@ueb_accent@tex_\string#1}{#2}% \` -> \brl@orig@csgrave
+  % for document
+  \@namedef{brl@document_dospecial_\string#1}##1{%
+    \ifcsname brl@document_dospecial_accent@l_\string#1_\string##1\endcsname%
+      \edef\brl@tmp{{\brl@text_cmd_letter{\csname brl@document_dospecial_accent@l_\string#1_\string##1\endcsname}{#1}{##1}}}% \brl@text_cmd_letter{â}{\^}{a}
+    \else%
+      {%
+        \brl@document##1\brl@document@enddoc%
+        \xdef\brl@tmp{{\brl@text_cmd_letter{.}{#1}{\the\brl@document@toks}}}%
+      }%
+      % 
+    \fi%
+    \expandafter\brl@document_appendtoks\brl@tmp%
+    %
+    \brl@document_text%
+  }
+}
+
+\brl@document_accentdef{\`}{\brl@orig@csgrave}
+\brl@document_accentdef{\'}{\brl@orig@csacute}
+\brl@document_accentdef{\^}{\brl@orig@cscircumflex}
+\brl@document_accentdef{\~}{\brl@orig@cstilde}
+\brl@document_accentdef{\"}{\brl@orig@csumlaut}
+\brl@document_accentdef{\=}{\brl@orig@csmacron}
+\brl@document_accentdef{\u}{\brl@orig@csbreve}
+\brl@document_accentdef{\c}{\brl@orig@cscedilla}
+\brl@document_accentdef{\v}{\brl@orig@cscaron}
+\brl@document_accentdef{\H}{\brl@orig@cshumlaut}
+\brl@document_accentdef{\r}{\brl@orig@csring}
+\brl@document_accentdef{\t}{\brl@orig@cstie}
+\brl@document_accentdef{\.}{\brl@orig@csdotover}
+\brl@document_accentdef{\k}{\brl@orig@csogonek}
+\brl@document_accentdef{\b}{\brl@orig@csbarunder}
+\brl@document_accentdef{\d}{\brl@orig@csdotunder}
+
+
+
+\def\brl@document_accentalphdef#1#2#3#4#5#6#7#8#9{%
+  \brl@document_accentalphdef__{\`}{#1}#2\brl@end%
+  \brl@document_accentalphdef__{\'}{#1}#3\brl@end%
+  \brl@document_accentalphdef__{\^}{#1}#4\brl@end%
+  \brl@document_accentalphdef__{\~}{#1}#5\brl@end%
+  \brl@document_accentalphdef__{\"}{#1}#6\brl@end%
+  \brl@document_accentalphdef__{\=}{#1}#7\brl@end%
+  \brl@document_accentalphdef__{\u}{#1}#8\brl@end%
+  \brl@document_accentalphdef__{\c}{#1}#9\brl@end%
+  \brl@document_accentalphdef_{#1}%
+}
+
+\def\brl@document_accentalphdef_#1#2#3#4#5#6#7#8#9{%
+  \brl@document_accentalphdef__{\v}{#1}#2\brl@end%
+  \brl@document_accentalphdef__{\H}{#1}#3\brl@end%
+  \brl@document_accentalphdef__{\r}{#1}#4\brl@end%
+  \brl@document_accentalphdef__{\t}{#1}#5\brl@end%
+  \brl@document_accentalphdef__{\.}{#1}#6\brl@end%
+  \brl@document_accentalphdef__{\k}{#1}#7\brl@end%
+  \brl@document_accentalphdef__{\b}{#1}#8\brl@end%
+  \brl@document_accentalphdef__{\d}{#1}#9\brl@end%
+}
+
+\def\brl@document_accentempty{..}
+
+%%
+%% #1: \'
+%% #2: A
+%% #3: Á
+%%
+%% brl@document_dospecial_accent@l_\'_A = Á
+%% brl@document_dospecial_accent@a_Á = {\'}{A}
+
+\ifbrl@uplatex%
+
+\def\brl@document_accentalphdef__#1#2#3\brl@end{%
+  \@namedef{brl@ueb_alph@tex_\string#1_\string#2}{{\csname brl@ueb_accent@tex_\string#1\endcsname{#2}}}%
+  \def\brl@tmp{#3}%
+  \ifx\brl@tmp\brl@document_accentempty%
+  \else%
+    % for document
+    \@namedef{brl@document_dospecial_accent@l_\string#1_\string#2}{#3}%
+    \@namedef{brl@document_dospecial_accent@a_\detokenize{#3}}{{#1}{#2}}%
+  \fi%
+}
+
+%%
+\def\brl@document_letterdef#1{%
+  \@namedef{brl@document_dospecial_\string#1}##1{%
+    \edef\brl@tmp{{\brl@text_cmd_letter{#1##1}\csname brl@document_dospecial_accent@a_\detokenize{#1##1}\endcsname}}% \brl@text_cmd_letter{â}{\^}{a}
+    \expandafter\brl@document_appendtoks\brl@tmp%
+    %
+    \brl@document_text%
+  }
+}
+
+\brl@document_letterdef{^^c2}
+\brl@document_letterdef{^^c3}
+\brl@document_letterdef{^^c4}
+\brl@document_letterdef{^^c5}
+\brl@document_letterdef{^^c6}
+\brl@document_letterdef{^^c7}
+\brl@document_letterdef{^^c8}
+
+\@namedef{brl@document_dospecial_\string^^e1}#1#2{%
+  \edef\brl@tmp{{\brl@text_cmd_letter{^^e1#1#2}\csname brl@document_dospecial_accent@a_\detokenize{^^e1#1#2}\endcsname}}% \brl@text_cmd_letter{â}{\^}{a}
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  % 
+  \brl@document_text%
+}
+
+\else%
+  
+\def\brl@document_accentalphdef__#1#2#3\brl@end{%
+  \@namedef{brl@ueb_alph@tex_\string#1_\string#2}{{\csname brl@ueb_accent@tex_\string#1\endcsname{#2}}}%
+  \def\brl@tmp{#3}%
+  \ifx\brl@tmp\brl@document_accentempty%
+  \else%
+    % for document
+    \@namedef{brl@document_dospecial_accent@l_\string#1_\string#2}{#3}%
+    \@namedef{brl@document_dospecial_accent@a_\detokenize{#3}}{{#1}{#2}}%
+    %
+    \@namedef{brl@document_dospecial_\detokenize{#3}}{%
+      \edef\brl@tmp{{\brl@text_cmd_letter{#3}\csname brl@document_dospecial_accent@a_\detokenize{#3}\endcsname}}% \brl@text_cmd_letter{â}{\^}{a}
+      \expandafter\brl@document_appendtoks\brl@tmp%
+      \brl@document_text%
+    }%
+  \fi%
+}%
+
+
+
+
+\fi
+
+
+
+%                               \`  \'  \^  \~  \"  \=  \u  \c  \v  \H  \r  \t  \.  \k  \b  \d
+%                           1   2   3   4   5   6   7   8   9   2   3   4   5   6   7   8   9
+
+\brl@document_accentalphdef{A} {À} {Á} {Â} {Ã} {Ä} {Ā} {Ă} {..}{Ǎ} {..}{Å} {Ȃ} {Ȧ} {Ą} {..}{Ạ}
+\brl@document_accentalphdef{a} {à} {á} {â} {ã} {ä} {ā} {ă} {..}{ǎ} {..}{å} {ȃ} {ȧ} {ą} {..}{ạ}
+\brl@document_accentalphdef{B} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{Ḃ} {..}{Ḇ} {Ḅ}
+\brl@document_accentalphdef{b} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{ḃ} {..}{ḇ} {ḅ}
+\brl@document_accentalphdef{C} {..}{Ć} {Ĉ} {..}{..}{..}{..}{Ç} {Č} {..}{..}{..}{Ċ} {..}{..}{..}
+\brl@document_accentalphdef{c} {..}{ć} {ĉ} {..}{..}{..}{..}{ç} {č} {..}{..}{..}{ċ} {..}{..}{..}
+\brl@document_accentalphdef{D} {..}{..}{..}{..}{..}{..}{..}{..}{Ď} {..}{..}{..}{Ḋ} {..}{Ḏ} {Ḍ}
+\brl@document_accentalphdef{d} {..}{..}{..}{..}{..}{..}{..}{..}{ď} {..}{..}{..}{ḋ} {..}{ḏ} {ḍ}
+\brl@document_accentalphdef{E} {È} {É} {Ê} {Ẽ} {Ë} {Ē} {Ĕ} {Ȩ} {Ě} {..}{..}{Ȇ} {Ė} {Ę} {..}{Ẹ}
+\brl@document_accentalphdef{e} {è} {é} {ê} {ẽ} {ë} {ē} {ĕ} {ȩ} {ě} {..}{..}{ȇ} {ė} {ę} {..}{ẹ}
+\brl@document_accentalphdef{F} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{Ḟ} {..}{..}{..}
+\brl@document_accentalphdef{f} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{ḟ} {..}{..}{..}
+\brl@document_accentalphdef{G} {..}{Ǵ} {Ĝ} {..}{..}{Ḡ} {Ğ} {Ģ} {Ǧ} {..}{..}{..}{Ġ} {..}{..}{..}
+\brl@document_accentalphdef{g} {..}{ǵ} {ĝ} {..}{..}{ḡ} {ğ} {..}{ǧ} {..}{..}{..}{ġ} {..}{..}{..}
+\brl@document_accentalphdef{H} {..}{..}{Ĥ} {..}{Ḧ} {..}{..}{Ḩ} {Ȟ} {..}{..}{..}{Ḣ} {..}{..}{Ḥ}
+\brl@document_accentalphdef{h} {..}{..}{ĥ} {..}{ḧ} {..}{..}{ḩ} {ȟ} {..}{..}{..}{ḣ} {..}{..}{ḥ}
+\brl@document_accentalphdef{I} {Ì} {Í} {Î} {Ĩ} {Ï} {Ī} {Ĭ} {..}{Ǐ} {..}{..}{Ȋ} {İ} {Į} {..}{Ị}
+%\brl@document_accentalphdef{i} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{į} {..}{ị}
+% \brl@document_accentalphdef{\i}{ì} {í} {î} {ĩ} {ï} {ī} {ĭ} {..}{ǐ} {..}{..}{ȋ} {..}{..}{..}{..}
+\brl@document_accentalphdef{i} {ì} {í} {î} {ĩ} {ï} {ī} {ĭ} {..}{ǐ} {..}{..}{ȋ} {..}{į} {..}{ị}
+\brl@document_accentalphdef{\i}{ì} {í} {î} {ĩ} {ï} {ī} {ĭ} {..}{ǐ} {..}{..}{ȋ} {..}{į} {..}{ị}
+\brl@document_accentalphdef{J} {..}{..}{Ĵ} {..}{..}{..}{..}{..}{ǰ} {..}{..}{..}{..}{..}{..}{..}
+\brl@document_accentalphdef{\j}{..}{..}{ĵ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}
+\brl@document_accentalphdef{K} {..}{Ḱ} {..}{..}{..}{..}{..}{Ķ} {Ǩ} {..}{..}{..}{..}{..}{Ḵ} {Ḳ}
+\brl@document_accentalphdef{k} {..}{ḱ} {..}{..}{..}{..}{..}{ķ} {ǩ} {..}{..}{..}{..}{..}{ḵ} {ḳ}
+\brl@document_accentalphdef{L} {..}{Ĺ} {..}{..}{..}{..}{..}{Ļ} {..}{..}{..}{..}{..}{..}{Ḻ} {Ḷ}
+\brl@document_accentalphdef{l} {..}{ĺ} {..}{..}{..}{..}{..}{ļ} {..}{..}{..}{..}{..}{..}{ḻ} {ḷ}
+\brl@document_accentalphdef{M} {..}{Ḿ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{Ṁ} {..}{..}{Ṃ}
+\brl@document_accentalphdef{m} {..}{ḿ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{ṁ} {..}{..}{ṃ}
+\brl@document_accentalphdef{N} {Ǹ} {Ń} {..}{Ñ} {..}{..}{..}{Ņ} {Ň} {..}{..}{..}{Ṅ} {..}{Ṉ} {Ṇ}
+\brl@document_accentalphdef{n} {ǹ} {ń} {..}{ñ} {..}{..}{..}{ņ} {ň} {..}{..}{..}{ṅ} {..}{ṉ} {ṇ}
+\brl@document_accentalphdef{O} {Ò} {Ó} {Ô} {Õ} {Ö} {Ō} {Ŏ} {..}{Ǒ} {Ő} {..}{Ȏ} {Ȯ} {Ǫ} {..}{Ọ}
+\brl@document_accentalphdef{o} {ò} {ó} {ô} {õ} {ö} {ō} {ŏ} {..}{ǒ} {ő} {..}{ȏ} {ȯ} {ǫ} {..}{ọ}
+\brl@document_accentalphdef{P} {..}{Ṕ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{Ṗ} {..}{..}{..}
+\brl@document_accentalphdef{p} {..}{ṕ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{ṗ} {..}{..}{..}
+\brl@document_accentalphdef{R} {..}{Ŕ} {..}{..}{..}{..}{..}{Ŗ} {Ř} {..}{..}{Ȓ} {Ṙ} {..}{Ṟ} {Ṛ}
+\brl@document_accentalphdef{r} {..}{ŕ} {..}{..}{..}{..}{..}{ŗ} {ř} {..}{..}{ȓ} {ṙ} {..}{ṟ} {ṛ}
+\brl@document_accentalphdef{S} {..}{Ś} {Ŝ} {..}{..}{..}{..}{Ş} {Š} {..}{..}{..}{Ṡ} {..}{..}{Ṣ}
+\brl@document_accentalphdef{s} {..}{ś} {ŝ} {..}{..}{..}{..}{ş} {š} {..}{..}{..}{ṡ} {..}{..}{ṣ}
+\brl@document_accentalphdef{T} {..}{..}{..}{..}{..}{..}{..}{Ţ} {Ť} {..}{..}{..}{Ṫ} {..}{Ṯ} {Ṭ}
+\brl@document_accentalphdef{t} {..}{..}{..}{..}{ẗ} {..}{..}{ţ} {..}{..}{..}{..}{ṫ} {..}{ṯ} {ṭ}
+\brl@document_accentalphdef{U} {Ù} {Ú} {Û} {Ũ} {Ü} {Ū} {Ŭ} {..}{Ǔ} {Ű} {Ů} {Ȗ} {..}{Ų} {..}{Ụ}
+\brl@document_accentalphdef{u} {ù} {ú} {û} {ũ} {ü} {ū} {ŭ} {..}{ǔ} {ű} {ů} {ȗ} {..}{ų} {..}{ụ}
+\brl@document_accentalphdef{V} {..}{..}{..}{Ṽ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{Ṿ}
+\brl@document_accentalphdef{v} {..}{..}{..}{ṽ} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{ṿ}
+\brl@document_accentalphdef{W} {Ẁ} {Ẃ} {Ŵ} {..}{Ẅ} {..}{..}{..}{..}{..}{..}{..}{Ẇ} {..}{..}{Ẉ}
+\brl@document_accentalphdef{w} {ẁ} {ẃ} {ŵ} {..}{ẅ} {..}{..}{..}{..}{..}{ẘ} {..}{ẇ} {..}{..}{ẉ}
+\brl@document_accentalphdef{X} {..}{..}{..}{..}{Ẍ} {..}{..}{..}{..}{..}{..}{..}{Ẋ} {..}{..}{..}
+\brl@document_accentalphdef{x} {..}{..}{..}{..}{ẍ} {..}{..}{..}{..}{..}{..}{..}{ẋ} {..}{..}{..}
+\brl@document_accentalphdef{Y} {Ỳ} {Ý} {Ŷ} {Ỹ} {Ÿ} {Ȳ} {..}{..}{..}{..}{..}{..}{Ẏ} {..}{..}{Ỵ}
+\brl@document_accentalphdef{y} {ỳ} {ý} {ŷ} {ỹ} {ÿ} {ȳ} {..}{..}{..}{..}{ẙ} {..}{ẏ} {..}{..}{ỵ}
+\brl@document_accentalphdef{Z} {..}{Ź} {Ẑ} {..}{..}{..}{..}{..}{Ž} {..}{..}{..}{Ż} {..}{Ẕ} {Ẓ}
+\brl@document_accentalphdef{z} {..}{ź} {ẑ} {..}{..}{..}{..}{..}{ž} {..}{..}{..}{ż} {..}{ẕ} {ẓ}
+% \brl@document_accentalphdef{Æ} {..}{Ǽ}{..}{..}{..}{Ǣ}{..}{..}{..}{..}{..}{..}{..}{..}
+% \brl@document_accentalphdef{æ} {..}{ǽ}{..}{..}{..}{ǣ}{..}{..}{..}{..}{..}{..}{..}{..}
+
+
+%
+% #1: Æ
+% #2: emptyaccent
+% #3: AE
+%
+% \brl@text_cmd_letter{Æ}{emptyaccent}{AE}
+% 
+
+\ifbrl@uplatex% in uplatex, Æ is treated as a set of chars.
+
+\def\brl@document_alphdef#1\brl@end#2\brl@end#3{%
+  % for ueb
+  \@namedef{brl@ueb_alph@tex__#2}{{\noexpand#3}}%
+  % for document
+  \@namedef{brl@document_dospecial_accent@a_\detokenize{#1}}{{}{#2}}% emptyaccent
+}
+\def\brl@document_alphaccentdef#1\brl@end#2\brl@end#3{%
+  % for ueb
+  \@namedef{brl@ueb_alph@tex_englishaccent_#2}{{\noexpand#3}}%  
+  % for document
+  \@namedef{brl@document_dospecial_accent@a_\detokenize{#1}}{{englishaccent}{#2}}%
+}
+
+\else% in xelatex and lualatex, Æ is treated as one char.
+
+\def\brl@document_alphdef#1\brl@end#2\brl@end#3{%
+  % for ueb
+  \@namedef{brl@ueb_alph@tex__#2}{{\noexpand#3}}%
+  % for document
+  \@namedef{brl@document_dospecial_accent@a_\detokenize{#1}}{{}{#2}}% emptyaccent
+  \@namedef{brl@document_dospecial_\detokenize{#1}}{%
+    \edef\brl@tmp{{\brl@text_cmd_letter{#1}\csname brl@document_dospecial_accent@a_\detokenize{#1}\endcsname}}% \brl@text_cmd_letter{â}{\^}{a}
+    \expandafter\brl@document_appendtoks\brl@tmp%
+    \brl@document_text%
+  }%
+}
+\def\brl@document_alphaccentdef#1\brl@end#2\brl@end#3{%
+  % for ueb
+  \@namedef{brl@ueb_alph@tex_englishaccent_#2}{{\noexpand#3}}%  
+  % for document
+  \@namedef{brl@document_dospecial_accent@a_\detokenize{#1}}{{englishaccent}{#2}}%
+  \@namedef{brl@document_dospecial_\detokenize{#1}}{%
+    \edef\brl@tmp{{\brl@text_cmd_letter{#1}\csname brl@document_dospecial_accent@a_\detokenize{#1}\endcsname}}% \brl@text_cmd_letter{â}{\^}{a}
+    \expandafter\brl@document_appendtoks\brl@tmp%
+    \brl@document_text%
+  }%
+}
+
+\fi
+
+
+
+\brl@document_alphdef Æ\brl@end AE\brl@end\brl@orig@AE
+\brl@document_alphdef æ\brl@end ae\brl@end\brl@orig@ae
+\brl@document_alphdef Œ\brl@end OE\brl@end\brl@orig@OE
+\brl@document_alphdef œ\brl@end oe\brl@end\brl@orig@oe
+\brl@document_alphdef ß\brl@end ss\brl@end\brl@orig@ss
+
+\brl@document_alphaccentdef ø\brl@end o\brl@end\brl@orig@o
+\brl@document_alphaccentdef Ø\brl@end O\brl@end\brl@orig@O
+\brl@document_alphaccentdef ł\brl@end l\brl@end\brl@orig@l
+\brl@document_alphaccentdef Ł\brl@end L\brl@end\brl@orig@L
+
+
+
+
+%{Ȁ}{ȁ}{Ȅ}{ȅ}{Ȉ}{ȉ}{Ȍ}{ȍ}{Ȑ}{ȑ}{ȕ}{Ȕ}
+%\brl@document_accentalphdef{} {..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}{..}
+
+%% U+0040 ^^c1^^80 : invalid
+%% U+0080 ^^c2^^80
+%% U+00C0 ^^c3^^80
+%% U+0100 ^^c4^^80
+%% U+0140 ^^c5^^80
+%% U+0180 ^^c6^^80
+%% U+01C0 ^^c7^^80
+%% U+0200 ^^c8^^80
+%%
+
+
+
+% NBSP¡¢£¤¥¦§¨©ª«¬SHY®¯
+% 00B0°±²³´µ¶·¸¹º»¼½¾¿
+% 00C0ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏ
+% 00D0ÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß
+% 00E0àáâãäåæçèéêëìíîï
+% 00F0ðñòóôõö÷øùúûüýþÿ
+% U+0123456789ABCDEF
+% 0100ĀāĂăĄąĆćĈĉĊċČčĎď
+% 0110ĐđĒēĔĕĖėĘęĚěĜĝĞğ
+% 0120ĠġĢģĤĥĦħĨĩĪīĬĭĮį
+% 0130İıĲĳĴĵĶķĸĹĺĻļĽľĿ
+% 0140ŀŁłŃńŅņŇňŉŊŋŌōŎŏ
+% 0150ŐőŒœŔŕŖŗŘřŚśŜŝŞş
+% 0160ŠšŢţŤťŦŧŨũŪūŬŭŮů
+% 0170ŰűŲųŴŵŶŷŸŹźŻżŽžſ
+% 0180ƀƁƂƃƄƅƆƇƈƉƊƋƌƍƎƏ
+% 0190ƐƑƒƓƔƕƖƗƘƙƚƛƜƝƞƟ
+% 01A0ƠơƢƣƤƥƦƧƨƩƪƫƬƭƮƯ
+% 01B0ưƱƲƳƴƵƶƷƸƹƺƻƼƽƾƿ
+% 01C0ǀǁǂǃǄǅǆǇǈǉǊǋǌǍǎǏ
+% 01D0ǐǑǒǓǔǕǖǗǘǙǚǛǜǝǞǟ
+% 01E0ǠǡǢǣǤǥǦǧǨǩǪǫǬǭǮǯ
+% 01F0ǰǱǲǳǴǵǶǷǸǹǺǻǼǽǾǿ
+% U+0123456789ABCDEF
+% 0200ȀȁȂȃȄȅȆȇȈȉȊȋȌȍȎȏ
+% 0210ȐȑȒȓȔȕȖȗȘșȚțȜȝȞȟ
+% 0220ȠȡȢȣȤȥȦȧȨȩȪȫȬȭȮȯ
+% 0230ȰȱȲȳȴȵȶȷȸȹȺȻȼȽȾȿ
+
+%% Latin
+%%
+%% U+1E00 ^^e1^^b8^^80
+%% U+1E40 ^^e1^^b9^^80
+%% U+1E80 ^^e1^^ba^^80
+%% U+1EC0 ^^e1^^bb^^80
+%%
+
+
+% 1E00ḀḁḂḃḄḅḆḇḈḉḊḋḌḍḎḏ
+% 1E10ḐḑḒḓḔḕḖḗḘḙḚḛḜḝḞḟ
+% 1E20ḠḡḢḣḤḥḦḧḨḩḪḫḬḭḮḯ
+% 1E30ḰḱḲḳḴḵḶḷḸḹḺḻḼḽḾḿ
+% 1E40ṀṁṂṃṄṅṆṇṈṉṊṋṌṍṎṏ
+% 1E50ṐṑṒṓṔṕṖṗṘṙṚṛṜṝṞṟ
+% 1E60ṠṡṢṣṤṥṦṧṨṩṪṫṬṭṮṯ
+% 1E70ṰṱṲṳṴṵṶṷṸṹṺṻṼṽṾṿ
+% 1E80ẀẁẂẃẄẅẆẇẈẉẊẋẌẍẎẏ
+% 1E90ẐẑẒẓẔẕẖẗẘẙẚẛẜẝẞẟ
+% 1EA0ẠạẢảẤấẦầẨẩẪẫẬậẮắ
+% 1EB0ẰằẲẳẴẵẶặẸẹẺẻẼẽẾế
+% 1EC0ỀềỂểỄễỆệỈỉỊịỌọỎỏ
+% 1ED0ỐốỒồỔổỖỗỘộỚớỜờỞở
+% 1EE0ỠỡỢợỤụỦủỨứỪừỬửỮữ
+% 1EF0ỰựỲỳỴỵỶỷỸỹỺỻỼỽỾỿ
+
+% c̆
+
+
+
+%% procedures of the end of a paragraph.
+%%
+%%
+%%
+\def\brl@document_exec_text{%
+  % finish fonts.
+  %
+  % if the text consists of only fonts, then add nothing.
+  \brl@document_ifequal{\brl@document@prevtext\the\brl@document@toks}{\brl@document@appendfont\brl@document@currappendfont}{%
+    \brl@text@toks{}%
+  }{%
+    \edef\brl@tmp{{\brl@document@prevtext\the\brl@document@toks\brl@document@currprependfont\brl@document@prependfont}}%
+    \expandafter\brl@text\brl@tmp%
+  }%
+}
+
+%% input: \brl@document@toks 
+%%
+%% output: \brl@text@toks 
+%%         \brl@document@indent
+\def\brl@document_indent{%
+  %
+  %
+  \brl@document_exec_text%
+  %
+  %
+  \ifbrl@document@indent%
+    \global\let\brl@document@indent\brl@document@indent_default% default : 2
+  \else%
+    %
+    \global\let\brl@document@indent\brl@document@noindent_default% default : 0
+    \global\brl@document@indenttrue%
+  \fi%
+}
+
+\def\brl@document_end{%
+  %
+  %
+  \brl@document_indent%
+  \brl@print{\brl@document@leftmargin}{\brl@document@indent}{\brl@text@toks}{\brl@bse@width}%
+  %
+  \brl@document_footnote%
+  \global\brl@document@indenttrue%
+  \brl@document@char% continue
+}
+
+
+
+\def\brl@document_endbypar{% skip par
+  \futurelet\brl@document@textchar\brl@document_endbypar_loop%
+}
+
+\expandafter\let\csname brl@document_dospecial_\string\par\endcsname\brl@document_endbypar
+
+\def\brl@document_endbypar_loop{%
+  \ifx\brl@document@textchar\par%
+    \expandafter\brl@document_endbypar_skippar%
+  \else%
+    \expandafter\brl@document_endbypar_%
+  \fi%
+}
+
+\def\brl@document_endbypar_skippar\par{% skip par
+  \futurelet\brl@document@textchar\brl@document_endbypar_loop%
+}
+
+\def\brl@document_endbypar_{%
+  \ifx\brl@document@textchar\end%
+    \expandafter\brl@document_endbypar_csend%
+  \else%
+    \let\brl@document@char\empty%
+    \expandafter\brl@document_end%
+  \fi%
+}
+
+\def\brl@document_endbypar_csend#1{%
+  \brl@document_dospecial_csend%
+}
+
+
+
+
+\def\brl@document_enddef#1{%
+  \@namedef{brl@document_dospecial_\string#1}{%
+    \def\brl@document@char{#1}%
+    \brl@document_end%
+  }%
+}
+
+%% items which indicates the end of a paragraph
+%%
+\brl@document_enddef{\chapter}
+\brl@document_enddef{\section}
+\brl@document_enddef{\subsection}
+\brl@document_enddef{\subsubsection}
+\brl@document_enddef{\item}
+\brl@document_enddef{\bibitem}
+\brl@document_enddef{\BrailleNewpage}
+\brl@document_enddef{\BraillePar}
+\brl@document_enddef{\smallskip}
+\brl@document_enddef{\medskip}
+\brl@document_enddef{\bigskip}
+\brl@document_enddef{\vspace}
+\brl@document_enddef{\vskip}
+\brl@document_enddef{\input}
+\brl@document_enddef{\include}
+\brl@document_enddef{\mainmatter}
+\brl@document_enddef{\frontmatter}
+\brl@document_enddef{\backmatter}
+\brl@document_enddef{\maketitle}
+\brl@document_enddef{\tableofcontents}
+\brl@document_enddef{\includegraphics}
+%
+\brl@document_enddef{\hrule}
+
+%
+% \vrule begins with \par. Thus
+% \vrule -> \everypar\vrule
+% -> \brl@document\vrule
+% infinite loop if \brl@document_enddef{\vrule}.
+% Hence, \vrule is replaced by \hrule.
+%
+% Note that \hrule gobbles width, depth, height.
+%
+\@namedef{brl@document_dospecial_\string\vrule}{%
+  \def\brl@document@char{\hrule}%
+  \brl@document_end%
+}%
+
+\@namedef{brl@document_dospecial_\string\brl@end}{%
+  \let\brl@document@char\empty% ignore \brl@end
+  \brl@document_end%
+}%
+
+
+%
+% #1 : left margin
+% #2 : indent
+% #3 : width
+% #4 : prepended toks
+% #5 : appended toks
+\@namedef{brl@document_dospecial_\string\brl@document@end}#1#2#3#4#5{%
+  \brl@document_exec_text%
+  \edef\brl@tmp{{#4\the\brl@text@toks#5}}%
+  \brl@text@toks\brl@tmp%
+  \brl@print{#1}{#2}{\brl@text@toks}{#3}%
+  \brl@document_footnote%
+  \global\brl@document@indenttrue%
+}
+
+
+\@namedef{brl@document_dospecial_\string\brl@document@endtext}{%
+  \brl@document_exec_text%
+}
+
+\@namedef{brl@document_dospecial_\string\brl@document@enddoc}{%
+  \brl@document_ifequal{\brl@document@prevtext\the\brl@document@toks}{\brl@document@appendfont\brl@document@currappendfont}{%
+    \brl@document@toks{}%
+  }{%
+    \edef\brl@tmp{{\brl@document@prevtext\the\brl@document@toks\brl@document@currprependfont\brl@document@prependfont}}%
+    \brl@document@toks\brl@tmp%
+  }%
+}
+
+  
+%%%
+%%%
+% \def\begin#1{%
+%   \@ifundefined{#1}% Environment begin
+%     {\def\reserved@a{\@latex@error{Environment #1 undefined}\@eha}}%
+%     {\def\reserved@a{\def\@currenvir{#1}%
+%      \edef\@currenvline{\on@line}%
+%      \csname #1\endcsname}}%
+%   \@ignorefalse
+%   \begingroup\@endpefalse\reserved@a}% <- grouping starts
+% \def\end#1{% Environment end
+%   \csname end#1\endcsname\@checkend{#1}%
+%   \expandafter\endgroup\if@endpe\@doendpe\fi% <- grouping ends
+%   \if@ignore\@ignorefalse\ignorespaces\fi}
+%
+% \def\equation{$$\refstepcounter{equation}}
+% \def\endequation{\eqno\hbox{\@eqnnum}$$\@ignoretrue}
+% \def\@ignoretrue{\global\let\if@ignore\iftrue}
+%
+% \def\@doendpe{\@endpetrue \def \par {\@restorepar \clubpenalty \@clubpenalty \@endpefalse \everypar {}\par }\everypar {{\setbox \z@ \lastbox }\everypar {}\@endpefalse }
+%
+% \def\@endpetrue{\global \let \if@endpe \iftrue \ifnum \currentgrouptype =14 \aftergroup \propagate@doendpe \else \ifnum \currentgrouptype =\z@ \else \ifnum \currentgrouptype =\@ne \aftergroup \propagate@doendpe \fi \fi \fi}
+% \def\propagate@doendpe{\if@endpe \@doendpe \fi}
+%
+\@namedef{brl@document_dospecial_\string\begin}#1{%
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  \def\brl@tmp{brl@document@begin_#1}%
+  \ifcsname\brl@tmp\endcsname%
+    \csname\brl@tmp\expandafter\endcsname%
+  \else%
+    \def\brl@document@char{\brl@orig@begin{#1}}%
+    \expandafter\brl@document_end%
+  \fi%
+}
+
+\@namedef{brl@document_dospecial_\string\\}{%
+  % 
+  \brl@document_indent%
+  \brl@print{\brl@document@leftmargin}{\brl@document@indent}{\brl@text@toks}{\brl@bse@width}%
+  %
+  \brl@document_footnote%
+  \global\brl@document@indentfalse%
+  \@ifnextchar[{\brl@document_gobble_opt}{}%
+}
+
+\def\brl@document_gobble_opt[#1]{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% in tikz
+%% use the following instead of the above.
+%%
+%% no footnote is allowed.
+%% \\ gives rise to \brl@document again.
+%%
+
+%% for draw
+%%
+%% input : \brl@pgf@boxname
+%%
+%% output :
+%%  \global\setbox\brl@pgf@nodetext_\string\pgfnodepart\brl@pgf@boxname boxa\endcsname{...}
+%%  \global\setbox\brl@pgf@nodetext_\string\pgfnodepart\brl@pgf@boxname boxb\endcsname{...}
+
+
+\newbox\brl@document@boxa% vbox
+\newbox\brl@document@boxb% vbox
+
+\newbox\brl@document@hboxa% hbox
+\newbox\brl@document@hboxb% hbox
+
+\newif\ifbrl@document@emptybox% empty box or not
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% draw tikz
+%%
+
+
+%%
+%% in nodes of tikzpicture
+%%
+\brl@def{brl@document_dospecial_\string\\}\brl@end{%
+  \protected\def\brl@document_draw_tikz{%
+    % patch
+    % \let\brl@document_dospecial_bsbs_tikz_orig\\%
+    \let\@xcentercr\brl@@xcentercr%
+    \let\@icentercr\brl@@icentercr%
+    \edef\brl@document@basegrouplevel{\the\currentgrouplevel}%
+    \let#1\brl@document_dospecial_bsbs_draw_tikz%
+    % nodepart for draw is default as defined below.
+    \let\brl@document_text_egroup\brl@document_text_egroup_draw_tikz%
+    \let\brl@document_end\brl@document_end_draw_tikz% if \brl@document encounters \begin{tikzpicture or tabular}, then \brl@document should continue.
+    %
+    % init
+    % all contents are below baseline.
+    \setbox\brl@document@boxa\vbox{\hrule\@height\z@\@depth\z@}% needed for 'text width' option.
+    \setbox\brl@document@boxb\vbox{\hrule\@height\z@\@depth\z@}%
+    % \setbox\brl@document@boxa\vbox{}%
+    % \setbox\brl@document@boxb\vbox{}%
+    % \setbox\brl@document@boxb\vbox{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+    % \setbox\brl@document@boxa\vbox{\brl@draw@textcmd}%\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+    % \setbox\brl@document@boxb\vbox{\brl@draw@textcmd}%\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+    \setbox\brl@document@hboxa\hbox{}% hbox
+    \setbox\brl@document@hboxb\hbox{}% hbox
+    \global\brl@document@emptyboxtrue%
+    %
+    \brl@document%
+  }
+}
+
+% patch
+\def\brl@@xcentercr{\addvspace{-\parskip}\leavevmode\@ifnextchar[\@icentercr\brl@document_skipsp}
+\def\brl@@icentercr[#1]{\@vspace@calcify{#1}\brl@document_skipsp}
+
+
+
+\def\brl@document_dospecial_bsbs_draw_tikz{% \\
+  \brl@document_exec_text_draw_tikz% append contents to hbox
+  \setbox\brl@document@boxa\vtop{\unvbox\brl@document@boxa\box\brl@document@hboxa}%
+  \setbox\brl@document@boxb\vtop{\unvbox\brl@document@boxb\box\brl@document@hboxb}%
+  \@ifnextchar[{\brl@document_bsbs_gobble_opt}{\brl@document}%
+}
+
+\@namedef{brl@document_dospecial_\string\nodepart}{%
+  \brl@document_exec_text_draw_tikz% append contents to hbox
+  \brl@document_exec_text_draw_tikz_end% append hbox to box, and make the box required
+  \nodepart%
+}
+
+\def\brl@document_text_egroup_draw_tikz{% We are inside { }.
+  %
+  \brl@document_text_egroup_sub% append font
+  \ifnum\brl@document@basegrouplevel=\currentgrouplevel%
+    %
+    \brl@tmpcmd% defined in \brl@document_text_egroup_sub
+    % 
+    \let\brl@document@currprependfont\empty% to avoid appending font twice.
+    \brl@document_exec_text_draw_tikz% append contents to hbox
+    \brl@document_exec_text_draw_tikz_end% append hbox to box, and make the box required
+    %
+  \else%
+    \global\setbox\z@\box\brl@document@boxa%
+    \global\setbox\@ne\box\brl@document@boxb%
+    \global\setbox\thr@@\box\brl@document@hboxa%
+    \global\setbox4\box\brl@document@hboxb%
+    \aftergroup\brl@document_text_egroup_draw_tikz_cont%
+  \fi%
+}
+
+\def\brl@document_text_egroup_draw_tikz_cont{% We are outside { }.
+  \brl@tmpcmd% defined in \brl@document_text_egroup_sub
+  \setbox\brl@document@boxa\box\z@%
+  \setbox\brl@document@boxb\box\@ne%
+  \setbox\brl@document@hboxa\box\thr@@%
+  \setbox\brl@document@hboxb\box4\relax%
+  \brl@document_text%
+}
+
+
+
+%% exec_text and append contents to hbox for texts.
+%%
+\def\brl@document_exec_text_draw_tikz{%
+  %
+  %
+  \brl@document_exec_text%
+  \brl@print{0}{0}{\brl@text@toks}{\brl@bse@width}% print@hbox
+  %
+  %
+  % make document@hboxa, document@hboxb
+  \setbox\brl@document@hboxa\hbox{\unhbox\brl@document@hboxa\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\unvbox\brl@print@boxa}}% hbox
+  \setbox\brl@document@hboxb\hbox{\unhbox\brl@document@hboxb\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\unvbox\brl@print@boxb}}% hbox
+  % 
+}%
+
+%% append hbox to box
+%%
+\def\brl@document_exec_text_draw_tikz_end{%
+  % make document@boxa, document@boxb
+  \setbox\brl@document@boxa\vtop{\unvbox\brl@document@boxa\box\brl@document@hboxa}%
+  \setbox\brl@document@boxb\vtop{\unvbox\brl@document@boxb\box\brl@document@hboxb}%
+  %
+  \edef\brl@document@boxname{brl@pgf@nodetext_\string\pgfnodepart\brl@pgf@boxname box}%
+  \ifcsname\brl@document@boxname a\endcsname%
+  \else%
+    \expandafter\newbox\csname\brl@document@boxname a\endcsname%
+    \expandafter\newbox\csname\brl@document@boxname b\endcsname%
+  \fi%
+  %
+  \copy\brl@document@boxb% dummy box to determine the size of the box.
+  %
+  \global\setbox\csname\brl@document@boxname a\endcsname\box\brl@document@boxa%
+  \global\setbox\csname\brl@document@boxname b\endcsname\box\brl@document@boxb%
+  %exit
+}
+
+% in draw mode
+% \tikz \...
+\def\brl@document_end_draw_tikz{% when \brl@document meets \begin
+  \brl@document_exec_text_draw_tikz%
+  %
+  % \brl@document_footnote% footnote is ignored here.
+  %
+  \brl@document@char% continue (\begin{tabular} etc.) 
+}
+
+
+\@namedef{brl@document_dospecial_\string\tikz@text@action}{%
+  % 
+}
+
+
+%
+% tikz matrix math common in draw and plot.
+%
+% codes are also in math_dospecial_\string\\ and math_dospecial_&
+%
+\protected\def\brl@document_tikz_math{%
+  %
+  \ifbrl@figure@plot%
+  \else% init for draw
+    % \setbox\brl@document@boxa\vbox{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+    % \setbox\brl@document@boxb\vbox{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+    % \global\setbox\brl@document@boxa\vbox{\hrule\@height\z@\@depth\z@}% all contents are below baseline.
+    % \global\setbox\brl@document@boxb\vbox{\hrule\@height\z@\@depth\z@}%
+    % \setbox\brl@document@boxa\vbox{}%\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+%    \setbox\brl@document@boxa\vbox{\hrule\@height\z@\@depth\z@}%
+    \setbox\brl@document@boxa\vbox{}%
+    \setbox\brl@document@boxb\vbox{}%\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight}%
+    \setbox\brl@document@hboxa\hbox{}% hbox
+    \setbox\brl@document@hboxb\hbox{}% hbox
+    \global\brl@document@emptyboxtrue%
+  \fi%
+  %
+  \bgroup%
+  %
+  %
+    % \@currenvir : automatrically set as tikzpicture
+    %
+    \brl@document@mathtoks{}%
+    %
+    \let\brl@document_math_checkalldigit\@gobble%
+    %
+    \brl@document_math%
+}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% draw tabular
+%%
+
+% in draw mode
+% \tabular \...
+\def\brl@document_end_draw_tabular{% when \brl@document meets \begin
+  \expandafter%
+  \brl@document_end_draw_tabular_egroup%
+  \brl@document@char% continue <- first expanded.
+}
+
+
+\def\brl@document_end_draw_tabular_egroup{%
+    \brl@document_exec_text_draw_tikz%
+    \global\setbox\z@\box\brl@document@hboxa%
+    \global\setbox\@ne\box\brl@document@hboxb%
+    \xdef\brl@tmpa{\brl@document@appendfont}%
+    \xdef\brl@tmpb{\brl@document@prependfont}%
+    \xdef\brl@tmpc{\brl@document@currappendfont}%
+    \xdef\brl@tmpd{\brl@document@currprependfont}%
+  \egroup%
+  \setbox\brl@document@hboxa\box\z@%
+  \setbox\brl@document@hboxb\box\@ne%
+  \bgroup%
+    \let\brl@document@appendfont\brl@tmpa%
+    \let\brl@document@prependfont\brl@tmpb%
+    \let\brl@document@currappendfont\brl@tmpc%
+    \let\brl@document@currprependfont\brl@tmpd%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% plot tikz
+%%
+
+% for each node
+\brl@def{brl@document_dospecial_\string\\}{brl@document_dospecial_\string\nodepart}\brl@end{%
+  \protected\def\brl@document_plot_tikz{%
+    % patch
+    \edef\brl@document@basegrouplevel{\the\currentgrouplevel}%
+    \let#1\brl@document_dospecial_bsbs_plot_tikz%
+    \let#2\brl@document_dospecial_nodepart_plot_tikz%
+    \let\brl@document_text_egroup\brl@document_text_egroup_plot_tikz%
+    \let\brl@document_end\brl@document_end_plot_tikz% if \brl@document encounters \begin{tikzpicture or tabular}, then \brl@document should continue.
+    % 
+    % init
+    \brl@document@plottoks{}%
+    %
+    \brl@document%
+  }
+}
+
+
+\def\brl@document_dospecial_bsbs_plot_tikz{%
+  \brl@document_exec_text%
+  \brl@text_appendbreaks{\brl@char@break_break}{0}%
+  \expandafter\brl@document_appendplottoks\expandafter{\the\brl@text@toks}%
+  \@ifnextchar[{\brl@document_bsbs_gobble_opt}{\brl@document}%
+}
+\def\brl@document_bsbs_gobble_opt[#1]{\brl@document}
+
+
+\def\brl@document_dospecial_nodepart_plot_tikz{%
+  \brl@document_exec_text%
+  \expandafter\brl@document_appendplottoks\expandafter{\the\brl@text@toks}%
+  \brl@print{0}{0}{\brl@document@plottoks}{\brl@bse@width}%
+  \nodepart%
+}
+
+\def\brl@document_text_egroup_plot_tikz{% We are inside { }.
+  %
+  \brl@document_text_egroup_sub%
+  \ifnum\brl@document@basegrouplevel=\currentgrouplevel%
+    %
+    \brl@tmpcmd% defined in \brl@document_text_egroup_sub
+    %
+    \let\brl@document@currprependfont\empty% to avoid appending font twice. 
+    \brl@document_exec_text%
+    \expandafter\brl@document_appendplottoks\expandafter{\the\brl@text@toks}%
+    \brl@print{0}{0}{\brl@document@plottoks}{\brl@bse@width}%
+    %
+  \else%
+    \xdef\brl@tmp{{\the\brl@document@plottoks}}%
+    \aftergroup\brl@document_text_egroup_plot_tikz_cont%
+  \fi%
+}
+
+\def\brl@document_text_egroup_plot_tikz_cont{% We are outside { }.
+  \brl@tmpcmd% defined in \brl@document_text_egroup_sub
+  \brl@document@plottoks\brl@tmp%
+  \brl@document_text%
+}
+
+% in plot mode
+% \tikz \...
+\def\brl@document_end_plot_tikz{% when \brl@document meets \begin
+  \brl@document_exec_text%
+  %
+  \expandafter\brl@document_appendplottoks\expandafter{\the\brl@text@toks}%
+  %
+  % \brl@document_footnote% footnote is ignored here.
+  %
+  \brl@document@char% continue (\begin etc.)
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% plot tabular
+%%
+
+% in plot mode
+% \tabular \...
+
+\def\brl@document_end_plot_tabular{% when \brl@document meets \begin
+  \expandafter%
+  \brl@document_end_plot_tabular_egroup%
+  \brl@document@char% continue <- first expanded.
+}
+
+\def\brl@document_end_plot_tabular_egroup{% when \brl@document meets \begin
+  \xdef\brl@tmpa{\brl@document@appendfont}%
+  \xdef\brl@tmpb{\brl@document@prependfont}%
+  \xdef\brl@tmpc{\brl@document@currappendfont}%
+  \xdef\brl@tmpd{\brl@document@currprependfont}%
+  %
+  \brl@env_plot_tabular_appendtoks% \append and \egroup
+  % 
+  %
+  %
+  \bgroup% <- \bgroup begins
+    \let\brl@document@appendfont\brl@tmpa%
+    \let\brl@document@prependfont\brl@tmpb%
+    \let\brl@document@currappendfont\brl@tmpc%
+    \let\brl@document@currprependfont\brl@tmpd%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\def\brl@document_dospecial_csend{%
+  %
+  %
+  \brl@document_indent%
+  \ifx\brl@env@currentlastchars\empty% default : \empty. only in proof circumstance, defined as \qedsymbol.
+    %
+  \else% text@toks never ends with breakable. 
+    {% Thus we obtain XXX + breakable{lineend}.
+      % 
+      \brl@document\brl@env@currentlastchars\brl@document@endtext%
+      \xdef\brl@tmp{{\brl@code_text_textmode\brl@char@breakable{{\brl@code_text_space\the\brl@text@toks}{\brl@code_text_space}{1}{3}}{\brl@char@break_lineend}{}}}% to avoid only qedsymbol
+    }%
+    %
+    %
+    \expandafter\brl@text_appendtoks\brl@tmp%
+    %
+  \fi%
+  %
+  \brl@print{\brl@document@leftmargin}{\brl@document@indent}{\brl@text@toks}{\brl@bse@width}%
+  %
+  \brl@document_footnote%
+  \global\brl@document@indenttrue%
+  \brl@orig@end%
+}
+
+
+
+\@namedef{brl@document_dospecial_\string\end}{\brl@document_dospecial_csend}
+
+
+\brl@def{brl@code_text_\string\qedsymbol}\brl@end{%
+  \@namedef{brl@document_dospecial_\string\qed}{%
+    %
+    \brl@document_indent%
+    \edef\brl@tmp{{\brl@code_text_textmode\brl@char@breakable{{#1}{\brl@code_text_space}{1}{0}}{\brl@char@break_lineend}{}}}% to avoid only qedsymbol
+    %
+    %
+    \expandafter\brl@text_appendtoks\brl@tmp%
+    \brl@print{\brl@document@leftmargin}{\brl@document@indent}{\brl@text@toks}{\brl@bse@width}%
+    %
+    \brl@document_footnote%
+    \global\brl@document@indenttrue%
+    %
+  }
+}
+
+
+%% \footnote, \footnotetext
+%%
+
+
+%% \footnote may be of the form
+%% \footnote{AAA
+%%
+%% BBB}
+\def\brl@document_text_egroup_footnote{% We are inside { }. 
+  %
+  \brl@document_text_egroup_sub%
+  \ifnum\brl@document@basegrouplevel=\currentgrouplevel%
+    \brl@tmpcmd% defined in \brl@document_text_egroup_sub
+    %
+    \let\brl@document@currprependfont\empty% to avoid appending font twice. 
+    \brl@document_indent%
+    \brl@print{\brl@document@leftmargin}{\brl@document@indent}{\brl@text@toks}{\brl@bse@width}% \brl@print_footnote
+    % exit with \egroup. -> \brl@document_text.
+  \else%
+    \aftergroup\brl@document_text_egroup_cont%
+  \fi%
+}
+
+%%
+%% note : in \footnote   {   ...},
+%% the first spaces are skipped while reading \footnote since it is cs.
+%% the second spaces are absorbed by \brl@document_text_skipsp.
+%%
+\def\brl@document_dospecial_footnote{%
+  \afterassignment\brl@document_dospecial_footnote_%
+  \let\brl@tmp% gobble \bgroup
+}
+
+\def\brl@document_dospecial_footnote_{%
+  \bgroup%
+    \let\brl@document@prevtext\empty%
+    \protected@edef\brl@tmp{{\brl@text_cmd_footnotemark{\@thefnmark}\brl@text_cmd_space}}%
+    %
+    \brl@document@toks\brl@tmp%
+    \global\brl@document@indenttrue% in a footnote, indent is forced.
+    % to do:
+    \protected@edef\@currentlabel{%
+       \csname p@footnote\endcsname\@thefnmark%
+    }%
+    \aftergroup\brl@document_text% \footnote{...}\brl@document_text
+    \edef\brl@document@basegrouplevel{\the\currentgrouplevel}%
+    \let\brl@document_text_egroup\brl@document_text_egroup_footnote%
+    \let\brl@document_footnote\empty% footnote in footnote is invalidated
+    \let\brl@print\brl@print_footnote% output is \brl@document@foottoks
+    \brl@document_text_skipsp% skip the first spaces in \footnote{   ...}
+}
+
+\def\brl@print_footnote#1#2#3#4{%
+  \edef\brl@tmp{{{#1}{#2}{\the#3}}}%
+  %
+  \expandafter\brl@document_appendfoottoks\brl@tmp%%
+  \brl@print_par%
+}
+
+\def\brl@document_dospecial_footnote_setmark_default{%
+  \stepcounter{footnote}%
+  \protected@xdef\@thefnmark{\thefootnote}%
+  \protected@edef\brl@tmp{{\brl@text_cmd_footnotemark{\@thefnmark}}}%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+}
+
+\def\brl@document_dospecial_footnote_setmark#1[#2]{%
+  {%
+    \c@footnote#2\relax%
+    \protected@xdef\@thefnmark{\thefootnote}%
+  }%
+  \protected@edef\brl@tmp{{\brl@text_cmd_footnotemark{\@thefnmark}}}%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  #1%
+}
+
+\@namedef{brl@document_dospecial_\string\footnote}{%
+  \@ifnextchar[{%
+    \brl@document_dospecial_footnote_setmark%
+    \brl@document_dospecial_footnote%
+  }{%
+    \brl@document_dospecial_footnote_setmark_default%
+    \brl@document_dospecial_footnote%
+  }%
+}
+
+\@namedef{brl@document_dospecial_\string\footnotetext}{%
+  \brl@document_dospecial_footnote%
+}
+
+\@namedef{brl@document_dospecial_\string\footnotemark}{%
+  \@ifnextchar[{%
+    \brl@document_dospecial_footnote_setmark%
+    \brl@document_text%
+  }{%
+    \brl@document_dospecial_footnote_setmark_default%
+    \brl@document_text%
+  }%
+}
+
+
+
+%%
+%% \brl@document_replacedef: #1 -> #2
+%%
+\def\brl@document_replacedef#1#2{%
+  \@namedef{brl@document_dospecial_\string#1}{%
+    \brl@document_appendtoks{#2}%
+    \brl@document_text%
+  }
+}
+
+
+\brl@document_replacedef{Ａ}{A}
+\brl@document_replacedef{Ｂ}{B}
+\brl@document_replacedef{Ｃ}{C}
+\brl@document_replacedef{Ｄ}{D}
+\brl@document_replacedef{Ｅ}{E}
+\brl@document_replacedef{Ｆ}{F}
+\brl@document_replacedef{Ｇ}{G}
+\brl@document_replacedef{Ｈ}{H}
+\brl@document_replacedef{Ｉ}{I}
+\brl@document_replacedef{Ｊ}{J}
+\brl@document_replacedef{Ｋ}{K}
+\brl@document_replacedef{Ｌ}{L}
+\brl@document_replacedef{Ｍ}{M}
+\brl@document_replacedef{Ｎ}{N}
+\brl@document_replacedef{Ｏ}{O}
+\brl@document_replacedef{Ｐ}{P}
+\brl@document_replacedef{Ｑ}{Q}
+\brl@document_replacedef{Ｒ}{R}
+\brl@document_replacedef{Ｓ}{S}
+\brl@document_replacedef{Ｔ}{T}
+\brl@document_replacedef{Ｕ}{U}
+\brl@document_replacedef{Ｖ}{V}
+\brl@document_replacedef{Ｗ}{W}
+\brl@document_replacedef{Ｘ}{X}
+\brl@document_replacedef{Ｙ}{Y}
+\brl@document_replacedef{Ｚ}{Z}
+
+\brl@document_replacedef{ａ}{a}
+\brl@document_replacedef{ｂ}{b}
+\brl@document_replacedef{ｃ}{c}
+\brl@document_replacedef{ｄ}{d}
+\brl@document_replacedef{ｅ}{e}
+\brl@document_replacedef{ｆ}{f}
+\brl@document_replacedef{ｇ}{g}
+\brl@document_replacedef{ｈ}{h}
+\brl@document_replacedef{ｉ}{i}
+\brl@document_replacedef{ｊ}{j}
+\brl@document_replacedef{ｋ}{k}
+\brl@document_replacedef{ｌ}{l}
+\brl@document_replacedef{ｍ}{m}
+\brl@document_replacedef{ｎ}{n}
+\brl@document_replacedef{ｏ}{o}
+\brl@document_replacedef{ｐ}{p}
+\brl@document_replacedef{ｑ}{q}
+\brl@document_replacedef{ｒ}{r}
+\brl@document_replacedef{ｓ}{s}
+\brl@document_replacedef{ｔ}{t}
+\brl@document_replacedef{ｕ}{u}
+\brl@document_replacedef{ｖ}{v}
+\brl@document_replacedef{ｗ}{w}
+\brl@document_replacedef{ｘ}{x}
+\brl@document_replacedef{ｙ}{y}
+\brl@document_replacedef{ｚ}{z}
+
+\brl@document_replacedef{１}{1}
+\brl@document_replacedef{２}{2}
+\brl@document_replacedef{３}{3}
+\brl@document_replacedef{４}{4}
+\brl@document_replacedef{５}{5}
+\brl@document_replacedef{６}{6}
+\brl@document_replacedef{７}{7}
+\brl@document_replacedef{８}{8}
+\brl@document_replacedef{９}{9}
+\brl@document_replacedef{０}{0}
+
+\brl@document_replacedef{　}{\brl@text_cmd_glue}
+
+\brl@document_replacedef{｡}{。}% U+FF61
+\brl@document_replacedef{､}{、}% U+FF64
+\brl@document_replacedef{･}{・}% U+FF65
+\brl@document_replacedef{‐}{-}% U+2010 全角ハイフン
+\brl@document_replacedef{─}{--}% U+2500 罫線
+\brl@document_replacedef{–}{--}% U+2013 en dash
+\brl@document_replacedef{—}{--}% U+2014 em dash
+\brl@document_replacedef{―}{--}% U+2015 horizontal bar
+\brl@document_replacedef{⸺}{--}% U+2E3A
+\brl@document_replacedef{－}{--}% U+FF0D 全角ハイフンマイナス
+\brl@document_replacedef{゠}{＝}% U+30A0 全角ダブルハイフン（二重ハイフン）
+\brl@document_replacedef{＃}{♯}
+\brl@document_replacedef{～}{〜}% fullwidth tilde -> 波線
+
+
+% \brl@document_replacedef{−}{マイナス}% U+2212 全角マイナス
+% \brl@document_replacedef{￥}{円}
+% % & is used both in jp and eng.
+% \brl@document_replacedef{＋}{プラス}
+% \brl@document_replacedef{＄}{ドル}
+% \brl@document_replacedef{§}{セクション}
+% \brl@document_replacedef{¶}{パラグラフ}
+% \brl@document_replacedef{£}{ポンド}
+% \brl@document_replacedef{©}{コピーライト}
+% \brl@document_replacedef{†}{ダガー}
+% \brl@document_replacedef{‡}{ダブルダガー}
+% 
+
+% used these symbols in texttt. Thus this replacement is executed in mecab.
+% \brl@document_replacedef{"}{''}% to do.
+% \brl@document_replacedef{\#}{♯}% symbol used in jp
+% \brl@document_replacedef{\%}{％}% symbol used in jp
+% \brl@document_replacedef{@}{＠}% symbol used in jp
+% \brl@document_replacedef{*}{＊}% symbol used in jp
+% \brl@document_replacedef{\$}{ドル}
+% \brl@document_replacedef{+}{プラス}
+% \brl@document_replacedef{=}{＝}% 半角イコール
+
+
+\def\brl@document_voiddef#1{%
+  \@namedef{brl@document_dospecial_\string#1}{%
+    \brl@document_text%
+  }
+}
+
+\brl@document_voiddef{\relax}
+\brl@document_voiddef{\brl@document}
+\brl@document_voiddef{\protect}
+\brl@document_voiddef{\hfil}
+\brl@document_voiddef{\hfill}
+
+
+
+
+%%
+%% \brl@document_replacemathdef: #1 -> $#2$
+%%
+\def\brl@document_replacemathdef#1#2{%
+  \@namedef{brl@document_dospecial_\string#1}{%
+    \brl@document_text$#2$%
+  }
+}
+
+\brl@document_replacemathdef{Α}{\Alpha}
+\brl@document_replacemathdef{Β}{\Beta}
+\brl@document_replacemathdef{Γ}{\Gamma}
+\brl@document_replacemathdef{Δ}{\Delta}
+\brl@document_replacemathdef{Ε}{\Epsilon}
+\brl@document_replacemathdef{Ζ}{\Zeta}
+\brl@document_replacemathdef{Η}{\Eta}
+\brl@document_replacemathdef{Θ}{\Theta}
+\brl@document_replacemathdef{Ι}{\Iota}
+\brl@document_replacemathdef{Κ}{\Kappa}
+\brl@document_replacemathdef{Λ}{\Lambda}
+\brl@document_replacemathdef{Μ}{\Mu}
+\brl@document_replacemathdef{Ν}{\Nu}
+\brl@document_replacemathdef{Ξ}{\Xi}
+\brl@document_replacemathdef{Ο}{\Omicron}
+\brl@document_replacemathdef{Π}{\Pi}
+\brl@document_replacemathdef{Ρ}{\Rho}
+\brl@document_replacemathdef{Σ}{\Sigma}
+\brl@document_replacemathdef{Τ}{\Tau}
+\brl@document_replacemathdef{Υ}{\Upsilon}
+\brl@document_replacemathdef{Φ}{\Phi}
+\brl@document_replacemathdef{Χ}{\Chi}
+\brl@document_replacemathdef{Ψ}{\Psi}
+\brl@document_replacemathdef{Ω}{\Omega}
+\brl@document_replacemathdef{α}{\alpha}
+\brl@document_replacemathdef{β}{\beta}
+\brl@document_replacemathdef{γ}{\gamma}
+\brl@document_replacemathdef{δ}{\delta}
+\brl@document_replacemathdef{ε}{\epsilon}
+\brl@document_replacemathdef{ζ}{\zeta}
+\brl@document_replacemathdef{η}{\eta}
+\brl@document_replacemathdef{θ}{\theta}
+\brl@document_replacemathdef{ι}{\iota}
+\brl@document_replacemathdef{κ}{\kappa}
+\brl@document_replacemathdef{λ}{\lambda}
+\brl@document_replacemathdef{μ}{\mu}
+\brl@document_replacemathdef{ν}{\nu}
+\brl@document_replacemathdef{ξ}{\xi}
+\brl@document_replacemathdef{ο}{\omicron}
+\brl@document_replacemathdef{π}{\pi}
+\brl@document_replacemathdef{ρ}{\rho}
+\brl@document_replacemathdef{σ}{\sigma}
+\brl@document_replacemathdef{τ}{\tau}
+\brl@document_replacemathdef{υ}{\upsilon}
+\brl@document_replacemathdef{φ}{\phi}
+\brl@document_replacemathdef{χ}{\chi}
+\brl@document_replacemathdef{ψ}{\psi}
+\brl@document_replacemathdef{ω}{\omega}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% text and math
+%%
+
+%% trigger of math
+\newif\ifbrl@document@dispmath% This flag is used only in $ to check whether $ or $$
+
+
+% default mathfont
+\def\brl@document_math_setnormalfont{\def\brl@document_math@currfont{\brl@math_cmd_normalfont}}
+\brl@document_math_setnormalfont% default
+
+\let\brl@document_math@version\math@version% default
+
+\@namedef{brl@document_dospecial_$}{%$
+  \brl@futurelet\brl@document@mathchar\brl@document_dospecial_dollar%
+}
+
+\def\brl@document_dospecial_dollar{%
+  \ifx\brl@document@mathchar$%$ -> $$
+    \expandafter\brl@document_dospecial_eq%
+  \else%
+    \expandafter\brl@document_dospecial_dollar_%
+  \fi%
+}
+
+\def\brl@document_dospecial_dollar_{%
+  \bgroup%
+    \brl@document@dispmathfalse% single $, which will be checked in $ in the sequel
+    \let\brl@document@alldigit_set\brl@document@alldigit_set_number%
+    \def\brl@document_math_checkalldigit{\brl@document_math_checkalldigit_init}%
+    %
+    \brl@document@mathtoks{}%
+    %
+    \brl@document_math_normalfont%
+}
+
+
+\def\brl@document_dospecial_eq${% $$
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  \bgroup%
+    \brl@document@dispmathtrue% double $, which will be checked in $ in the sequel
+    \let\brl@document_math_checkalldigit\@gobble%
+    % 
+    \def\@currenvir{gather*}%
+    \brl@document@mathtoks{}%
+    \brl@document@mathenvtoks{}%
+    %
+    %
+    \brl@document_math_normalfont%
+}
+
+\@namedef{brl@document_dospecial_\string\[}{%\]
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  \bgroup%
+    \let\brl@document_math_checkalldigit\@gobble%
+    %
+    \def\@currenvir{gather*}%
+    \brl@document@mathtoks{}%
+    \brl@document@mathenvtoks{}%
+    %
+    %
+    %
+    \brl@document_math_normalfont%
+}
+
+
+
+\def\brl@document_begindef#1#2{%
+  \@namedef{brl@document@begin_#1}{%
+    \bgroup%
+      %
+      \brl@document_math@starredfalse%
+      \global\brl@document_math@eqnswtrue%
+      \def\brl@document_math_dospecial_label{\brl@document_math_withlabel}%
+      %
+      \let\brl@document_math_checkalldigit\@gobble%
+      %
+      \def\@currenvir{#2}%
+      \brl@document@mathtoks{}%
+      \brl@document@mathenvtoks{}%
+      %
+      %
+      \brl@document_math_normalfont%
+  }%
+  \expandafter\let\csname #1\endcsname\empty%
+  \expandafter\let\csname end#1\endcsname\empty%
+}
+
+
+\def\brl@document_beginstardef#1#2{%
+  \@namedef{brl@document@begin_#1}{%
+    \bgroup%
+      %
+      \brl@document_math@starredtrue%
+      \def\brl@document_math_dospecial_label{\brl@document_math_withlabel}%
+      %
+      \let\brl@document_math_checkalldigit\@gobble%
+      %
+      \def\@currenvir{#2}%
+      \brl@document@mathtoks{}%
+      \brl@document@mathenvtoks{}%
+      %
+      %
+      \brl@document_math_normalfont%
+    }%
+  \expandafter\let\csname #1\endcsname\empty%
+  \expandafter\let\csname end#1\endcsname\empty%
+}
+
+% equation equation* align align*
+% gather gather* alignat alignat*
+% multline multline* flalign flalign*
+
+\brl@document_begindef{equation}{gather}
+\brl@document_beginstardef{equation*}{gather*}
+\brl@document_begindef{gather}{gather}
+\brl@document_beginstardef{gather*}{gather*}
+\brl@document_begindef{align}{align}
+\brl@document_beginstardef{align*}{align*}
+\brl@document_begindef{eqnarray}{align}
+\brl@document_beginstardef{eqnarray*}{align*}
+
+%%
+%% \brl@document_math
+%%
+%% input : \brl@document@alldigit_set : required only for textmath
+%%                                   _number or _dollar : distinguish whether only numbers or not.
+%%         \brl@document_math_checkalldigit : \@gobble for circumstances. checkalldigit_init for textmath.
+%%         \@currenvir{XXXX} : required only for circumstances
+%%
+%%         \brl@document@mathtoks{}
+%%         \brl@document@mathenvtoks{} : required only for circumstances
+%%
+%%         \brl@document_math@labelname : \empty required only for circumstances with eqnum
+%%         \brl@document_math@currentlabel : \p@equation\theequation required only for circumstances with eqnum
+%%
+%%         \brl@document_math_dospecial_label : required only for circumstances
+%% with eqnum     \brl@document_math_withlabel -> {\mathtoks\cmd_label{labelname}{\@currentlabel}}{lastchar}{texted tag}
+%% without eqnum  \edef\brl@tmpchar{{\brl@document@lastchar}{}} -> {\mathtoks}{lastchar}{}
+%% in mathmode    \let\brl@tmpchar\empty -> {\mathtoks}
+%%
+%% in \\, \cr, \end, the following is executed.
+%%      \edef\brl@tmptoks{\the\brl@document@mathtoks}%
+%%      \ifx\brl@tmptoks\empty\else
+%%          \brl@document_math_dospecial_label
+%%          \edef\brl@tmp{{{\brl@tmptoks}\brl@tmpchar}}
+%%          \expandafter\brl@document_appendmathenvtoks\brl@tmp
+%%
+%%
+%% note : called as the following form
+%%
+%% \bgroup\brl@document_math
+%%
+%% Thus \brl@document_math ended with \egroup.
+%%
+%%
+%% output : \brl@document@lastchar
+%%
+
+
+
+%% require normalfont before X :
+%% \overleftarrow{X}, rightarrow, leftrightarrow,
+%% \underlefarrow{X}
+%% \underbrace{X}, \overbrace{X}
+%%
+%% \begin{...} X... \end{...} \lastfont <- lastfont is added (pmatrix etc.)
+%% \\ X
+%% \cr X
+%% & X
+%% \sqrt[X]{Y}
+
+
+%% obey the previous fonts :
+%% \hat{X}, \tilde, \dot, \ddot, \dddot, \mathring, etc.
+%% \frac{X}{Y}
+%% _{X}
+%% ^{X}
+%% \binom{X}{Y}
+%% \sqrt{X}
+%% \xrightarrow
+
+
+%% default normalfont
+%%
+%% the place where the lastfont is inserted :
+%% 
+%% $$ \lastfont
+%% $  \lastfont
+%% \[ \lastfont
+%% \begin{...*}  \lastfont
+%% \begin{...}   \lastfont
+%% \tikz_math    \lastfont
+%% \egroup       \lastfont
+%% \end{exitenv} \lastfont
+%% \end{cases*}  \lastfont
+%% \intertext{...} \lastfont
+%%
+%%
+%% change lastfont :
+%% \normalfont
+%% \bf
+%% \cal
+%% \frak
+%% \rm
+
+%% example :
+%% \bf 2\dot{b.}a 1.2{\cal aa}2\frac{\cal a}{b}
+%% ->
+%% \brl@math_cmd_bf 2\dot {b.}a1.2\brl@math_cmd_cal aa\brl@math_cmd_bf 2\frac {\brl@math_cmd_cal a}{b}
+
+
+
+%%
+%% \brl@document_getmathchar\exit\exitb\exite XYZZZZZ
+%%
+%% output : \brl@document@mathchar : \string X
+%% expand XXXXX until it is expanded to
+%% either a primitive, brl_command, char, {, }
+%% if brl_command which is dospecial, then reserve it in \mathdo.
+%%
+
+
+
+\def\brl@document_getmathchar#1#2#3{%
+  \def\brl@document_getmathchar_exit{#1}%
+  \def\brl@document_getmathchar_exitb{#2}%
+  \def\brl@document_getmathchar_exite{#3}%
+  \let\brl@document_getmathchar@prevchar0% anything which is not a cs.
+  \let\brl@document_mathdo\empty%
+  \brl@document_getmathchar_loop%
+}
+\def\brl@document_getmathchar_loop{%
+  \brl@futurelet\brl@document_getmathchar@char\brl@document_getmathchar_group% first skip space
+}
+
+
+\def\brl@document_getmathchar_group{%
+  \ifx\brl@document_getmathchar@char\egroup% check }.
+    \def\brl@document_next{\brl@document_getmathchar_exite}%
+  \else%
+    \ifx\brl@document_getmathchar@char\bgroup% check {.
+      \def\brl@document_next{\brl@document_getmathchar_exitb}%
+    \else%
+      \def\brl@document_next{\brl@document_getmathchar_char}%
+    \fi%
+  \fi%
+  \brl@document_next%
+}
+
+
+\long\def\brl@document_getmathchar_char#1{%
+  \def\brl@document_next{\brl@document_getmathchar_exit#1}%
+  \edef\brl@document@mathchar{\string#1}%
+  \ifcsname brl@document_math_dospecial_\brl@document@mathchar\endcsname% dospecial -> exit
+    \edef\brl@document_mathdo{\expandafter\noexpand\csname brl@document_math_dospecial_\brl@document@mathchar\endcsname}%
+  \else%
+    \ifcat\relax\noexpand#1% non cs -> exit
+      \ifcsname brl@code_math_\brl@document@mathchar\endcsname% char -> exit
+      \else%
+        \ifx\brl@document@mathchar\brl@document_getmathchar@prevchar% primitive
+          \PackageError{jmbraille}{\brl@document@mathchar\brl@@space can not be expanded. \brl@document@mathchar\brl@@space may be a primitive}{}%
+        \else%
+          \let\brl@document_getmathchar@prevchar\brl@document@mathchar% macro
+          \def\brl@document_next{\expandafter\brl@document_getmathchar_loop#1}% cs & non primitive
+        \fi%
+      \fi%
+    \fi%
+  \fi%
+  \brl@document_next%
+}
+
+
+%%
+%% input : \brl@document_math_checkalldigit
+%%
+\protected\def\brl@document_math_normalfont{%
+  \brl@document_math_setnormalfont%
+  \brl@document_getmathchar\brl@document_math_\brl@document_math_bgroup\brl@document_math_egroup%
+}
+
+\protected\def\brl@document_math{%
+  \brl@document_getmathchar\brl@document_math_\brl@document_math_bgroup\brl@document_math_egroup%
+}
+
+\def\brl@document_math_#1{%
+  \brl@document_math_checkalldigit{#1}%
+  \ifx\brl@document_mathdo\empty% , and . is treated in dospecial
+    \gdef\brl@document@lastchar{X}% default X
+    \brl@document_appendmathtoks{#1}%
+    \expandafter\brl@document_math%
+  \else%
+    \expandafter\brl@document_mathdo%
+  \fi%
+}
+
+
+\def\brl@document_math_egroup{% We are inside { }.
+  \xdef\brl@tmp{{\the\brl@document@mathtoks}}%
+  \aftergroup\brl@document_math_egroup_cont%
+}
+
+\def\brl@document_math_egroup_cont{% We are outside { }.
+  \ifx\brl@tmp\brl@@empty%
+    \brl@document_appendmathtoks{\brl@math_cmd{empty}{}}% {}^t etc.
+  \else%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+  \fi%
+  \brl@document_math%
+}
+
+
+\def\brl@document_math_bgroup{%
+  \afterassignment\brl@document_math_bgroup_cont%
+  \let\brl@tmp% gobble \bgroup
+}
+  
+\def\brl@document_math_bgroup_cont{%
+  \let\brl@document@alldigit_set\brl@document@alldigit_set_dollar%
+  \let\brl@document_math_checkalldigit\@gobble%
+  \bgroup%
+    \brl@document@mathtoks{}%
+    \brl@document_math%
+}
+
+
+%
+% once nondigit appears, then, there are some nondigits.
+%
+\def\brl@document_math_checkalldigit_init#1{%
+  \ifcsname brl@document_dospecial_checkalldigit@\string#1\endcsname% 0-9,$,normalfont
+    %
+  \else%
+    \let\brl@document@alldigit_set\brl@document@alldigit_set_dollar% this equation includes the others than digits.
+    \let\brl@document_math_checkalldigit\@gobble% we dont need this check anymore.
+  \fi%
+}
+
+
+\@namedef{brl@document_math_dospecial_\string\brl@document_math@end}{}
+
+
+
+%% in the case \muskip-1mu\},
+%% \} is expanded as \relax\brl@document\}
+%% thus need to gobble `\relax' and `\brl@document'.
+
+\@namedef{brl@document_math_dospecial_\string\mskip}{%
+  \afterassignment\brl@document_math%
+  \muskip\z@%
+}
+
+\@namedef{brl@document_math_dospecial_\string\mkern}{%
+  \afterassignment\brl@document_math%
+  \muskip\z@%
+}
+
+\@namedef{brl@document_math_dospecial_\string\relax}{%
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_\string\brl@document}{%
+  \brl@document_math%
+}
+
+
+\@namedef{brl@document_math_dospecial_\string\text}#1{%
+  {%
+    \brl@document#1\brl@document@enddoc%
+%    \xdef\brl@tmp{{\text{\the\brl@document@toks}}}% documented
+    \xdef\brl@tmp{{\brl@math_cmd{text}{\the\brl@document@toks}}}% documented
+  }%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  %
+  % \brl@document@lastchar is determined in #1
+  %
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_\string\intertext}#1{%$
+  \brl@document_math_dospecial_lineend_ifneeded%
+  {%
+    \brl@document#1\brl@document@enddoc%
+%    \xdef\brl@tmp{{{\intertext{\the\brl@document@toks}}{.}{}}}% the lastchar is `.' to set \brl@math@contafterfalse
+    \xdef\brl@tmp{{{\brl@math_cmd{intertext}{\the\brl@document@toks}}{.}{}}}% the lastchar is `.' to set \brl@math@contafterfalse
+  }%
+  \expandafter\brl@document_appendmathenvtoks\brl@tmp%
+  % 
+  \brl@document_math%
+}
+
+
+\@namedef{brl@document_math_dospecial_\string\mbox}#1{%
+  {%
+    \brl@document#1\brl@document@enddoc%
+    \xdef\brl@tmp{{\brl@math_cmd{text}{\the\brl@document@toks}}}%
+  }%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  %
+  % \brl@document@lastchar is determined in #1
+  %
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_\string\ref}#1{%
+  \ifcsname r@#1\endcsname%
+    \expandafter\let\expandafter\brl@tmp\csname r@#1\endcsname%
+    \edef\brl@tmp{\expandafter\@firstoftwo\brl@tmp}% documented in tag.
+    {%
+      \expandafter\brl@document\brl@tmp\brl@document@enddoc%
+      \xdef\brl@tmp{{\brl@math_cmd{text}{\the\brl@document@toks}}}%
+    }%
+    % \brl@document@lastchar is determined in #1
+  \else%
+    \def\brl@tmp{{\brl@math_cmd{text}{\brl@text_cmd_transopen ??\brl@text_cmd_transclose}}}%
+%    \gdef\brl@document@lastchar{\brl@text_cmd_transclose}%
+    \gdef\brl@document@lastchar{X}%
+  \fi%
+  %
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  %
+  %
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_\string\eqref}#1{%
+  \ifcsname r@#1\endcsname%
+    \expandafter\let\expandafter\brl@tmp\csname r@#1\endcsname%
+    \edef\brl@tmp{\expandafter\@firstoftwo\brl@tmp}%
+    {%
+      \expandafter\brl@document\brl@tmp\brl@document@enddoc%
+      % \xdef\brl@tmp{{\text{\brl@text_cmd_eqquote{\the\brl@document@toks}}}}%
+      \xdef\brl@tmp{{\brl@math_cmd{text}{\tagform@{\the\brl@document@toks}}}}%
+    }%
+    % \brl@document@lastchar is determined in #1
+  \else%
+    \def\brl@tmp{{\brl@math_cmd{text}{\brl@text_cmd_transopen ??\brl@text_cmd_transclose}}}%
+    % \gdef\brl@document@lastchar{\brl@text_cmd_transclose}%
+    \gdef\brl@document@lastchar{X}%
+  \fi%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  %
+  %
+  \brl@document_math%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \label
+%% \tag
+%% \notag
+
+\@namedef{brl@document_math_dospecial_\string\tag}{%
+  \relax%
+  \ifbrl@document_math@tag%
+    \invalid@tag{Multiple \string\tag}%
+  \else%
+    \global\brl@document_math@tagtrue%
+    \brl@document_math_dospecial_nonumber%
+  \fi%
+  %
+  \@ifstar\brl@document_math_dospecial_tag\brl@document_math_dospecial_tag_%
+}
+
+\def\brl@document_math_dospecial_tag#1{%
+  \gdef\brl@document_math@df_tag{%
+    \edef\brl@document_math@tag{#1}%
+    \def\@currentlabel{#1}%
+  }%
+  \brl@document_math%
+}
+\def\brl@document_math_dospecial_tag_#1{%
+  \gdef\brl@document_math@df_tag{%
+    \edef\brl@document_math@tag{\brl@document_math@tagform{#1}}%
+    \edef\@currentlabel{\unexpanded\expandafter{\p@equation{#1}}}%
+  }%
+  \brl@document_math%
+}
+
+
+\def\brl@document_math_dospecial_nonumber{%
+  \ifbrl@document_math@eqnsw%
+    \ifx\brl@document_math@incr_eqnum\empty%
+      \addtocounter{equation}\m@ne%
+    \fi
+  \fi
+  \let\brl@document_math@print_eqnum\empty%
+  \let\brl@document_math@incr_eqnum\empty%
+  \global\brl@document_math@eqnswfalse%
+}
+\@namedef{brl@document_math_dospecial_\string\nonumber}{%
+  \brl@document_math_dospecial_nonumber%
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_\string\label}#1{%
+  \ifx\brl@document_math@df_label\empty\else%
+    \@amsmath@err{Multiple \string\label's: %
+      label '\brl@document_math@df_label' will be lost}%
+  \fi%
+  \gdef\brl@document_math@df_label{#1}%
+  \brl@document_math%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@document_math@withopt_array{}
+\def\brl@document_math@withopt_subarray{}
+
+%
+% mathenv inside the mathmode
+%
+\@namedef{brl@document_math_dospecial_\string\begin}#1{%
+  \bgroup%
+    \def\@currenvir{#1}%
+    %\
+    \def\brl@document_math_dospecial_label{\brl@document_math_withoutlabel}% array etc. does not need label, since we were already in mathmode.
+    %
+    \brl@document@mathtoks{}%
+    %
+    %
+    \ifcsname brl@document_math@withopt_\@currenvir\endcsname% requires opt.
+      \expandafter\brl@document_math_withopt% with opt.
+    \else%
+      \brl@document@mathenvtoks{}% without opt.
+      \expandafter\brl@document_math_normalfont%
+    \fi%
+}
+
+\def\brl@document_math_withopt{%
+  \@ifnextchar[{\brl@document_math_withopt_}{\brl@document_math_withopt_[]}%
+}
+
+\def\brl@document_math_withopt_[#1]#2{%  #1 : position (ignore), #2 : format
+  \brl@document@mathenvtoks{{#2}}%
+  \brl@document_math_normalfont%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% exit mathmode :
+%
+%
+%
+% begin{...} ... \end{...} :
+% gather, align
+% gather*, align*
+% Xmatrix
+% array
+% cases
+% split
+
+%% 
+%% finish the line :
+\def\brl@document_math_dospecial_lineend{%
+  \edef\brl@tmptoks{\the\brl@document@mathtoks}%
+  %
+  % \brl@tmptoks
+  % \document_math@currtag
+  \brl@document_math_dospecial_label%
+  % env without tag (pmatrix etc.) : {{}}
+  % env with tag : {{}{lastchar}{tag}} {{\label{}{}}{lastchar}{tag}}
+  %
+  \edef\brl@tmp{\brl@tmptoks\document_math@currtag}%
+  \ifx\brl@tmp\empty% both the content and the tag are empty.
+    % append nothing.
+  \else%
+    \edef\brl@tmp{{{\brl@tmptoks}\brl@tmpchar}}%
+    \expandafter\brl@document_appendmathenvtoks\brl@tmp%
+  \fi%
+  %
+  \brl@document@mathtoks{}% clear. mathtoks may have been only \normalfont.
+}
+
+%
+% if the line is empty, do not append it.
+%
+\def\brl@document_math_dospecial_lineend_ifneeded{%
+  \edef\brl@tmptoks{\the\brl@document@mathtoks}%
+  %
+  \ifx\brl@tmptoks\empty% if empty, nothing is added to mathenvtoks.
+  \else%
+    \brl@document_math_dospecial_label%
+    \edef\brl@tmp{{{\brl@tmptoks}\brl@tmpchar}}%
+    \expandafter\brl@document_appendmathenvtoks\brl@tmp%
+  \fi%
+  %
+  \brl@document@mathtoks{}% clear. mathtoks may have been only \normalfont.
+}
+
+
+\@namedef{brl@document_math_dospecial_\string\end}#1{%$ % ignore #1. to do: #1\neq\@currenvir
+% \@checkend{#1}% equation is replaced by gather. thus this can not be applied.
+  %
+  \brl@document_math_dospecial_lineend%
+  %
+  \ifcsname brl@document_math_exitenv@\@currenvir\endcsname%
+    %
+    %
+    %
+    \xdef\brl@tmp{\brl@document_appendtoks{\brl@text_cmd_env{\@currenvir}{\the\brl@document@mathenvtoks}{\brl@document@lastchar}}%
+      \brl@document_text}% exit to textmode.
+  \else%
+    %
+    %
+    \xdef\brl@tmp{\brl@document_appendmathtoks{\brl@math_cmd_env{\@currenvir}{\the\brl@document@mathenvtoks}}%
+      \brl@document_math}% exit to mathmode.
+    % append the envtoks to the mathtoks since matrix etc. is merely an element.
+    %
+  \fi%
+  %
+  \egroup%
+  \brl@tmp%
+}
+
+\@namedef{brl@document_math_exitenv@gather}{}
+\@namedef{brl@document_math_exitenv@gather*}{}
+\@namedef{brl@document_math_exitenv@align}{}
+\@namedef{brl@document_math_exitenv@align*}{}
+
+
+% math ends with $
+
+\@namedef{brl@document_math_dospecial_$}{%$
+  \ifbrl@document@dispmath% math starts with $$
+    \expandafter\brl@document_math_dospecial_eq%
+  \else%
+    \expandafter\brl@document_math_dospecial_dollar%
+  \fi%
+}
+
+
+
+\def\brl@document_math_dospecial_eq${% #1 must be $
+    %
+    \xdef\brl@tmp{{\brl@text_cmd_env{gather*}{{\the\brl@document@mathtoks}{}{}}{\brl@document@lastchar}}}%
+  \egroup%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+\@namedef{brl@document_math_dospecial_\string\]}{%$
+    %
+    \xdef\brl@tmp{{\brl@text_cmd_env{gather*}{{\the\brl@document@mathtoks}{}{}}{\brl@document@lastchar}}}%
+  \egroup%
+  \expandafter\brl@document_appendtoks\brl@tmp%
+  \brl@document_text%
+}
+
+% textmath
+%
+% \brl@document_math_dospecial_dollar
+
+\@namedef{brl@document@notmath_bin/times/}{\brl@document_appendtoks{×}\brl@document_text}
+\@namedef{brl@document@notmath_rel/greater/}{\brl@document_appendtoks{＞}\brl@document_text}
+\@namedef{brl@document@notmath_rel/less/}{\brl@document_appendtoks{＜}\brl@document_text}
+\@namedef{brl@document@notmath_rel/equal/}{\brl@document_appendtoks{=}\brl@document_text}
+\@namedef{brl@document@notmath_symbol/square/}{\brl@document_text\qed}
+\@namedef{brl@document@notmath_arrow/space/mainarrow/lefttarrow/}{\brl@document_appendtoks{←}\brl@document_text}
+\@namedef{brl@document@notmath_arrow/space/mainarrow/rightarrow/}{\brl@document_appendtoks{→}\brl@document_text}
+\@namedef{brl@document@notmath_arrow/space/mainarrow/leftrightarrow/}{\brl@document_appendtoks{↔}\brl@document_text}
+\@namedef{brl@document@notmath_mainArrow/Lefttarrow/}{\brl@document_appendtoks{⇐}\brl@document_text}
+\@namedef{brl@document@notmath_mainArrow/Rightarrow/}{\brl@document_appendtoks{⇒}\brl@document_text}
+\@namedef{brl@document@notmath_mainArrow/Leftrightarrow/}{\brl@document_appendtoks{⇔}\brl@document_text}
+
+
+%
+% if the content is pure number -> \cmd_number
+%                     otherwise -> \cmd_dollar
+%
+\def\brl@document@alldigit_set_number{\brl@text_cmd_number\brl@tmp}
+\def\brl@document@alldigit_set_dollar{\brl@text_cmd_dollar\brl@tmp{\brl@document@lastchar}}
+%
+%
+%
+\def\brl@document_math_cmd#1#2{#1/#2/}%
+
+\def\brl@document_math_dospecial_dollar{%
+  {%
+    \edef\brl@tmp{\the\brl@document@mathtoks}%
+    \xdef\brl@tmp{{\brl@tmp}}%
+    \let\brl@math_cmd\brl@document_math_cmd%
+    \xdef\brl@tmpnotmath{\brl@tmp}%
+  }%
+  %
+  \ifcsname brl@document@notmath_\detokenize\brl@tmpnotmath\endcsname%
+    \xdef\brl@document_next{\csname brl@document@notmath_\detokenize\brl@tmpnotmath\endcsname}%
+  \else%
+    %
+    % \brl@document_math_setarrows%
+    %
+    % \brl@document@alldigit_set is either `number' or `dollar'
+    %
+    %
+    \xdef\brl@document_next{\brl@document_appendtoks{\brl@document@alldigit_set}\brl@document_text}%
+    %
+    %
+  \fi%
+  %
+  %
+  \egroup%
+  \brl@document_next%
+}
+
+
+
+
+
+%
+% output : \brl@tmpchar <- {lastchar}{label}
+%          \brl@tmptoks <- toks
+%
+%          algorithm is from amsmath.
+%
+%\def\brl@document_math@tagform#1{(#1)}
+\def\brl@document_math@tagform#1{\tagform@{#1}}
+
+\newif\ifbrl@document_math@tag
+\newif\ifbrl@document_math@eqnsw
+\newif\ifbrl@document_math@starred
+\let\brl@document_math@df_label\empty
+\let\brl@document_math@df_tag\empty
+
+\def\brl@document_math@print_eqnum_orig{%
+  \edef\brl@document_math@tag{\brl@document_math@tagform\theequation}%
+}
+\def\brl@document_math@incr_eqnum_orig{%
+  \refstepcounter{equation}%
+  \let\brl@document_math@incr_eqnum\empty%
+}
+\let\brl@document_math@print_eqnum\brl@document_math@print_eqnum_orig
+\let\brl@document_math@incr_eqnum\brl@document_math@incr_eqnum_orig
+
+
+\def\brl@document_math_withoutlabel{%
+  \let\brl@tmpchar\empty%
+  \let\document_math@currtag\empty%
+}% array etc. d
+
+\def\brl@document_math_withlabel{%
+  %
+  % tag
+  \ifbrl@document_math@starred%
+    \brl@document_math_dospecial_nonumber%
+  \fi%  
+  %
+  \let\brl@document_math@tag\empty%
+  \ifbrl@document_math@eqnsw%
+    \brl@document_math@incr_eqnum%
+    \brl@document_math@print_eqnum%
+  \else%
+    \ifbrl@document_math@tag%
+      \brl@document_math@df_tag%
+      \global\let\brl@document_math@df_tag\empty%
+      \global\brl@document_math@tagfalse%
+    \fi%
+  \fi%
+  \let\brl@document@label_lastchar\brl@document@lastchar% save because it is changed globally in the following:
+  \ifx\brl@document_math@tag\empty%
+    \let\document_math@currtag\empty%
+  \else%
+    {%
+      \expandafter\brl@document\brl@document_math@tag\brl@document@enddoc%
+      \xdef\document_math@currtag{\the\brl@document@toks}% documented. texted in appendmath
+      %
+    }%
+  \fi%
+  \edef\brl@tmpchar{{\brl@document@label_lastchar}{\document_math@currtag}}%
+  \ifbrl@document_math@starred%
+  \else%
+    \global\brl@document_math@eqnswtrue%
+  \fi%
+  %
+  % label
+  \ifx\brl@document_math@df_label\empty%
+  \else%
+    \edef\brl@tmptoks{\brl@tmptoks\brl@math_cmd_label{\brl@document_math@df_label}{\@currentlabel}}%
+    \global\let\brl@document_math@df_label\empty%
+  \fi%
+  % 
+  %
+  \let\brl@document_math@print_eqnum\brl@document_math@print_eqnum_orig%
+  \let\brl@document_math@incr_eqnum\brl@document_math@incr_eqnum_orig%
+}
+
+
+
+\@namedef{brl@document_math_dospecial_\string\tikz@lib@matrix@startup}% for draw_tikz
+{\tikz@lib@matrix@startup\brl@document_math}% to do : \let may comes next.
+
+
+\def\brl@document_math_dospecial_setmatrix{%
+    % 
+    %
+    \xdef\brl@tmp{{\brl@text_cmd_dollar{\the\brl@document@mathtoks}{\brl@document@lastchar}}}%
+  \egroup%
+  %
+  %
+  \brl@document@toks\brl@tmp% do not need to \expandafter\brl@document_appendtoks\brl@tmp%
+  \ifbrl@figure@plot%
+    \brl@document_exec_text% for plot_tikz
+    \brl@print{0}{0}{\brl@text@toks}{\brl@bse@width}% for plot_tikz
+  \else%
+    %
+    \brl@document_exec_text_draw_tikz% for draw_tikz
+    \brl@document_exec_text_draw_tikz_end% for draw_tikz
+  \fi%
+}
+
+\@namedef{brl@document_math_dospecial_\string\cr}{%
+  % 
+  \brl@document_math_dospecial_lineend%
+  \brl@document_math_normalfont%
+}
+
+\@namedef{brl@document_math_dospecial_\string\\}{%$
+  %
+  \ifx\@currenvir\brl@@tikzpicture% for tikz
+    %
+    \brl@document_math_dospecial_setmatrix% for tikz
+    \def\brl@document_next{\\}% for tikz
+  \else%
+    % 
+    \brl@document_math_dospecial_lineend%
+    \def\brl@document_next{\new@ifnextchar[{\brl@document_math_gobble_opt}{\brl@document_math_normalfont%
+      }}%
+  \fi%
+  \brl@document_next%
+}
+
+
+\@namedef{brl@document_math_dospecial_&}{%$
+  %
+  %
+  %
+  \ifx\@currenvir\brl@@tikzpicture% for draw_tikz
+    %
+    %
+    \brl@document_math_dospecial_setmatrix% for draw_tikz
+    \expandafter\pgfmatrixnextcell% for draw_tikz
+  \else%
+    \csname brl@document_math_dospecial@ampersand_\@currenvir\expandafter\endcsname%
+  \fi%
+}
+
+\def\brl@document_math_dospecial@ampersand_matrix{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}%
+\def\brl@document_math_dospecial@ampersand_bmatrix{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_Bmatrix{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_pmatrix{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_vmatrix{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_Vmatrix{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_cases{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_dcases{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_rcases{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_drcases{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+\def\brl@document_math_dospecial@ampersand_array{\brl@document_appendmathtoks{&}\brl@document_math_normalfont}
+%%
+%% \brl@math_cmd_align_ampersand is to be set as \cs in the parser
+%%
+%% explicitly append \normalfont
+%%
+\def\brl@document_math_dospecial@ampersand_aligned{\brl@document_math\brl@math_cmd_normalfont}
+\def\brl@document_math_dospecial@ampersand_split{\brl@document_math\brl@math_cmd_normalfont}
+\def\brl@document_math_dospecial@ampersand_align{\brl@document_math\brl@math_cmd_normalfont}
+\@namedef{brl@document_math_dospecial@ampersand_align*}{\brl@document_math\brl@math_cmd_normalfont}
+
+\brl@def{brl@document_math_dospecial@ampersand_cases*}\brl@end{%
+  \@namedef{brl@document_math_dospecial@ampersand_dcases*}{#1}%
+}
+\brl@def{brl@document_math_dospecial@ampersand_cases*}\brl@end{%
+  \@namedef{brl@document_math_dospecial@ampersand_rcases*}{#1}%
+}
+\brl@def{brl@document_math_dospecial@ampersand_cases*}\brl@end{%
+  \@namedef{brl@document_math_dospecial@ampersand_drcases*}{#1}%
+}
+\brl@def{brl@document_dospecial_\string\end}{brl@document_dospecial_\string\\}\brl@end{%
+\@namedef{brl@document_math_dospecial@ampersand_cases*}{%
+  \brl@document_math_setnormalfont%
+  \bgroup%
+    \let#1\brl@document_dospecial_casesstar_end%
+    \let#2\brl@document_dospecial_casesstar_bsbs%
+    \brl@document_skipsp%
+}
+}
+
+    
+\def\brl@document_dospecial_casesstar_end#1{% ignore #1. to do: #1\neq\@currenvir
+  %
+  %
+    \xdef\brl@tmp{\the\brl@document@toks}% documented
+    \ifx\brl@tmp\empty%
+    \else%
+      \xdef\brl@tmp{&\brl@math_cmd{text}{\brl@tmp}}% documented
+    \fi%
+  \egroup%
+  \edef\brl@tmptoks{\the\brl@document@mathtoks\brl@tmp}%
+  %
+  % \brl@document_math_dospecial_label% <- \let\brl@tmpchar\empty
+  % \edef\brl@tmp{{{\brl@tmptoks}\brl@tmpchar}}%
+  % 
+  \edef\brl@tmp{{{\brl@tmptoks}}}%
+  \expandafter\brl@document_appendmathenvtoks\brl@tmp%
+  % 
+  % this env is not exitenv.
+  \xdef\brl@tmp{\brl@document_appendmathtoks{\brl@math_cmd_env{\@currenvir}{\the\brl@document@mathenvtoks}}%
+    %
+    % \brl@document_math\brl@document_math@lastfont}% <- normalfont
+    \brl@document_math}% <- normalfont
+    % exit to mathmode. append the envtoks to the mathtoks since matrix etc. is merely an element.
+    %
+  \egroup%
+  \brl@tmp%
+  % 
+  % \brl@document@lastchar is determined in #1
+  %
+}
+\def\brl@document_dospecial_casesstar_bsbs{%
+    \xdef\brl@tmp{\the\brl@document@toks}% documented
+    \ifx\brl@tmp\empty%
+    \else%
+      \xdef\brl@tmp{&\brl@math_cmd{text}{\brl@tmp}}% documented
+    \fi%
+  \egroup%
+  \edef\brl@tmptoks{\the\brl@document@mathtoks\brl@tmp}%
+  % \brl@document_math_dospecial_label% <- \let\brl@tmpchar\empty
+  % \edef\brl@tmp{{{\brl@tmptoks}\brl@tmpchar}}%
+  \edef\brl@tmp{{{\brl@tmptoks}}}%
+  \expandafter\brl@document_appendmathenvtoks\brl@tmp%
+  % 
+    % 
+    % 
+  \brl@document@mathtoks{}%
+  % \brl@document@lastchar is determined in #1
+  %
+  \def\brl@document_next{\new@ifnextchar[{\brl@document_math_gobble_opt}{\brl@document_math_normalfont}}%
+  \brl@document_next%
+}
+
+\def\brl@document_math_gobble_opt[#1]{\brl@document_math_normalfont}
+
+
+\@namedef{brl@document_math_dospecial_\string\multicolumn}#1#2#3{%$
+  %
+  %
+  %
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math_normalfont#3\brl@document_math@end%
+    \xdef\brl@tmp{{\brl@array_cmd_multicolumn{\the\numexpr#1-\@ne\relax}{#2}{\the\brl@document@mathtoks}}}%
+  }%
+  %
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  \brl@document_math_normalfont%
+}
+
+
+\@namedef{brl@document_math_dospecial_\string\hline}{%$
+  %
+  % \brl@document@mathtoks must be empty.
+  % otherwise \cs\hline
+  %
+  % \hline must appear only in array.
+  \brl@document_appendmathenvtoks{{\brl@array_cmd_hline}}%
+  \brl@document@mathtoks{}%
+  \brl@document_math_normalfont%
+}
+
+%%
+%% {\brl@array_cmd_hline}
+%% {a & b & c}
+%% {\brl@array_cmd_cline}{{1-2}{4-5}...}
+%%
+
+\@namedef{brl@document_math_dospecial_\string\cline}#1{%$
+  %
+  % \brl@document@mathtoks must be empty.
+  % (Although \cline \hline is possible, this gives an absurd result)
+  %
+  % \cline{1-2}\cline{3-4} -> {\brl@array_cmd_cline}{{1-2}{3-4}}
+  %
+  \brl@document_appendmathenvtoks{{\brl@array_cmd_cline}}%
+  \brl@document@mathtoks{{#1}}%
+  \brl@futurelet\brl@tmp\brl@document_math_dospecial_cline_%
+}
+
+
+\def\brl@document_math_dospecial_cline_{%
+  \ifx\brl@tmp\cline%
+    \expandafter\brl@document_math_dospecial_cline__%
+  \else%
+    \expandafter\brl@document_appendmathenvtoks\expandafter{\expandafter{\the\brl@document@mathtoks}}%
+    %
+    %
+    \brl@document@mathtoks{}%
+    \expandafter\brl@document_math_normalfont%
+  \fi%
+}%
+
+\def\brl@document_math_dospecial_cline__#1#2{% #1 : \cline
+  \brl@document_appendmathtoks{{#2}}%
+  \brl@futurelet\brl@tmp\brl@document_math_dospecial_cline_%
+}
+
+
+
+\@namedef{brl@document_math_dospecial_\string\hspace}#1{%
+  \brl@document_math%
+}
+
+
+%%
+%% fonts
+\@namedef{brl@document_math_dospecial_\string\brl@math_cmd_normalfont}{%
+  \def\brl@document_math@currfont{\brl@math_cmd_normalfont}%
+  \brl@document_math%
+}%
+
+\@namedef{brl@document_math_dospecial_\string\bf}{%
+  \def\brl@document_math@currfont{\brl@math_cmd_bf}%
+  \brl@document_math%
+}%
+
+\@namedef{brl@document_math_dospecial_\string\cal}{%
+  \def\brl@document_math@currfont{\brl@math_cmd_cal}%
+  \brl@document_math%
+}%
+
+\@namedef{brl@document_math_dospecial_\string\frak}{%
+  \def\brl@document_math@currfont{\brl@math_cmd_frak}%
+  \brl@document_math%
+}%
+
+\@namedef{brl@document_math_dospecial_\string\rm}{%
+  \def\brl@document_math@currfont{\brl@math_cmd_rm}%
+  \brl@document_math%
+}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% \text{...} -> \text{, {}, }, ... -> _{\text{...}}
+%
+% to do: lastchar
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@document_math_dospecial__{%
+  \brl@document_appendmathtoks{_}%
+  \brl@document_getmathchar\brl@document_math_dospecial_sub\brl@document_math_dospecial_subb\brl@document_math_dospecial_subb%
+}
+
+\@namedef{brl@document_math_dospecial_^}{%
+  \brl@document_appendmathtoks{^}%
+  \brl@document_getmathchar\brl@document_math_dospecial_sub\brl@document_math_dospecial_subb\brl@document_math_dospecial_subb%
+}
+
+\def\brl@document_math_dospecial_sub{%
+  \bgroup%
+    \brl@document@mathtoks{}%
+    \ifcsname brl@document_math_dospecial_sub@\brl@document@mathchar\endcsname%
+      \expandafter\brl@document_math_dospecial_sub_% only \text{...}
+    \else%
+      \expandafter\brl@document_math_dospecial_sub__%
+    \fi%
+}
+
+\def\brl@document_math_dospecial_subb{%
+  \bgroup%
+    \brl@document@mathtoks{}%
+    \brl@document_math_dospecial_sub__%
+}
+
+%%
+\def\brl@document_math_dospecial_sub_#1#2{%
+    \brl@document_math#1{#2}\brl@document_math@end% only \text{...} 
+    \xdef\brl@tmp{{{\the\brl@document@mathtoks}}}%
+  \egroup%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  \brl@document_math%
+}
+
+\def\brl@document_math_dospecial_sub__#1{%
+    \brl@document_math#1\brl@document_math@end% obeyfont
+    \xdef\brl@tmp{{{\the\brl@document@mathtoks}}}%
+  \egroup%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_sub@\string\text}{}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\@namedef{brl@document_math_dospecial_\string\substack}#1{%
+  \brl@document_math%
+  \begin{subarray}{}#1\end{subarray}%
+}%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\@namedef{brl@document_math_dospecial_,}{%
+  \gdef\brl@document@lastchar{,}%
+  \brl@document_appendmathtoks{,}%
+  \brl@document_math%
+}
+
+\@namedef{brl@document_math_dospecial_.}{%
+  \gdef\brl@document@lastchar{.}%
+  \brl@document_appendmathtoks{.}%
+  \brl@document_math%
+}
+
+%%
+%% \brl@document_math_replacedef: #1 -> #2
+%%
+\def\brl@document_math_replacedef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}{%
+    \brl@document_appendmathtoks{#2}%
+    \brl@document_math%
+  }
+}
+
+%\brl@document_math_replacedef{　}{}
+
+\@namedef{brl@document_math_dospecial_\string\brl@math_cmd}#1#2{%
+  \brl@document_appendmathtoks{\brl@math_cmd{#1}{#2}}%
+%  \gdef\brl@document@lastchar{#1}%
+  \gdef\brl@document@lastchar{X}%
+  \brl@document_math%
+}
+
+
+\def\brl@document_math_voiddef#1{%
+  \@namedef{brl@document_math_dospecial_\string#1}{%
+    \brl@document_math%
+  }
+}
+
+\brl@document_math_voiddef{\displaystyle}
+\brl@document_math_voiddef{\scriptstyle}
+\brl@document_math_voiddef{\scriptscriptstyle}
+\brl@document_math_voiddef{\textstyle}
+\brl@document_math_voiddef{　}
+
+\def\brl@document_math_cmddef#1#2#3{%
+  \@namedef{brl@document_math_dospecial_\string#2}{%
+    \brl@document_appendmathtoks{\brl@math_cmd{#1}{#3}}%
+%    \gdef\brl@document@lastchar{#2}%
+    \gdef\brl@document@lastchar{X}%
+    \brl@document_math%
+  }
+}
+
+\brl@document_math_cmddef{bin}{＋}{plus}
+\brl@document_math_cmddef{bin}{−}{minus}
+
+\brl@document_math_cmddef{bin}{+}{plus}
+\brl@document_math_cmddef{bin}{-}{minus}
+\brl@document_math_cmddef{bin}{\times}{times}
+\brl@document_math_cmddef{bin}{\div}{div}
+\brl@document_math_cmddef{bin}{\backslash}{backslash}
+\brl@document_math_cmddef{bin}{\pm}{pm}
+\brl@document_math_cmddef{bin}{\mp}{mp}
+%\brl@document_math_cmddef{bin}{/}%
+\brl@document_math_cmddef{bin}{\cdot}{cdot}
+\brl@document_math_cmddef{bin}{\cup}{cup}
+\brl@document_math_cmddef{bin}{\cap}{cap}
+\brl@document_math_cmddef{bin}{\vee}{vee}
+\brl@document_math_cmddef{bin}{\wedge}{wedge}
+\brl@document_math_cmddef{bin}{\circ}{circ}
+\brl@document_math_cmddef{bin}{\oplus}{oplus}
+\brl@document_math_cmddef{bin}{\ominus}{ominus}
+\brl@document_math_cmddef{bin}{\otimes}{otimes}
+\brl@document_math_cmddef{bin}{\oslash}{oslash}
+
+\brl@document_math_cmddef{op}{\int}{int}
+\brl@document_math_cmddef{op}{\iint}{iint}
+\brl@document_math_cmddef{op}{\iiint}{iiint}
+\brl@document_math_cmddef{op}{\oint}{oint}
+\brl@document_math_cmddef{op}{\sum}{sum}
+\brl@document_math_cmddef{op}{\prod}{prod}
+\brl@document_math_cmddef{op}{\coprod}{coprod}
+\brl@document_math_cmddef{op}{\bigcup}{bigcup}
+\brl@document_math_cmddef{op}{\bigcap}{bigcap}
+\brl@document_math_cmddef{op}{\bigvee}{bigvee}
+\brl@document_math_cmddef{op}{\bigwedge}{bigwedge}
+\brl@document_math_cmddef{op}{\bigoplus}{bigoplus}
+\brl@document_math_cmddef{op}{\bigotimes}{bigotimes}
+
+
+\brl@document_math_cmddef{rel}{=}{equal}
+\brl@document_math_cmddef{rel}{\neq}{neq}
+\brl@document_math_cmddef{rel}{\fallingdotseq}{fallingdotseq}
+\brl@document_math_cmddef{rel}{>}{greater}
+\brl@document_math_cmddef{rel}{<}{less}
+\brl@document_math_cmddef{rel}{\geq}{geq}
+\brl@document_math_cmddef{rel}{\leq}{leq}
+\brl@document_math_cmddef{rel}{\equiv}{equiv}
+\brl@document_math_cmddef{rel}{\parallel}{parallel}
+\brl@document_math_cmddef{rel}{\perp}{perp}
+\brl@document_math_cmddef{rel}{\in}{in}
+\brl@document_math_cmddef{rel}{\ni}{ni}
+\brl@document_math_cmddef{rel}{\subset}{subset}
+\brl@document_math_cmddef{rel}{\supset}{supset}
+\brl@document_math_cmddef{rel}{\supseteq}{subseteq}
+\brl@document_math_cmddef{rel}{\supseteq}{supseteq}
+\brl@document_math_cmddef{rel}{\lhd}{lhd}
+\brl@document_math_cmddef{rel}{\rhd}{rhd}
+\brl@document_math_cmddef{rel}{\triangleleft}{triangleleft}
+\brl@document_math_cmddef{rel}{\triangleright}{triangleright}
+\brl@document_math_cmddef{rel}{\sim}{sim}
+\brl@document_math_cmddef{rel}{\cong}{cong}
+\brl@document_math_cmddef{rel}{\approx}{approx}
+\brl@document_math_cmddef{rel}{\simeq}{simeq}
+\brl@document_math_cmddef{rel}{\prec}{prec}
+\brl@document_math_cmddef{rel}{\succ}{succ}
+\brl@document_math_cmddef{rel}{\notin}{notin}
+\brl@document_math_cmddef{rel}{\notni}{notni}
+\brl@document_math_cmddef{rel}{\subsetneq}{subsetneq}
+\brl@document_math_cmddef{rel}{\supsetneq}{supsetneq}
+\brl@document_math_cmddef{rel}{\mid}{mid}
+\brl@document_math_cmddef{rel}{\nmid}{nmid}
+
+\brl@document_math_cmddef{open}{\lvert}{lvert}
+\brl@document_math_cmddef{close}{\rvert}{rvert}
+\brl@document_math_cmddef{open}{\lVert}{lVert}
+\brl@document_math_cmddef{close}{\rVert}{rVert}
+\brl@document_math_cmddef{open}{\{}{lbrace}
+\brl@document_math_cmddef{close}{\}}{rbrace}
+\brl@document_math_cmddef{open}{[}{lbrack}
+\brl@document_math_cmddef{close}{]}{rbrack}
+\brl@document_math_cmddef{open}{\langle}{langle}
+\brl@document_math_cmddef{close}{\rangle}{rangle}
+
+
+\brl@document_math_cmddef{funcaj}{\arcsin}{arcsin}
+\brl@document_math_cmddef{funcaj}{\arccos}{arccos}
+\brl@document_math_cmddef{funcaj}{\arctan}{arctan}
+\brl@document_math_cmddef{funcaj}{\arg}{arg}
+\brl@document_math_cmddef{funcaj}{\cos}{cos}
+\brl@document_math_cmddef{funcaj}{\cosh}{cosh}
+\brl@document_math_cmddef{funcaj}{\cot}{cot}
+\brl@document_math_cmddef{funcaj}{\deg}{deg}
+\brl@document_math_cmddef{funcaj}{\det}{det}
+\brl@document_math_cmddef{funcaj}{\dim}{dim}
+\brl@document_math_cmddef{funcaj}{\exp}{exp}
+\brl@document_math_cmddef{funcaj}{\im}{im}
+
+\brl@document_math_cmddef{funckz}{\ker}{ker}
+\brl@document_math_cmddef{funckz}{\ln}{ln}
+\brl@document_math_cmddef{funckz}{\log}{log}
+\brl@document_math_cmddef{funckz}{\sec}{sec}
+\brl@document_math_cmddef{funckz}{\sin}{sin}
+\brl@document_math_cmddef{funckz}{\sinh}{sinh}
+\brl@document_math_cmddef{funckz}{\tan}{tan}
+\brl@document_math_cmddef{funckz}{\tanh}{tanh}
+\brl@document_math_cmddef{funckz}{\mod}{mod}
+\brl@document_math_cmddef{funckz}{\bmod}{bmod}
+
+\brl@document_math_cmddef{funcaj}{\inf}{inf}
+\brl@document_math_cmddef{funcaj}{\injlim}{injlim}
+
+\brl@document_math_cmddef{funckz}{\lim}{lim}
+\brl@document_math_cmddef{funckz}{\limsup}{limsup}
+\brl@document_math_cmddef{funckz}{\liminf}{liminf}
+\brl@document_math_cmddef{funckz}{\sup}{sup}
+\brl@document_math_cmddef{funckz}{\max}{max}
+\brl@document_math_cmddef{funckz}{\min}{min}
+\brl@document_math_cmddef{funckz}{\projlim}{projlim}
+
+\brl@document_math_cmddef{func}{\Re}{Re}
+\brl@document_math_cmddef{func}{\Im}{Im}
+
+\brl@document_math_cmddef{space}{\quad}{quad}
+\brl@document_math_cmddef{space}{\qquad}{qquad}
+\brl@document_math_cmddef{space}{\!}{exclamation}
+\brl@document_math_cmddef{space}{\,}{comma}
+\brl@document_math_cmddef{space}{\>}{greater}
+\brl@document_math_cmddef{space}{\:}{colon}
+\brl@document_math_cmddef{space}{\;}{semicolon}
+\brl@document_math_cmddef{space}{\ }{space}
+\brl@document_math_cmddef{space}{~}{tilde}
+\brl@document_math_cmddef{space}{\brl@math_cmd_space}{cmdspace}
+
+
+\brl@document_math_cmddef{ordblock}{\vdots}{vdots}
+\brl@document_math_cmddef{ordblock}{\ddots}{ddots}
+
+\brl@document_math_cmddef{ord}{\square}{square}
+\brl@document_math_cmddef{ord}{\exists}{exists}
+\brl@document_math_cmddef{ord}{\propto}{propto}
+\brl@document_math_cmddef{ord}{\emptyset}{emptyset}
+\brl@document_math_cmddef{ord}{\sharp}{sharp}
+\brl@document_math_cmddef{ord}{\#}{sharp}
+\brl@document_math_cmddef{ord}{\flat}{flat}
+\brl@document_math_cmddef{ord}{\natural}{natural}
+\brl@document_math_cmddef{ord}{\dagger}{dagger}
+\brl@document_math_cmddef{ord}{\forall}{forall}
+\brl@document_math_cmddef{ord}{\therefore}{therefore}
+\brl@document_math_cmddef{ord}{\because}{because}
+\brl@document_math_cmddef{ord}{\angle}{angle}
+\brl@document_math_cmddef{ord}{\triangle}{triangle}
+\brl@document_math_cmddef{ord}{\frown}{frown}
+\brl@document_math_cmddef{ord}{\parallelogram}{parallelogram}
+\brl@document_math_cmddef{ord}{\rectangle}{rectangle}
+\brl@document_math_cmddef{ord}{\infty}{infty}
+\brl@document_math_cmddef{ord}{\neg}{neg}
+\brl@document_math_cmddef{ord}{\partial}{partial}
+\brl@document_math_cmddef{ord}{\nabla}{nabla}
+\brl@document_math_cmddef{ord}{\aleph}{aleph}
+
+% greek
+\brl@document_math_cmddef{ord}{\alpha}{alpha}
+\brl@document_math_cmddef{ord}{\beta}{beta}
+\brl@document_math_cmddef{ord}{\gamma}{gamma}
+\brl@document_math_cmddef{ord}{\delta}{delta}
+\brl@document_math_cmddef{ord}{\epsilon}{epsilon}
+\brl@document_math_cmddef{ord}{\zeta}{zeta}
+\brl@document_math_cmddef{ord}{\eta}{eta}
+\brl@document_math_cmddef{ord}{\theta}{theta}
+\brl@document_math_cmddef{ord}{\iota}{iota}
+\brl@document_math_cmddef{ord}{\kappa}{kappa}
+\brl@document_math_cmddef{ord}{\lambda}{lambda}
+\brl@document_math_cmddef{ord}{\mu}{mu}
+\brl@document_math_cmddef{ord}{\nu}{nu}
+\brl@document_math_cmddef{ord}{\xi}{xi}
+\brl@document_math_cmddef{ord}{\omicron}{omicron}
+\brl@document_math_cmddef{ord}{\pi}{pi}
+\brl@document_math_cmddef{ord}{\rho}{rho}
+\brl@document_math_cmddef{ord}{\sigma}{sigma}
+\brl@document_math_cmddef{ord}{\tau}{tau}
+\brl@document_math_cmddef{ord}{\upsilon}{upsilon}
+\brl@document_math_cmddef{ord}{\phi}{phi}
+\brl@document_math_cmddef{ord}{\chi}{chi}
+\brl@document_math_cmddef{ord}{\psi}{psi}
+\brl@document_math_cmddef{ord}{\omega}{omega}
+\brl@document_math_cmddef{ord}{\varepsilon}{varepsilon}
+\brl@document_math_cmddef{ord}{\vartheta}{vartheta}
+\brl@document_math_cmddef{ord}{\varpi}{varpi}
+\brl@document_math_cmddef{ord}{\varphi}{varphi}
+\brl@document_math_cmddef{ord}{\varrho}{varrho}
+\brl@document_math_cmddef{ord}{\varsigma}{varsigma}
+\brl@document_math_cmddef{ord}{\Alpha}{Alpha}
+\brl@document_math_cmddef{ord}{\Beta}{Beta}
+\brl@document_math_cmddef{ord}{\Gamma}{Gamma}
+\brl@document_math_cmddef{ord}{\Delta}{Delta}
+\brl@document_math_cmddef{ord}{\Epsilon}{Epsilon}
+\brl@document_math_cmddef{ord}{\Zeta}{Zeta}
+\brl@document_math_cmddef{ord}{\Eta}{Eta}
+\brl@document_math_cmddef{ord}{\Theta}{Theta}
+\brl@document_math_cmddef{ord}{\Iota}{Iota}
+\brl@document_math_cmddef{ord}{\Kappa}{Kappa}
+\brl@document_math_cmddef{ord}{\Lambda}{Lambda}
+\brl@document_math_cmddef{ord}{\Mu}{Mu}
+\brl@document_math_cmddef{ord}{\Nu}{Nu}
+\brl@document_math_cmddef{ord}{\Xi}{Xi}
+\brl@document_math_cmddef{ord}{\Omicron}{Omicron}
+\brl@document_math_cmddef{ord}{\Pi}{Pi}
+\brl@document_math_cmddef{ord}{\Rho}{Rho}
+\brl@document_math_cmddef{ord}{\Sigma}{Sigma}
+\brl@document_math_cmddef{ord}{\Tau}{Tau}
+\brl@document_math_cmddef{ord}{\Upsilon}{Upsilon}
+\brl@document_math_cmddef{ord}{\Phi}{Phi}
+\brl@document_math_cmddef{ord}{\Chi}{Chi}
+\brl@document_math_cmddef{ord}{\Psi}{Psi}
+\brl@document_math_cmddef{ord}{\Omega}{Omega}
+
+
+\brl@document_math_cmddef{break}{\BrailleBreak}{break}
+
+\brl@document_math_cmddef{colon}{\colon}{colon}
+\brl@document_math_cmddef{rel}{:}{altcolon}
+
+\brl@document_math_cmddef{dots}{\dots}{dots}
+
+
+\@namedef{brl@document_math_dospecial_\string\prime}{% prime is detected in sup
+  \brl@document_appendmathtoks{\brl@math_cmd_prime}%
+  \gdef\brl@document@lastchar{X}%
+  \brl@document_math%
+}
+
+
+
+
+\def\brl@document_math_delimdef#1#2#3{%
+  \@namedef{brl@document_math_dospecial_\string#1}##1{%
+    \edef\brl@tmp{{\brl@math_cmd{#2}{\csname brl@document_math_delim@#3\string##1\endcsname}}}
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    % 
+    \gdef\brl@document@lastchar{X}%
+    %
+    %
+    \brl@document_math%
+  }
+}
+
+\brl@document_math_delimdef{\left}{left}{l}
+\brl@document_math_delimdef{\right}{right}{r}
+\brl@document_math_delimdef{\middle}{middle}{m}
+
+
+\@namedef{brl@document_math_delim@l.}{emptydelim}
+\@namedef{brl@document_math_delim@l\string|}{lvert}
+\@namedef{brl@document_math_delim@l\string\|}{lVert}
+\@namedef{brl@document_math_delim@l(}{parenopen}
+\@namedef{brl@document_math_delim@l)}{parenclose}
+\@namedef{brl@document_math_delim@l\string\lvert}{lvert}
+\@namedef{brl@document_math_delim@l\string\rvert}{rvert}
+\@namedef{brl@document_math_delim@l\string\lVert}{lVert}
+\@namedef{brl@document_math_delim@l\string\rVert}{rVert}
+\@namedef{brl@document_math_delim@l\string\{}{lbrace}
+\@namedef{brl@document_math_delim@l\string\}}{rbrace}
+\@namedef{brl@document_math_delim@l[}{lbrack}
+\@namedef{brl@document_math_delim@l]}{rbrack}
+\@namedef{brl@document_math_delim@l\string\langle}{langle}
+\@namedef{brl@document_math_delim@l\string\rangle}{rangle}
+
+\@namedef{brl@document_math_delim@m.}{emptydelim}
+\@namedef{brl@document_math_delim@m\string|}{rvert}
+\@namedef{brl@document_math_delim@m\string\|}{rVert}
+\@namedef{brl@document_math_delim@m(}{parenopen}
+\@namedef{brl@document_math_delim@m)}{parenclose}
+\@namedef{brl@document_math_delim@m\string\lvert}{lvert}
+\@namedef{brl@document_math_delim@m\string\rvert}{rvert}
+\@namedef{brl@document_math_delim@m\string\lVert}{lVert}
+\@namedef{brl@document_math_delim@m\string\rVert}{rVert}
+\@namedef{brl@document_math_delim@m\string\{}{lbrace}
+\@namedef{brl@document_math_delim@m\string\}}{rbrace}
+\@namedef{brl@document_math_delim@m[}{lbrack}
+\@namedef{brl@document_math_delim@m]}{rbrack}
+\@namedef{brl@document_math_delim@m\string\langle}{langle}
+\@namedef{brl@document_math_delim@m\string\rangle}{rangle}
+
+\@namedef{brl@document_math_delim@r.}{emptydelim}
+\@namedef{brl@document_math_delim@r\string|}{rvert}
+\@namedef{brl@document_math_delim@r\string\|}{rVert}
+\@namedef{brl@document_math_delim@r(}{parenopen}
+\@namedef{brl@document_math_delim@r)}{parenclose}
+\@namedef{brl@document_math_delim@r\string\lvert}{lvert}
+\@namedef{brl@document_math_delim@r\string\rvert}{rvert}
+\@namedef{brl@document_math_delim@r\string\lVert}{lVert}
+\@namedef{brl@document_math_delim@r\string\rVert}{rVert}
+\@namedef{brl@document_math_delim@r\string\{}{lbrace}
+\@namedef{brl@document_math_delim@r\string\}}{rbrace}
+\@namedef{brl@document_math_delim@r[}{lbrack}
+\@namedef{brl@document_math_delim@r]}{rbrack}
+\@namedef{brl@document_math_delim@r\string\langle}{langle}
+\@namedef{brl@document_math_delim@r\string\rangle}{rangle}
+
+
+
+
+
+
+%% with normal_font
+\def\brl@document_math_primitiveinedef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}##1{%
+    {%
+      \brl@document@mathtoks{}%
+      \brl@document_math_normalfont##1\brl@document_math@end%
+      \xdef\brl@tmp{{\brl@math_cmd_accent{#2}{\the\brl@document@mathtoks}}}%
+    }%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    %
+    \gdef\brl@document@lastchar{X}%
+    %
+    \brl@document_math%
+  }%
+}
+
+\brl@document_math_primitiveinedef{\overleftarrow}{overleftarrow}
+\brl@document_math_primitiveinedef{\overrightarrow}{overrightarrow}
+\brl@document_math_primitiveinedef{\overleftrightarrow}{overleftrightarrow}
+\brl@document_math_primitiveinedef{\underleftarrow}{underleftarrow}
+\brl@document_math_primitiveinedef{\underrightarrow}{underrightarrow}
+\brl@document_math_primitiveinedef{\underleftrightarrow}{underleftrightarrow}
+
+%% primitive i expanded
+\def\brl@document_math_primitiveiedef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}##1{%
+    {%
+      \brl@document@mathtoks{}%
+      \brl@document_math##1\brl@document_math@end%
+      \xdef\brl@tmp{{\brl@math_cmd_accent{#2}{\the\brl@document@mathtoks}}}%
+    }%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    %
+    \gdef\brl@document@lastchar{X}%
+    %
+    \brl@document_math%
+  }%
+}
+
+% without normalfont
+\brl@document_math_primitiveiedef{\hat}{hat}
+\brl@document_math_primitiveiedef{\tilde}{tilde}
+\brl@document_math_primitiveiedef{\mathring}{mathring}
+\brl@document_math_primitiveiedef{\bar}{bar}
+%\brl@document_math_primitiveiedef{\dot}{dot}
+\brl@document_math_primitiveiedef{\ddot}{ddot}
+\brl@document_math_primitiveiedef{\dddot}{dddot}
+\brl@document_math_primitiveiedef{\ddddot}{ddddot}
+\brl@document_math_primitiveiedef{\underline}{underline}
+\brl@document_math_primitiveiedef{\overline}{overline}
+
+
+\@namedef{brl@document_math_dospecial_\string\dot}#1{%
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math#1\brl@document_math@end%
+    \xdef\brl@tmp{{\brl@math_cmd_dot{\the\brl@document@mathtoks}}}%
+  }%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  % 
+  \gdef\brl@document@lastchar{X}%
+  % 
+  \brl@document_math%
+}%
+
+
+% normalfont
+
+{\catcode`\!=8\relax\lccode`\!=`\_\lowercase{
+\global\@namedef{brl@document_math_dospecial_\string\underbrace}#1{%
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math_normalfont#1\brl@document_math@end%
+    \xdef\brl@tmp{\the\brl@document@mathtoks}%
+  }%
+  \@ifnextchar!%
+  {\brl@document_math_dospecial_underbracesub}%
+  {\brl@document_math_dospecial_underbrace}%
+}
+}}
+
+\def\brl@document_math_dospecial_underbracesub{%
+  \edef\brl@tmp{{\brl@math_cmd_underbracesub{\brl@tmp}}}%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  % 
+  \brl@document_math%
+}%
+\def\brl@document_math_dospecial_underbrace{%
+  \edef\brl@tmp{{\brl@math_cmd_brace{\brl@tmp}{under}}}%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  % 
+  \brl@document_math%
+}%
+
+
+\@namedef{brl@document_math_dospecial_\string\overbrace}#1{%
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math_normalfont#1\brl@document_math@end%
+    \xdef\brl@tmp{\the\brl@document@mathtoks}%
+  }%
+  \@ifnextchar^%
+  {\brl@document_math_dospecial_overbracesup}%
+  {\brl@document_math_dospecial_overbrace}%
+}
+
+\def\brl@document_math_dospecial_overbracesup{%
+  \edef\brl@tmp{{\brl@math_cmd_overbracesup{\brl@tmp}}}%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  %
+  \brl@document_math%
+}%
+\def\brl@document_math_dospecial_overbrace{%
+  \edef\brl@tmp{{\brl@math_cmd_brace{\brl@tmp}{over}}}%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  % 
+  \brl@document_math%
+}%
+
+
+
+%% primitive ii expanded
+
+\def\brl@document_math_primitiveiiedef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}##1##2{%
+    {%
+      \brl@document@mathtoks{}%
+      \brl@document_math##1\brl@document_math@end%
+      \xdef\brl@tmp{{\brl@math_cmd{#2}{\the\brl@document@mathtoks}}}%
+    }%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    {%
+      \brl@document@mathtoks{}%
+      \brl@document_math##2\brl@document_math@end%
+      \xdef\brl@tmp{{\brl@math_cmd{#2}{\the\brl@document@mathtoks}}}%
+    }%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    %
+    \gdef\brl@document@lastchar{X}%
+    %
+    \brl@document_math%
+  }%
+}
+
+\brl@document_math_primitiveiiedef{\frac}{frac}
+\brl@document_math_primitiveiiedef{\binom}{binom}
+
+
+%% \sqrt{} : {obeyfont}
+%%
+%% \sqrt[]{} : [normalfont]{normalfont}
+%%
+\@namedef{brl@document_math_dospecial_\string\sqrt}{%
+  \@ifnextchar[%
+  {\brl@document_math_dospecial_sqrtm}%
+  {\brl@document_math_dospecial_sqrts}%
+}
+\def\brl@document_math_dospecial_sqrts#1{%
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math#1\brl@document_math@end% obeyfont
+    \xdef\brl@tmp{{\brl@math_cmd{sqrts}{\the\brl@document@mathtoks}}}%
+  }%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  \brl@document_math%
+}%%
+
+
+\def\brl@document_math_dospecial_sqrtm[#1]#2{%
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math_normalfont#1\brl@document_math@end% normalfont
+    \xdef\brl@tmp{{\brl@math_cmd_sqrtm{\the\brl@document@mathtoks}}}%
+  }%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  {%
+    \brl@document@mathtoks{}%
+    \brl@document_math_normalfont#2\brl@document_math@end% normalfont
+    \xdef\brl@tmp{{{\the\brl@document@mathtoks}}}%
+  }%
+%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  \brl@document_math%
+}%%
+
+
+%
+% Arrow: textspace + mainarrow + textspace
+%
+
+\def\brl@document_math_Arrowdef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}{%
+    \brl@document_appendmathtoks{\brl@math_cmd{mainArrow}{#2}}%
+    %
+    \gdef\brl@document@lastchar{X}%
+    %
+    %
+    \brl@document_math%
+  }
+}
+
+\brl@document_math_Arrowdef{\Leftarrow}{Leftarrow}
+\brl@document_math_Arrowdef{\Rightarrow}{Rightarrow}
+\brl@document_math_Arrowdef{\Leftrightarrow}{Leftrightarrow}
+
+
+%%%%%%%%%%%%
+%
+% arrow: mathspace + (mainarrow + mathspace)
+%
+
+\def\brl@document_math_arrowdef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}{%
+    \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{#2}}%
+    % 
+    \gdef\brl@document@lastchar{X}%
+    % 
+    \brl@document_math%
+  }
+}
+
+\brl@document_math_arrowdef{\leftrightarrow}{leftrightarrow}
+\brl@document_math_arrowdef{\rcurvearrowse}{rcurvearrowse}
+\brl@document_math_arrowdef{\rcurvearrowne}{rcurvearrowne}
+\brl@document_math_arrowdef{\lcurvearrowse}{lcurvearrowse}
+\brl@document_math_arrowdef{\lcurvearrowne}{lcurvearrowne}
+\brl@document_math_arrowdef{\nearrow}{nearrow}
+\brl@document_math_arrowdef{\searrow}{searrow}
+\brl@document_math_arrowdef{\nwarrow}{nwarrow}
+\brl@document_math_arrowdef{\swarrow}{swarrow}
+\brl@document_math_arrowdef{\downarrow}{downarrow}
+\brl@document_math_arrowdef{\uparrow}{uparrow}
+\brl@document_math_arrowdef{\mapsto}{mapsto}
+\brl@document_math_arrowdef{\hookrightarrow}{hookrightarrow}
+\brl@document_math_arrowdef{\hookleftarrow}{hookleftarrow}
+\brl@document_math_arrowdef{\twoheadrightarrow}{twoheadrightarrow}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+%
+\@namedef{brl@document_math_dospecial_\string\xleftarrow}{%
+  \@ifnextchar[%
+  {\brl@document_math_dospecial_xleftarrowbelow}%
+  {\brl@document_math_dospecial_xleftarrowabove}%
+}
+
+\def\brl@document_math_dospecial_xleftarrowbelow[#1]#2{%
+  \def\brl@tmp{#2}%
+  \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xleftarrow}}%
+  \ifx\brl@tmp\empty%
+    \def\brl@tmp{_{#1}\brl@math_cmd{endarrow}{space}}%
+  \else%
+    \def\brl@tmp{_{#1}^{#2}\brl@math_cmd{endarrow}{space}}%
+  \fi%
+  \expandafter\brl@document_math\brl@tmp%
+}
+
+\def\brl@document_math_dospecial_xlefttarrowabove#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty%
+    \brl@document_appendmathtoks{\brl@math_cmd{mainarrow}{leftarrow}}%
+    %
+    \gdef\brl@document@lastchar{X}%
+    \let\brl@tmp\empty%
+  \else%
+    \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xlefttarrow}}%
+    \def\brl@tmp{^{#1}\brl@math_cmd{endarrow}{space}}%
+  \fi%
+%
+  \expandafter\brl@document_math\brl@tmp%
+}
+
+\@namedef{brl@document_math_dospecial_\string\xrightarrow}{%
+  \@ifnextchar[%
+  {\brl@document_math_dospecial_xrightarrowbelow}%
+  {\brl@document_math_dospecial_xrightarrowabove}%
+}
+
+\def\brl@document_math_dospecial_xrightarrowbelow[#1]#2{%
+  \def\brl@tmp{#2}%
+  \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xrightarrow}}%
+  \ifx\brl@tmp\empty%
+    \def\brl@tmp{_{#1}\brl@math_cmd{endarrow}{space}}%
+  \else%
+    \def\brl@tmp{_{#1}^{#2}\brl@math_cmd{endarrow}{space}}%
+  \fi%
+  \expandafter\brl@document_math\brl@tmp%
+}
+
+\def\brl@document_math_dospecial_xrightarrowabove#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty%
+    \brl@document_appendmathtoks{\brl@math_cmd{mainarrow}{rightarrow}}%
+    %
+    \gdef\brl@document@lastchar{X}%
+    \let\brl@tmp\empty%
+  \else%
+    \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xrightarrow}}%
+    \def\brl@tmp{^{#1}\brl@math_cmd{endarrow}{space}}%
+  \fi%
+%
+  \expandafter\brl@document_math\brl@tmp%
+}
+
+
+
+
+\@namedef{brl@document_math_dospecial_\string\leftarrow}{%
+  \brl@futurelet\brl@tmp\brl@document_math_dospecial_leftarrow%
+}
+
+
+\@namedef{brl@document_math_dospecial_\string\rightarrow}{%
+  \brl@futurelet\brl@tmp\brl@document_math_dospecial_rightarrow%
+}
+
+\def\brl@document_math_dospecial_arrowabove^#1{%
+  \def\brl@document_math@above{#1}%
+  \brl@futurelet\brl@tmp\brl@document_math_dospecial_arrowabovebelow%
+}
+
+{\catcode`\!=8\relax\lccode`\!=`\_\lowercase{
+%%%%%%%%%%%%%%%%%%%%%%%%% !=_
+
+\gdef\brl@document_math_dospecial_leftarrow{%
+  \ifx\brl@tmp^%
+    \def\brl@document_next{\brl@document_math_dospecial_arrowabove}%
+    \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xleftarrow}}%
+  \else%
+    \ifx\brl@tmp!%
+      \def\brl@document_next{\brl@document_math_dospecial_arrowbelow}%
+      \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xleftarrow}}%
+    \else%
+      \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{leftarrow}}%
+      %
+      \gdef\brl@document@lastchar{X}%
+      \def\brl@document_next{\brl@document_math}%
+    \fi%
+  \fi%
+  \brl@document_next%
+}
+
+
+\gdef\brl@document_math_dospecial_rightarrow{%
+  \ifx\brl@tmp^%
+    \def\brl@document_next{\brl@document_math_dospecial_arrowabove}%
+    \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xrightarrow}}%
+  \else%
+    \ifx\brl@tmp!%
+      \def\brl@document_next{\brl@document_math_dospecial_arrowbelow}%
+      \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{xrightarrow}}%
+    \else%
+      \brl@document_appendmathtoks{\brl@math_cmd{arrow}{space}\brl@math_cmd{mainarrow}{rightarrow}}%
+      % 
+      \gdef\brl@document@lastchar{X}%
+      \def\brl@document_next{\brl@document_math}%
+    \fi%
+  \fi%
+  \brl@document_next%
+}
+
+
+\gdef\brl@document_math_dospecial_arrowabovebelow{%
+  \ifx\brl@tmp!%
+    \expandafter\brl@document_math_dospecial_arrowabovebelow_%
+  \else% only above
+    \edef\brl@document_next{\brl@document_math^{\brl@document_math@above}\brl@math_cmd{endarrow}{space}}%
+    \expandafter\brl@document_next%
+  \fi%
+}
+\gdef\brl@document_math_dospecial_arrowabovebelow_!#1{%
+  \edef\brl@tmp{^{\brl@document_math@above}_{#1}\brl@math_cmd{endarrow}{space}}%
+  \expandafter\brl@document_math\brl@tmp%
+}
+\gdef\brl@document_math_dospecial_arrowbelow!#1{%
+  \def\brl@document_math@below{#1}%
+  \brl@futurelet\brl@tmp\brl@document_math_dospecial_arrowbelowabove%
+}
+
+\def\brl@document_math_dospecial_arrowbelowabove{%
+  \ifx\brl@tmp^%
+    \expandafter\brl@document_math_dospecial_arrowbelowabove_%
+  \else% only below
+    \edef\brl@document_next{\brl@document_math!{\brl@document_math@below}\brl@math_cmd{endarrow}{space}}%
+    \expandafter\brl@document_next%
+  \fi%
+}
+\def\brl@document_math_dospecial_arrowbelowabove_^#1{%
+  \edef\brl@tmp{^{#1}!{\brl@document_math@below}\brl@math_cmd{endarrow}{space}}%
+  \expandafter\brl@document_math\brl@tmp%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%% !=_
+}}
+
+
+\@namedef{brl@document_math_dospecial_\string\not}{%
+  \@ifnextchar=%
+  {\brl@document_math_dospecial_noteq}%
+  {\brl@document_math_dospecial_not}%
+}
+
+\def\brl@document_math_dospecial_noteq={%
+  \brl@document_appendmathtoks{\brl@math_cmd{rel}{neq}}%
+  \brl@document_math%
+}
+
+\def\brl@document_math_dospecial_not{%
+  \brl@document_appendmathtoks{\brl@math_cmd{not}{not}}%
+  \brl@document_math%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% chars with fonts
+%
+% cmd_cmd{letterrU}{a}
+% cmd_cmd{digit}{{1}{r}}
+% cmd_cmd{slash}{r}
+%
+\def\brl@document_math_lettdef#1#2{%
+  \@namedef{brl@document_math_dospecial_\string#1}{%
+    \brl@document_math@currfont% do every time because mathversion may change normalfont etc.
+    %
+    \edef\brl@tmp{{\brl@math_cmd{letter\brl@math@fontprefix#2}{#1}}}%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    %
+    \gdef\brl@document@lastchar{X}%
+    \brl@document_math%
+  }
+  \@namedef{brl@document_math_lett@#1}{#2}% used in strtoletters in \brl_math.
+}
+
+\brl@document_math_lettdef{A}{U}
+\brl@document_math_lettdef{B}{U}
+\brl@document_math_lettdef{C}{U}
+\brl@document_math_lettdef{D}{U}
+\brl@document_math_lettdef{E}{U}
+\brl@document_math_lettdef{F}{U}
+\brl@document_math_lettdef{G}{U}
+\brl@document_math_lettdef{H}{U}
+\brl@document_math_lettdef{I}{U}
+\brl@document_math_lettdef{J}{U}
+\brl@document_math_lettdef{K}{U}
+\brl@document_math_lettdef{L}{U}
+\brl@document_math_lettdef{M}{U}
+\brl@document_math_lettdef{N}{U}
+\brl@document_math_lettdef{O}{U}
+\brl@document_math_lettdef{P}{U}
+\brl@document_math_lettdef{Q}{U}
+\brl@document_math_lettdef{R}{U}
+\brl@document_math_lettdef{S}{U}
+\brl@document_math_lettdef{T}{U}
+\brl@document_math_lettdef{U}{U}
+\brl@document_math_lettdef{V}{U}
+\brl@document_math_lettdef{W}{U}
+\brl@document_math_lettdef{X}{U}
+\brl@document_math_lettdef{Y}{U}
+\brl@document_math_lettdef{Z}{U}
+
+\brl@document_math_lettdef{a}{K}
+\brl@document_math_lettdef{b}{K}
+\brl@document_math_lettdef{c}{K}
+\brl@document_math_lettdef{d}{K}
+\brl@document_math_lettdef{e}{K}
+\brl@document_math_lettdef{f}{K}
+\brl@document_math_lettdef{g}{K}
+\brl@document_math_lettdef{h}{K}
+\brl@document_math_lettdef{i}{K}
+\brl@document_math_lettdef{j}{K}
+\brl@document_math_lettdef{k}{L}
+\brl@document_math_lettdef{l}{L}
+\brl@document_math_lettdef{m}{L}
+\brl@document_math_lettdef{n}{L}
+\brl@document_math_lettdef{o}{L}
+\brl@document_math_lettdef{p}{L}
+\brl@document_math_lettdef{q}{L}
+\brl@document_math_lettdef{r}{L}
+\brl@document_math_lettdef{s}{L}
+\brl@document_math_lettdef{t}{L}
+\brl@document_math_lettdef{u}{L}
+\brl@document_math_lettdef{v}{L}
+\brl@document_math_lettdef{w}{L}
+\brl@document_math_lettdef{x}{L}
+\brl@document_math_lettdef{y}{L}
+\brl@document_math_lettdef{z}{L}
+
+
+\def\brl@document_math_digitdef#1{%
+  \@namedef{brl@document_math_dospecial_\string#1}{%
+    \brl@document_math@currfont% do every time because mathversion may change normalfont etc.
+    %
+    \edef\brl@tmp{{\brl@math_cmd{digit}{{#1}{\brl@math@fontprefix}}}}%
+    \expandafter\brl@document_appendmathtoks\brl@tmp%
+    %
+    \gdef\brl@document@lastchar{X}%
+    \brl@document_math%
+  }
+}
+
+
+\brl@document_math_digitdef{1}
+\brl@document_math_digitdef{2}
+\brl@document_math_digitdef{3}
+\brl@document_math_digitdef{4}
+\brl@document_math_digitdef{5}
+\brl@document_math_digitdef{6}
+\brl@document_math_digitdef{7}
+\brl@document_math_digitdef{8}
+\brl@document_math_digitdef{9}
+\brl@document_math_digitdef{0}
+
+\@namedef{brl@document_math_dospecial_/}{%
+  \brl@document_math@currfont% do every time because mathversion may change normalfont etc.
+  %
+  \edef\brl@tmp{{\brl@math_cmd{slash}{\brl@math@fontprefix}}}%
+  \expandafter\brl@document_appendmathtoks\brl@tmp%
+  %
+  \gdef\brl@document@lastchar{X}%
+  \brl@document_math%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\def\brl@document_footnote{%
+  %
+  %
+  \edef\brl@tmp{\the\brl@document@mattoks}%
+  \ifx\brl@tmp\empty%
+  \else%
+    %
+    \edef\brl@tmp{%
+      %
+      \noexpand\brl@orig@begin{rectbox}{\brl@document_footnote@arrayelement}\noexpand\brl@document_matrix_loop%
+      \the\brl@document@mattoks%
+      \unexpanded{\brl@end\brl@orig@end{rectbox}}%
+    }%
+    \global\brl@document@mattoks{}% clear matrix elements
+    \global\brl@array@matnum\z@% clear replacement of matrix elements.
+    \brl@tmp%
+  \fi%
+  %
+  %
+  \edef\brl@tmp{\the\brl@document@foottoks}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \edef\brl@tmp{%
+      %
+      \noexpand\brl@orig@begin{rectbox}{\brl@document_footnote@footnote}\noexpand\brl@document_footnote_loop%
+      \the\brl@document@foottoks%
+      \unexpanded{\brl@end\brl@end\brl@end\brl@orig@end{rectbox}}%
+    }%
+    \global\brl@document@foottoks{}% clear footnote
+    \global\brl@document@indenttrue% force indent
+    \brl@tmp%
+  \fi%
+}
+
+
+\def\brl@document_matrix_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@math@toks{#1}%
+    \brl@print{0}{2}{\brl@math@toks}{\brl@bse@width}%
+    \expandafter\brl@document_matrix_loop%
+  \fi%
+}
+
+
+\def\brl@document_footnote_loop#1#2#3{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@text@toks{#3}%
+    \brl@print{#1}{#2}{\brl@text@toks}{\brl@bse@width}%
+    \expandafter\brl@document_footnote_loop%
+  \fi%
+}
+
+
+\def\brl@document_newpage{%
+  \ifnum\@ne=\brl@bse@linenum% for the first page
+  \else%
+    \expandafter\brl@document_newpage_loop%
+  \fi%
+}
+
+\def\brl@document_newpage_loop{%
+  \ifnum\brl@bse@height=\brl@bse@linenum%
+  \else%
+    \brl@print_onescline{0}{}%
+    \expandafter\brl@document_newpage_loop%
+  \fi%
+}
+
+\def\brl@document_par{%
+  \ifnum\brl@bse@height=\brl@bse@linenum%
+  \else%
+    \ifnum\@ne=\brl@bse@linenum% for the first page
+    \else%
+      \brl@print_onescline{0}{}%
+    \fi%
+  \fi%
+}
+
+
+
+%% nonbraille page
+%%
+
+\def\brl@document_nonbraille_parsepage{%
+  \ifx\brl@document_nonbraille@linepage\empty%
+  \else%
+    %
+    \expandafter\brl@document_nonbraille_parsepageb_\brl@document_nonbraille@linepage\brl@end%
+    %
+    %
+    \expandafter\brl@document_nonbraille_parsepagee_\brl@document_nonbraille@linepage\brl@end%
+    %
+    \ifx\brl@document_nonbraille@pageb\brl@document_nonbraille@pagee%
+      \ifx\brl@document_nonbraille@pageb\empty%
+        \let\brl@document_nonbraille@pageno\empty%
+      \else%
+        \edef\brl@document_nonbraille@pageno{\brl@text_cmd_number{\brl@document_nonbraille@pageb}\brl@text_cmd_space}%
+      \fi%
+    \else%
+      \ifx\brl@document_nonbraille@pageb\empty%
+        \edef\brl@document_nonbraille@pageno{\brl@text_cmd_number{\brl@document_nonbraille@pagee}\brl@text_cmd_space}%
+      \else%
+        \edef\brl@document_nonbraille@pageno{\brl@text_cmd_number{\brl@document_nonbraille@pageb}\brl@text_cmd_space\brl@text_cmd_number{\brl@document_nonbraille@pagee}\brl@text_cmd_space}%
+      \fi%
+    \fi%
+    \edef\brl@print@page{\brl@document_nonbraille@pageno\brl@print@page}% prepend nonbraille page
+  \fi%
+%
+}
+
+%% e.g.  
+%% {}{208}{1}{336}{2}{451}{3}
+%%
+%%    〜207 page {}
+%% 208〜335 page 1
+%% 336〜450 page 2
+%% 451〜    page 3
+
+
+\def\brl@document_nonbraille_parsepageb_#1#2{%
+  \def\brl@document_nonbraille@pageb{#1}%
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\brl@@end%
+    \let\brl@document_nonbraille_next\relax%
+  \else%
+    \ifnum#2>\brl@document@inputlinenob\relax%
+      \def\brl@document_nonbraille_next{\brl@document_nonbraille_parsepage_end{#1}{#2}}%
+    \else%
+      \def\brl@document_nonbraille_next{\brl@document_nonbraille_parsepageb_}%
+    \fi%
+  \fi%
+  \brl@document_nonbraille_next%
+}
+
+\def\brl@document_nonbraille_parsepage_end#1\brl@end{%
+  \edef\brl@document_nonbraille@linepage{#1}%
+}
+
+\def\brl@document_nonbraille_parsepagee_#1#2{%
+  \def\brl@document_nonbraille@pagee{#1}%
+  \def\brl@tmp{#2}%
+%
+  \ifx\brl@tmp\brl@@end%
+    \let\brl@document_nonbraille_next\relax%
+  \else%
+    \ifnum#2<\brl@document@inputlinenoe\relax%
+      \def\brl@document_nonbraille_next{\brl@document_nonbraille_parsepagee_}%
+    \else%
+      \def\brl@document_nonbraille_next{\brl@document_nonbraille_parsepage_end{#1}{#2}}%
+    \fi%
+  \fi%
+  \brl@document_nonbraille_next%
+}
+
+
+%% input the information of pages of the original nonbraille.
+%%
+
+%\ifbrl@option@oldchar
+\input{jmbraille/codes/brl_document_oldchar.tex}
+%\fi%
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

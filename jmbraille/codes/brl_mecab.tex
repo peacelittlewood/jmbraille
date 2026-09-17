@@ -1,0 +1,5025 @@
+% Time-stamp: <2026-09-15 17:01:37 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@mecab
+%%
+
+%%
+%% {space before1}{space after1}{space before2}{space after2}...
+%%
+%% if after1+before2
+%%        > 0 one space
+%%        < 0 no space
+%%        = 0 never happens
+%%
+%% 120  maximum
+%% -130 minimum 
+%%
+%% 。） 100 -130
+%% dollar） 120 -130
+%%
+%% 助詞、助動詞 < 接尾語
+%%
+%% 。と 80 -90
+\@namedef{brl@mecab@wakachi_0}{{40}{40}}%その他,間投,*,*
+\@namedef{brl@mecab@wakachi_1}{{40}{40}}%フィラー,*,*,*
+\@namedef{brl@mecab@wakachi_2}{{40}{40}}%感動詞,*,*,*
+% \@namedef{brl@mecab@wakachi_3}{{0}{0}}%記号,アルファベット,*,*
+% \@namedef{brl@mecab@wakachi_4}{{40}{40}}% ／
+% \@namedef{brl@mecab@wakachi_5}{{-70}{-1100}}%記号,括弧開,*,*
+% \@namedef{brl@mecab@wakachi_6}{{-1100}{40}}%記号,括弧閉,*,*
+% \@namedef{brl@mecab@wakachi_7}{{-1100}{-1100}}%記号,句点,*,*
+\@namedef{brl@mecab@wakachi_7}{{-130}{80}}%記号,句点,*,*
+% \@namedef{brl@mecab@wakachi_8}{{-10}{-10}}%記号,空白,*,*
+\@namedef{brl@mecab@wakachi_9}{{-130}{80}}%記号,読点,*,*
+\@namedef{brl@mecab@wakachi_10}{{20}{20}}%形容詞,自立,*,*
+\@namedef{brl@mecab@wakachi_11}{{-90}{20}}%形容詞,接尾,*,*
+\@namedef{brl@mecab@wakachi_12}{{-90}{20}}%形容詞,非自立,*,*
+\@namedef{brl@mecab@wakachi_13}{{-90}{80}}%助詞,格助詞,一般,* から, に, にて, を, が, で, へ, より
+\@namedef{brl@mecab@wakachi_14}{{-90}{80}}%助詞,格助詞・引用／格助詞・一般／並立助詞,*,* と  `です。」と'
+\@namedef{brl@mecab@wakachi_15}{{-90}{80}}%助詞,格助詞,連語,* という = 助詞 + 動詞(連用) or 助詞 + 動詞 + 接続助詞 (て etc.)
+\@namedef{brl@mecab@wakachi_16}{{-90}{80}}%助詞,係助詞,*,* は, も, や, こそ
+\@namedef{brl@mecab@wakachi_17}{{-90}{80}}%助詞,終助詞,*,* よ, わ, ね
+\@namedef{brl@mecab@wakachi_18}{{-90}{80}}%助詞,接続助詞,*,* から, どころか, [ものの]
+\@namedef{brl@mecab@wakachi_19}{{-90}{80}}%助詞,特殊,*,* にゃ, けむ
+\@namedef{brl@mecab@wakachi_20}{{-90}{80}}%助詞,副詞化,*,* と, に (のみ)
+\@namedef{brl@mecab@wakachi_21}{{-90}{80}}%助詞,副助詞,*,* のみ, ばかり, ほど
+\@namedef{brl@mecab@wakachi_22}{{-90}{80}}%助詞,副助詞／並立助詞／終助詞,*,* か (のみ)
+\@namedef{brl@mecab@wakachi_23}{{-90}{80}}%助詞,並立助詞,*,* やら, だの
+\@namedef{brl@mecab@wakachi_24}{{-90}{40}}%助詞,格助詞・一般／連体化,*,* 助詞,連体化,*,* の (のみ)
+\@namedef{brl@mecab@wakachi_25}{{-90}{80}}%助動詞,*,*,* う, たい, だ, ない
+\@namedef{brl@mecab@wakachi_26}{{40}{40}}%接続詞,*,*,*
+\@namedef{brl@mecab@wakachi_27}{{40}{-110}}%接頭詞,形容詞接続,*,*
+\@namedef{brl@mecab@wakachi_28}{{40}{-110}}%接頭詞,数接続,*,*
+\@namedef{brl@mecab@wakachi_29}{{40}{-110}}%接頭詞,動詞接続,*,*
+\@namedef{brl@mecab@wakachi_30}{{40}{-110}}%接頭詞,名詞接続,*,*
+\@namedef{brl@mecab@wakachi_31}{{20}{20}}%動詞,自立,*,*
+\@namedef{brl@mecab@wakachi_32}{{-30}{20}}%動詞,接尾,*,*
+\@namedef{brl@mecab@wakachi_33}{{-90}{20}}%動詞,非自立,*,*
+\@namedef{brl@mecab@wakachi_34}{{40}{40}}%副詞,一般,*,*
+% \@namedef{brl@mecab@wakachi_35}{{40}{40}}%副詞,助詞類接続,*,*
+% \@namedef{brl@mecab@wakachi_36}{{40}{40}}%名詞,サ変接続,*,*
+% \@namedef{brl@mecab@wakachi_37}{{40}{40}}%名詞,ナイ形容詞語幹,*,*
+\@namedef{brl@mecab@wakachi_38}{{40}{40}}%名詞,一般,*,*
+\@namedef{brl@mecab@wakachi_39}{{40}{40}}%名詞,引用文字列,*,*
+% \@namedef{brl@mecab@wakachi_40}{{40}{40}}%名詞,形容動詞語幹,*,*
+\@namedef{brl@mecab@wakachi_41}{{40}{40}}%名詞,固有名詞,一般,*
+\@namedef{brl@mecab@wakachi_42}{{40}{60}}%名詞,固有名詞,人名,一般
+\@namedef{brl@mecab@wakachi_43}{{40}{60}}%名詞,固有名詞,人名,姓
+\@namedef{brl@mecab@wakachi_44}{{40}{60}}%名詞,固有名詞,人名,名
+\@namedef{brl@mecab@wakachi_45}{{40}{40}}%名詞,固有名詞,組織,*
+\@namedef{brl@mecab@wakachi_46}{{40}{40}}%名詞,固有名詞,地域,一般
+\@namedef{brl@mecab@wakachi_47}{{40}{40}}%名詞,固有名詞,地域,国
+% \@namedef{brl@mecab@wakachi_48}{{100}{40}}%名詞,数,*,*
+\@namedef{brl@mecab@wakachi_49}{{40}{40}}%名詞,接続詞的,*,*
+\@namedef{brl@mecab@wakachi_50}{{-110}{40}}%名詞,接尾,サ変接続,*
+\@namedef{brl@mecab@wakachi_51}{{-110}{40}}%名詞,接尾,一般,*
+\@namedef{brl@mecab@wakachi_52}{{-110}{40}}%名詞,接尾,形容動詞語幹,*
+\@namedef{brl@mecab@wakachi_53}{{-110}{40}}%名詞,接尾,助数詞,*
+\@namedef{brl@mecab@wakachi_54}{{-110}{40}}%名詞,接尾,助動詞語幹,*
+\@namedef{brl@mecab@wakachi_55}{{-50}{40}}%名詞,接尾,人名,*
+\@namedef{brl@mecab@wakachi_56}{{-110}{40}}%名詞,接尾,地域,*
+\@namedef{brl@mecab@wakachi_57}{{-110}{40}}%名詞,接尾,特殊,*
+\@namedef{brl@mecab@wakachi_58}{{-110}{40}}%名詞,接尾,副詞可能,*
+% \@namedef{brl@mecab@wakachi_59}{{40}{40}}%名詞,代名詞,一般,*
+\@namedef{brl@mecab@wakachi_60}{{40}{40}}%名詞,代名詞,縮約,*
+\@namedef{brl@mecab@wakachi_61}{{40}{40}}%名詞,代名詞,助動詞接続,*
+\@namedef{brl@mecab@wakachi_62}{{40}{40}}%名詞,動詞非自立的,*,*
+\@namedef{brl@mecab@wakachi_63}{{40}{40}}%名詞,特殊,助動詞語幹,*
+\@namedef{brl@mecab@wakachi_64}{{40}{40}}%名詞,非自立,一般,* 
+\@namedef{brl@mecab@wakachi_65}{{40}{40}}%名詞,非自立,形容動詞語幹,* ふう, みたい (のみ) 
+\@namedef{brl@mecab@wakachi_66}{{-90}{40}}%名詞,非自立,助動詞語幹,* よ, よう (のみ)
+\@namedef{brl@mecab@wakachi_67}{{40}{40}}%名詞,非自立,副詞可能,* 限り, 頃 (など)
+\@namedef{brl@mecab@wakachi_68}{{40}{40}}%名詞,副詞可能,*,*
+\@namedef{brl@mecab@wakachi_69}{{40}{40}}%連体詞,*,*,*
+\@namedef{brl@mecab@wakachi_70}{{-90}{80}}%助詞,格助詞,引用,* と
+\@namedef{brl@mecab@wakachi_71}{{-90}{40}}%助詞,連体化,*,* ノ (のみ)
+
+\@namedef{brl@mecab@wakachi_100}{{40}{80}}%助詞,接続助詞,*,*,*,*,*,ものの 
+\@namedef{brl@mecab@wakachi_101}{{-110}{20}}%助詞,格助詞,連語,* という = 助詞 + 動詞 (基本形)
+
+
+\@namedef{brl@mecab@wakachi_107}{{-130}{-130}}%記号,句点,*,* after env
+% \@namedef{brl@mecab@wakachi_8}{{-10}{-10}}%記号,空白,*,*
+\@namedef{brl@mecab@wakachi_109}{{-130}{-130}}%記号,読点,*,* after env
+
+
+\@namedef{brl@mecab@wakachi_200}{{20}{20}}%助動詞,*,*,*,*,*,(ござる|御座る) 
+\@namedef{brl@mecab@wakachi_201}{{-70}{20}}%助動詞,*,*,*,*,*,(ある|ない)
+\@namedef{brl@mecab@wakachi_300}{{20}{-30}}%動詞,自立,*,*,サ変・スル,未然レル接続,する -> さ
+\@namedef{brl@mecab@wakachi_350}{{-30}{20}}%動詞,非自立,*,*,*,*,なさる
+\@namedef{brl@mecab@wakachi_351}{{20}{20}}%動詞,非自立,*,*,*,*,(くださる|下さる)
+
+\@namedef{brl@mecab@wakachi_370}{{-70}{40}}%名詞,接尾,動詞連用形,*
+
+\@namedef{brl@mecab@wakachi_380}{{40}{40}}%名詞,接尾,一般,*
+\@namedef{brl@mecab@wakachi_381}{{-70}{40}}%名詞,接尾,一般,*
+
+\@namedef{brl@mecab@wakachi_400}{{-90}{40}}%名詞,非自立,一般,*,*,*,の
+\@namedef{brl@mecab@wakachi_401}{{-90}{40}}%名詞,非自立,形容動詞語幹,*,*,*,みたい
+\@namedef{brl@mecab@wakachi_402}{{-90}{40}}%名詞,非自立,副詞可能,*,*,*,如く
+
+\@namedef{brl@mecab@wakachi_450}{{40}{40}}%接頭詞,数接続,*,*,*,*,各
+\@namedef{brl@mecab@wakachi_451}{{40}{40}}%接頭詞,名詞接続,*,*,*,*,各,相
+
+% 非
+\@namedef{brl@mecab@wakachi_452}{{40}{-60}}%接頭詞,名詞接続,*,*,*,*,非
+\@namedef{brl@mecab@wakachi_453}{{40}{40}}%接頭詞,名詞接続,*,*,*,*,非
+
+\@namedef{brl@mecab@wakachi_460}{{40}{-60}}%名詞,一般,*,* （名詞接続）
+
+\@namedef{brl@mecab@wakachi_600}{{120}{120}}% ＝, ―, …
+\@namedef{brl@mecab@wakachi_601}{{-130}{-130}}% 〜
+\@namedef{brl@mecab@wakachi_602}{{40}{40}}% ％, ♯, ＊
+\@namedef{brl@mecab@wakachi_603}{{120}{120}}%   (⇔|⇒|⇐|↔|←|→)
+\@namedef{brl@mecab@wakachi_604}{{-130}{120}}%   ・
+\@namedef{brl@mecab@wakachi_605}{{120}{-130}}%   \eqsign
+
+\@namedef{brl@mecab@wakachi_607}{{120}{120}}% ＆, ＠
+
+\@namedef{brl@mecab@wakachi_608}{{-130}{120}}% commamath
+
+\@namedef{brl@mecab@wakachi_609}{{-130}{-130}}% \n \BrailleDirect
+\@namedef{brl@mecab@wakachi_610}{{120}{120}}% ※, ☆, ★
+\@namedef{brl@mecab@wakachi_611}{{-130}{120}}% ：, ；
+
+\@namedef{brl@mecab@wakachi_620}{{-130}{120}}% \desci, \descii
+\@namedef{brl@mecab@wakachi_621}{{120}{120}}% \qedsymbol
+
+
+\@namedef{brl@mecab@wakachi_630}{{-70}{-130}}%記号,括弧開,*,*
+\@namedef{brl@mecab@wakachi_632}{{-70}{-130}}%記号,括弧開,*,*
+\@namedef{brl@mecab@wakachi_634}{{-70}{-130}}%記号,括弧開,*,*
+\@namedef{brl@mecab@wakachi_660}{{40}{-130}}%記号,括弧開,*,* カギ類
+\@namedef{brl@mecab@wakachi_662}{{40}{-130}}%記号,括弧開,*,* カギ類
+\@namedef{brl@mecab@wakachi_664}{{40}{-130}}%記号,括弧開,*,* カギ類
+\@namedef{brl@mecab@wakachi_680}{{-70}{-130}}%記号,括弧開,*,*
+
+\@namedef{brl@mecab@wakachi_698}{{120}{120}}%記号,括弧開,*,* ）（
+\@namedef{brl@mecab@wakachi_699}{{-130}{-130}}%記号,括弧開,*,* （（ or ））
+
+\@namedef{brl@mecab@wakachi_800}{{100}{40}}%(一|二|三|四|五|六|七|八|九)
+\@namedef{brl@mecab@wakachi_801}{{100}{40}}%(十|百|千)
+\@namedef{brl@mecab@wakachi_802}{{-50}{40}}%(万|億|兆)
+\@namedef{brl@mecab@wakachi_803}{{100}{40}}%(有余|余)
+\@namedef{brl@mecab@wakachi_804}{{100}{40}}%(偶数|奇数|有限|無限|可算|非可算|半|零|数千|何千|幾千|連千)
+\@namedef{brl@mecab@wakachi_805}{{100}{40}}%(数|何|幾)
+\@namedef{brl@mecab@wakachi_806}{{100}{40}}%(数十|何十|幾十|連十) etc.
+\@namedef{brl@mecab@wakachi_807}{{100}{40}}%(数百|何百|幾百) etc.
+\@namedef{brl@mecab@wakachi_808}{{100}{40}}%(連) etc.
+\@namedef{brl@mecab@wakachi_809}{{100}{40}}%(連百) etc.
+\@namedef{brl@mecab@wakachi_810}{{100}{40}}% idnumber
+\@namedef{brl@mecab@wakachi_811}{{100}{-130}}% idnumbernosp
+
+%
+% (100 120) dollar■と (-110 80) etc. because dollar does not closed.  
+\@namedef{brl@mecab@wakachi_153}{{-130}{100}}% \m cmd_dollar & alphunit  may be changed by user
+\@namedef{brl@mecab@wakachi_846}{{100}{120}}% \m cmd_dollar
+\@namedef{brl@mecab@wakachi_847}{{-130}{-130}}% \M cmd_env
+
+\@namedef{brl@mecab@wakachi_850}{{100}{100}}% cmd_verb
+
+\@namedef{brl@mecab@wakachi_851}{{-130}{-130}}% {} = _ 
+
+% \@namedef{brl@mecab@wakachi_852}{{-70}{40}}% invisible comma, skipped.
+
+\@namedef{brl@mecab@wakachi_853}{{40}{40}}% \n \brl@text_cmd_noun, \brl@text_cmd_eqquote, \brl@text_cmd_virtualchar
+
+\@namedef{brl@mecab@wakachi_854}{{100}{100}}% \n \brl@text_cmd_info
+
+
+% \@namedef{brl@mecab@wakachi_900}{{0}{-1100}}% 記号,括弧開,*,*,*,*,(
+% \@namedef{brl@mecab@wakachi_901}{{-1100}{0}}% 記号,括弧閉,*,*,*,*,)
+% \@namedef{brl@mecab@wakachi_902}{{100}{-1100}}% 記号,括弧開,*,*,*,*,``
+% \@namedef{brl@mecab@wakachi_903}{{-1100}{100}}% 記号,括弧閉,*,*,*,*,''
+% \@namedef{brl@mecab@wakachi_904}{{100}{-1100}}% 記号,括弧開,*,*,*,*,[
+% \@namedef{brl@mecab@wakachi_905}{{-1100}{100}}% 記号,括弧閉,*,*,*,*,]
+% \@namedef{brl@mecab@wakachi_906}{{100}{-1100}}% 記号,括弧開,*,*,*,*,`
+% \@namedef{brl@mecab@wakachi_907}{{-1100}{100}}% 記号,括弧閉,*,*,*,*,'
+\@namedef{brl@mecab@wakachi_908}{{-130}{-130}}% 記号,句点,*,*,*,*,. used only in the case X.Y, otherwise in english or transformed to ． or 。
+% \@namedef{brl@mecab@wakachi_909}{{-1100}{1000}}% 記号,読点,一般,*,*,*,","
+% \@namedef{brl@mecab@wakachi_910}{{0}{0}}%記号,一般,*,*,*,;
+% \@namedef{brl@mecab@wakachi_911}{{0}{0}}%記号,一般,*,*,*,:
+% \@namedef{brl@mecab@wakachi_912}{{0}{0}}%記号,一般,*,*,*,!
+% \@namedef{brl@mecab@wakachi_913}{{0}{0}}%記号,一般,*,*,*,?
+% \@namedef{brl@mecab@wakachi_914}{{0}{0}}%記号,一般,*,*,*,-
+% \@namedef{brl@mecab@wakachi_915}{{0}{0}}%記号,一般,*,*,*,/
+% \@namedef{brl@mecab@wakachi_916}{{0}{0}}%記号,一般,*,*,*,--
+% \@namedef{brl@mecab@wakachi_917}{{-1000}{40}}% \s \dots
+% \@namedef{brl@mecab@wakachi_918}{{-1000}{40}}% \s \&
+
+
+% \@namedef{brl@mecab@wakachi_948}{{100}{40}}%名詞,数,*,*
+
+\def\brl@mecab@wakachi_science{120}
+\def\brl@mecab@wakachi_common{100}
+
+\@namedef{brl@mecab@wakachi_1000}{{100}{100}}% \cmd_alphlett 記号,アルファベット,文字 may be changed by user
+\@namedef{brl@mecab@wakachi_1001}{{100}{100}}% \cmd_alphword 記号,アルファベット,語句
+\@namedef{brl@mecab@wakachi_1002}{{100}{120}}% \cmd_alphlett 記号,アルファベット,文字 + .
+
+% \@namedef{brl@mecab@wakachi_1010}{{0}{0}}%記号,アルファベット,*,*,*,*,'
+
+%
+% .\ etc. needs distinction.
+%
+% \cmd_space ends english.
+% avoid 付録 A bbb -> 付録 「A bbb」
+%
+\@namedef{brl@mecab@wakachi_820}{{-130}{-130}}% \cmd_space
+\@namedef{brl@mecab@wakachi_1021}{{-130}{-130}}% \!
+\@namedef{brl@mecab@wakachi_1022}{{-130}{-130}}% \,
+\@namedef{brl@mecab@wakachi_1023}{{-130}{-130}}% \>
+\@namedef{brl@mecab@wakachi_1024}{{-130}{-130}}% \:
+\@namedef{brl@mecab@wakachi_1025}{{-130}{-130}}% \;
+\@namedef{brl@mecab@wakachi_1026}{{-130}{-130}}% \␣
+\@namedef{brl@mecab@wakachi_1027}{{-130}{-130}}% ~
+\@namedef{brl@mecab@wakachi_1028}{{-130}{-130}}% \quad
+\@namedef{brl@mecab@wakachi_1029}{{-130}{-130}}% \qquad
+
+
+
+
+
+% 900-907 -> the corresponding symbols in jp
+% (,*,*,*,記号,括弧開,*,*,*,*,(,(,*,*
+% ),*,*,*,記号,括弧閉,*,*,*,*,),),*,*
+% [,*,*,*,記号,括弧開,*,*,*,*,[,[,*,*
+% ],*,*,*,記号,括弧閉,*,*,*,*,],],*,*
+% `,*,*,*,記号,括弧開,*,*,*,*,`,`,*,*
+% ',*,*,*,記号,括弧閉,*,*,*,*,',',*,*
+% ``,*,*,*,記号,括弧開,*,*,*,*,``,“,*,*
+% '',*,*,*,記号,括弧閉,*,*,*,*,'',”,*,*
+
+% 908
+% .,*,*,*,記号,句点,*,*,*,*,.,.,*,*
+
+% 909-916 -> the corresponding symbols in jp
+% ",",*,*,*,記号,読点,一般,*,*,*,",",",",*,*
+% ;,*,*,*,記号,一般,*,*,*,*,;,;,*,*
+% :,*,*,*,記号,一般,*,*,*,*,:,:,*,*
+% !,*,*,*,記号,一般,*,*,*,*,!,!,*,*
+% ?,*,*,*,記号,一般,*,*,*,*,?,?,*,*
+% -,*,*,*,記号,一般,*,*,*,*,-,-,*,*
+% /,*,*,*,記号,一般,*,*,*,*,/,/,1,*
+% --,*,*,*,記号,一般,*,*,*,*,--,--,*,*
+
+% 917 \dots -> …
+% 918 \& -> ＆
+
+% 1010 -> 616 ’
+% ',*,*,*,記号,アルファベット,*,*,*,*,',',*,*
+
+% OK
+% 660 40 -1100, 661 -1100 40 カギ類
+% 「,*,*,*,記号,括弧開,*,*,*,*,「,「,*,*
+% 」,*,*,*,記号,括弧閉,*,*,*,*,」,」,*,*
+% 『,*,*,*,記号,括弧開,*,*,*,*,『,『,*,*
+% 』,*,*,*,記号,括弧閉,*,*,*,*,』,』,*,*
+% “,*,*,*,記号,括弧開,*,*,*,*,“,“,*,*
+% ”,*,*,*,記号,括弧閉,*,*,*,*,”,”,*,*
+
+% ‘,*,*,*,記号,括弧開,*,*,*,*,‘,‘,*,*
+% ’,*,*,*,記号,括弧閉,*,*,*,*,’,’,*,*
+
+% OK
+% 630 -70 -1100, 631 -1100 40
+% （,*,*,*,記号,括弧開,*,*,*,*,（,（,*,*
+% ）,*,*,*,記号,括弧閉,*,*,*,*,）,）,*,*
+% ⸨,*,*,*,記号,括弧開,*,*,*,*,⸨,⸨,*,*
+% ⸩,*,*,*,記号,括弧閉,*,*,*,*,⸩,⸩,*,*
+% ［,*,*,*,記号,括弧開,*,*,*,*,［,［,*,*
+% ］,*,*,*,記号,括弧閉,*,*,*,*,］,］,*,*
+
+% 《,*,*,*,記号,括弧開,*,*,*,*,《,《,*,*
+% 》,*,*,*,記号,括弧閉,*,*,*,*,》,》,*,*
+% 〈,*,*,*,記号,括弧開,*,*,*,*,〈,〈,*,*
+% 〉,*,*,*,記号,括弧閉,*,*,*,*,〉,〉,*,*
+% 【,*,*,*,記号,括弧開,*,*,*,*,【,【,*,*
+% 】,*,*,*,記号,括弧閉,*,*,*,*,】,】,*,*
+% 〔,*,*,*,記号,括弧開,*,*,*,*,〔,〔,*,*
+% 〕,*,*,*,記号,括弧閉,*,*,*,*,〕,〕,*,*
+
+% OK
+% 600
+% …,*,*,*,記号,一般,*,*,*,*,…,…,*,*
+% ＝,*,*,*,記号,一般,*,*,*,*,＝,＝,*,*
+
+% OK
+% 601
+% 〜,*,*,*,記号,一般,*,*,*,*,〜,〜,*,*
+
+% OK
+% 603
+% ⇐⇒,*,*,*,記号,一般,*,*,*,*,⇐⇒,⇔,*,*
+% ⇔,*,*,*,記号,一般,*,*,*,*,⇔,⇔,*,*
+% ⇒,*,*,*,記号,一般,*,*,*,*,⇒,⇒,*,*
+% ⇐,*,*,*,記号,一般,*,*,*,*,⇐,⇐,*,*
+% ←→,*,*,*,記号,一般,*,*,*,*,←→,↔,*,*
+% ↔,*,*,*,記号,一般,*,*,*,*,↔,↔,*,*
+% ←,*,*,*,記号,一般,*,*,*,*,←,←,*,*
+% →,*,*,*,記号,一般,*,*,*,*,→,→,*,*
+
+% OK
+% 604 -1100 -1100 : glue is added in text
+%・,*,*,*,記号,一般,*,*,*,*,・,・,*,*
+
+% OK
+% 607, 1000 1000
+% ＠,*,*,*,記号,一般,*,*,*,*,＠,＠,*,*
+% ＆,*,*,*,記号,一般,*,*,*,*,＆,＆,*,*
+
+% OK
+% 608 -> included in math
+% ，,*,*,*,記号,読点,数式,*,*,*,，,",",*,*
+% ",",*,*,*,記号,読点,数式,*,*,*,",",",",*,*
+
+% OK
+% 609 b
+
+% 610
+% ※,*,*,*,記号,一般,*,*,*,*,※,※,*,*
+% ☆,*,*,*,記号,一般,*,*,*,*,☆,☆,*,*
+% ★,*,*,*,記号,一般,*,*,*,*,★,★,*,*
+
+% 611
+% ：,*,*,*,記号,一般,*,*,*,*,：,：,*,*
+% ；,*,*,*,記号,一般,*,*,*,*,；,；,*,*
+
+% OK
+% 7 -1100 -1100 : glue is added in text
+% 。,*,*,*,記号,句点,*,*,*,*,。,。,*,*
+% ．,*,*,*,記号,句点,*,*,*,*,．,。,*,*
+% ！,*,*,*,記号,一般,*,*,*,*,！,！,*,*
+% ？,*,*,*,記号,一般,*,*,*,*,？,？,*,*
+
+% p,*,*,*,記号,句点,*,*,*,*,p,p,4,*
+
+% OK
+% 9 -1100 -1100 : glue is added in text
+% ，,*,*,*,記号,読点,一般,*,*,*,，,、,*,*
+% 、,*,*,*,記号,読点,一般,*,*,*,、,、,*,*
+
+% -> cmd_space
+% ／,*,*,*,記号,一般,*,*,*,*,／,／,*,*
+
+
+% 53 etc.
+% ♯,*,*,*,記号,一般,*,*,*,*,♯,♯,*,*
+% ％,*,*,*,記号,一般,*,*,*,*,％,％,*,*
+% ＊,*,*,*,記号,一般,*,*,*,*,＊,＊,*,*
+
+%
+%
+%
+
+%
+% 理系の文章では接尾語とは離す
+%
+% OK lett接尾  100 -110 X_せん
+% OK word接尾    100 -110 speechしゅー
+% OK lett.␣接尾 120 -110 ?
+%
+% NG lett（      100 -70 ML（メーリングリスト）
+% OK word␣（    100 -70 Gold␣（きん）
+% OK lett.␣（   120 -70 Dr.␣（はくし）
+%
+
+
+
+% ()[]
+
+% 括弧類
+% 第１ 二重 第２
+% （） ⸨⸩ ［］ 《》 〈〉 【】 〔〕
+% 630  632  634  636  638  640  642   
+
+% カギ類
+% 第１ 二重 第２
+% 「」 『』 “” ‘’
+% 660  662  664  666
+
+% 英語記号
+% , ; : . ! ? ' - -- \dots / ( ) [ ] `` '' ` ' \& . ,
+%
+% 英語でないと判定後、日本語に変換
+
+% 星類
+% 第１ 第２ 第３
+%  ☆   ※   ★
+% * -> ＊ : brl_document
+
+% 記号
+% + -> プラス
+% = -> ＝
+%
+
+% content
+%
+% 点訳挿入    ⠶⠶ 680
+% （ 第１括弧 ⠶  630
+% ⸨ 二重括弧 ⠰⠶ 632
+% ［ 第２括弧 ⠐⠶ 634
+
+% 「 第１カギ ⠤  660
+% 『 二重カギ ⠰⠤ 662
+% “ 第２カギ ⠰⠄ 664
+
+% int
+%
+% 第一指示 ⠐⠤
+% 第二指示 ⠐⠤⠤
+% 第三指示 ⠰⠤⠤
+
+
+% \# \% 日本語のみ.
+% -> ♯ ％ : brl_document
+% -> \# \% : brl_math
+
+% その他の記号は brl_document で日本語に変換
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% preprocessor :
+%%
+%% \brl@mecab_preproc
+%%
+
+
+\newcount\brl@mecab@posnum
+\newcount\brl@mecab@linenum
+
+\newif\ifbrl@mecab@nocrbefore
+
+\def\brl@mecab_appendtoks#1{\brl@mecab@toks\expandafter{\the\brl@mecab@toks#1}}
+\newtoks\brl@mecab@toks
+
+\def\brl@mecab_appendwordtoks#1{\brl@mecab@wordtoks\expandafter{\the\brl@mecab@wordtoks#1}}
+\newtoks\brl@mecab@wordtoks
+
+\def\brl@mecab_appendnumtoks#1{\brl@mecab@numtoks\expandafter{\the\brl@mecab@numtoks#1}}
+\newtoks\brl@mecab@numtoks
+
+
+
+\def\brl@mecab_appendyomitoks#1#2{\brl@mecab@yomitoks\expandafter{\the\brl@mecab@yomitoks{#1}{#2}}}
+\newtoks\brl@mecab@yomitoks
+
+
+\def\brl@mecab_appenddcstoks#1{\brl@mecab@dcstoks\expandafter{\the\brl@mecab@dcstoks#1}}
+\newtoks\brl@mecab@dcstoks
+
+
+\def\brl@mecab_appendcsbtoks#1{%
+  \edef\brl@tmp{\the\brl@mecab@csbtoks{\the\brl@mecab@posnum}}%
+  \brl@mecab@csbtoks\expandafter{\brl@tmp{#1}}%
+}
+
+\def\brl@mecab_pullcsbtoks{%
+  \expandafter\brl@mecab_pullcsbtoks_\the\brl@mecab@csbtoks\brl@end%
+}
+
+\def\brl@mecab_pullcsbtoks_#1#2#3\brl@end{%
+  \def\brl@mecab@csbpos{#1}%
+  \def\brl@mecab@csb{{#2}}%
+  \brl@mecab@csbtoks{#3}%
+}
+
+\newtoks\brl@mecab@csbtoks
+
+\def\brl@mecab_appendsptoks{%
+  \edef\brl@tmp{\the\brl@mecab@sptoks{\the\brl@mecab@posnum}}%
+  \brl@mecab@sptoks\expandafter{\brl@tmp}%
+}
+
+\def\brl@mecab_pullsptoks{%
+  \expandafter\brl@mecab_pullsptoks_\the\brl@mecab@sptoks\brl@end%
+}
+
+\def\brl@mecab_pullsptoks_#1#2\brl@end{%
+  \def\brl@mecab@sppos{#1}%
+  \brl@mecab@sptoks{#2}%
+}
+
+\newtoks\brl@mecab@sptoks
+
+\def\brl@mecab_appendcsfatoks#1{%
+  \edef\brl@tmp{\the\brl@mecab@csfatoks{\the\brl@mecab@posnum}}%
+  \brl@mecab@csfatoks\expandafter{\brl@tmp{#1}}%
+}
+
+\def\brl@mecab_pullcsfatoks{%
+  \expandafter\brl@mecab_pullcsfatoks_\the\brl@mecab@csfatoks\brl@end%
+}
+
+\def\brl@mecab_pullcsfatoks_#1#2#3\brl@end{%
+  \def\brl@mecab@csfapos{#1}%
+  \def\brl@mecab@csfa{{#2}}%
+  \brl@mecab@csfatoks{#3}%
+}
+
+\def\brl@mecab_appendcsfbtoks#1{%
+  \edef\brl@tmp{\the\brl@mecab@csfbtoks{\the\brl@mecab@posnum}}%
+  \brl@mecab@csfbtoks\expandafter{\brl@tmp{#1}}%
+}
+
+\def\brl@mecab_pullcsfbtoks{%
+  \expandafter\brl@mecab_pullcsfbtoks_\the\brl@mecab@csfbtoks\brl@end%
+}
+
+\def\brl@mecab_pullcsfbtoks_#1#2#3\brl@end{%
+  \def\brl@mecab@csfbpos{#1}%
+  \def\brl@mecab@csfb{{#2}}%
+  \brl@mecab@csfbtoks{#3}%
+}
+
+\newtoks\brl@mecab@csfatoks% \bfclose
+\newtoks\brl@mecab@csfbtoks% \bfopen
+
+\newcount\brl@mecab@spnum
+
+\def\brl@math_cmd@#1#2{\@firstoftwo#2}% used for cmd{digit}{{2}{n}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% main :
+%%
+%%
+%% \brl@mecab@id
+%%   0〜899 : japanese
+%% 900〜999 : common in japanese and english (changable)
+%% 1000〜 : english
+
+
+% おちょこ,*,*,*,名詞,一般,*,*,*,*,おちょこ,オチョコ,オチョコ,お^ちょこ,1,*
+% おちょぼ口,*,*,*,名詞,一般,*,*,*,*,おちょぼ口,オチョボグチ,オチョボグチ,お^ちょぼぐち,2,*
+%
+% note:
+% ^ denotes ちょ and so on.
+% 1 means the reading is the same as the original noun.
+% 2 means the reading is different from the original noun.
+%
+% 縦,*,*,*,名詞,一般,*,*,*,*,縦,タテ/ホシイママ,タテ/ホシイママ,たて/ほしいまま,3,*
+%
+% note:
+% 3 means the number of the reading is more than one. 
+%
+% 品,*,*,*,名詞,接尾,助数詞,*,*,*,品,ヒン/シナ,ヒン/シナ,ひん/しな,3,"0:っ:ぴん--ぴん---ぴん--ぴん:ぴん:ぴん-ぴん-ぴん-ぴん,2:く:::"
+%
+% note:
+% 0: no wa-reading
+% っ: ひゃ"っ"ぴん
+% 1ぴん
+% 2ひん(default)
+% 3ぴん
+% ...:
+% じゅっぴん:
+% ひゃっぴん
+% せんぴん
+% まんぴん
+%
+
+% つ,*,*,*,名詞,接尾,助数詞,*,*,*,つ,ツ,ツ,つ,1,"9:く:--っつ-っつ--っつ--っつ::"
+%
+% note:
+% ひとつ
+% ふたつ
+% ...
+% ここのつ
+
+% 遍,*,*,*,名詞,接尾,助数詞,*,*,*,遍,ヘン,ヘン,へん,1,"0:っ:ぺん--べん---ぺん---:べん:ぺん-ぺん-べん-べん"
+%
+% "0:っ:ぺん--べん---ぺん---:べん:ぺん-ぺん-べん-べん"
+% #1 : 1つ, 2つ, etc. wa-reading
+% #2 : ひゃく, ひゃっ
+% #3 : 1ぺん,2へん,3べん,...,9へん
+% #4 : 何遍, 幾遍 -> なんべん, いくへん
+% #5 : 十遍, 百遍, 千遍, 万遍 -> 10ぺん, 100ぺん, 1000べん, まんべん
+
+
+
+\def\brl@mecab@idend{-1}
+\def\brl@mecab@idskip{-2}
+
+% 名詞,サ変接続,*,* 36
+% 名詞,一般,*,* 38
+% 名詞,引用文字列,*,* 39
+% 名詞,形容動詞語幹,*,* 40
+
+% \def\brl@mecab@idnoun_sah{36}
+\def\brl@mecab@idnoun_gen{38}
+% \def\brl@mecab@idnoun_adj{40}
+\def\brl@mecab@idnoun_left{460}
+%\def\brl@mecab@idnoun_right{461}
+
+\def\brl@mecab@idseparate{698}
+\def\brl@mecab@idconcat{699}
+
+\def\brl@mecab@idmw{53}%名詞,接尾,助数詞,*
+
+\def\brl@mecab@idnum_arabic{948}
+
+% (一|二|三|四|五|六|七|八|九)
+\def\brl@mecab@idnum_kanji{800}% and idnum_arabic are 0〜9999 -> arabic or jp
+
+% (十|百|千)
+\def\brl@mecab@idnum_sbase{801}%
+
+% (万|億|兆) etc.
+\def\brl@mecab@idnum_lbase{802}% WWW XXX
+
+% (有余|余)
+\def\brl@mecab@idnum_indefbase{803}% WWW XXX
+
+% (偶数|奇数|有限|無限|可算|非可算|半|零|数千|何千|幾千|連千)
+\def\brl@mecab@idnum_alone{804}% XXX
+
+% (数|何|幾)
+\def\brl@mecab@idnum_indefar{805}% WWW XXX -> WWW:arabic
+
+% (数十|何十|幾十|連十) etc.
+\def\brl@mecab@idnum_indefjpa{806}% WWW XXX -> WWW:jp XXX:ar=X0
+
+% (数百|何百|幾百) etc.
+\def\brl@mecab@idnum_indefjpb{807}% WWW XXX -> WWW:jp XXX:jp (conj)
+
+% (連) etc.
+\def\brl@mecab@idnum_indefsp{808}% WWW XXX -> WWXXX WW:arabic
+
+% (連百) etc.
+\def\brl@mecab@idnum_indefjpc{809}% WWW XXX -> WWW:jp XXX:arabic
+
+
+
+\def\brl@mecab@idnumber{810}% number
+\def\brl@mecab@idnumbernosp{811}% numbernosp
+
+\def\brl@mecab@idmathnum{845}% \d -> num
+\def\brl@mecab@idmath{846}% \m
+\def\brl@mecab@idMath{847}% \M
+
+\def\brl@mecab@idcommamath{608}% must be united and deleted.
+
+\def\brl@mecab@idalph_unit{153}
+\def\brl@mecab@idalph_lett{1000}
+\def\brl@mecab@idalph_word{1001}
+\def\brl@mecab@idalph_lettp{1002}
+
+\def\brl@mecab@context_jp{900}%
+\def\brl@mecab@context_en{1000}%
+
+\def\brl@mecab@repl_Math{M}% 847
+\def\brl@mecab@repl_any{a}% any
+\def\brl@mecab@repl_comma{c}% 608
+\def\brl@mecab@repl_digit{d}% 845 or 846
+\def\brl@mecab@repl_alphlett{l}% 1000
+\def\brl@mecab@repl_math{m}% 846
+\def\brl@mecab@repl_noun{n}% 38
+\def\brl@mecab@repl_period{p}% 7
+\def\brl@mecab@repl_symbol{s}% 4
+\def\brl@mecab@repl_alphunit{u}% 1000 or 153
+\def\brl@mecab@repl_alphword{w}% 1001
+\def\brl@mecab@repl_open{x}% 625
+\def\brl@mecab@repl_close{y}% 626
+
+
+
+% %t :letter id
+% 0:DEFAULT
+% 1:SPACE
+% 2:KANJI
+% 3:SYMBOL
+% 4:NUMERIC
+% 5:ALPHA
+% 6:HIRAGANA
+% 7:KATAKANA
+% 8:KANJINUMERIC
+% 9:GREEK
+% 10:CYRILLIC
+
+
+\def\brl@mecab#1{%
+  %\def\brl@tmp{#1}\show\brl@tmp
+  {%
+    % preproc init
+    %
+    \brl@mecab@posnum\z@%
+    \brl@mecab@nocrbeforefalse% Do not need \n at the first.
+    %
+    % preproc
+    %
+    \let\brl@mecab_preproc@prevchar\empty%
+    \brl@mecab_preproc#1\brl@end% replace cs by \?. $ -> cmd_dollar
+    %
+    %
+    % mecab init
+    %
+    \brl@mecab@posnum\@M% used appendcsa,b,fa,fb
+%    \brl@mecab_appendcsatoks{}% append dummy at the last.
+    \brl@mecab_appendcsbtoks{}% append dummy at the last.
+    \brl@mecab_appendsptoks% append dummy at the last.
+    \brl@mecab_appendsptoks% append dummy at the last.
+    \brl@mecab_appendcsfatoks{}% append dummy at the last.
+    \brl@mecab_appendcsfbtoks{}% append dummy at the last.
+    \edef\brl@mecab@text{\the\brl@mecab@toks}% replaced text
+    %
+    \brl@mecab@toks{}%
+    \brl@mecab@posnum\z@%
+    %
+    % \brl@mecab_pullcsatoks% take the first
+    \brl@mecab_pullcsbtoks% take the first
+    \brl@mecab_pullsptoks% take the first
+    \brl@mecab_pullcsfatoks% take the first
+    \brl@mecab_pullcsfbtoks% take the first
+    %
+    % mecab
+    %
+    \brl@mecab_exec%
+    %
+    %
+    %
+    % postproc init
+    %
+    \brl@mecab@spnum=-\@M% There is no space at the first.
+    \brl@mecab@linenum\z@%
+    \let\brl@mecab@previd\brl@mecab@idend% EOS
+    \def\brl@mecab@endnum{\m@ne}% english while linenum <= endnum
+    %
+    % postproc
+    %
+    % \show\brl@mecab@result%
+    \expandafter\brl@mecab_postproc\brl@mecab@result%
+    %
+    %
+    %
+    \xdef\brl@text@text{\the\brl@mecab@toks}%
+    %
+    % log
+    %
+    \brl@mecab_log{#1}%
+    %
+    % temporary
+    % \let\brl@text_cmd_number\brl@@asis%
+    % \xdef\brl@text@text{\brl@text@text}%
+  }%
+}
+
+
+
+
+%%
+%% \brl@mecab_preproc
+%% replace cs by \?
+%%
+%% input: text
+%%
+%% output:
+%%
+%% \brl@mecab@toks: text with cs replaced with \?
+%%
+%% \M: display math
+%% \m: math (number)
+%% \n: noun
+%% \p: period
+%% \d: digit
+%% \c: comma
+%% \s: symbol
+%% \a: user difinition
+%% \b: \BrailleDirect
+%% 
+%% \brl@mecab@yomitoks: {{yomi}{id}...{..}{..}{..}}
+%%
+%%
+%% \brl@mecab@csatoks: {{pos}{xxx}...{..}{..}}
+%%
+%%   \brl@text_cmd_label{#1}{#2}
+%%
+%% \brl@mecab@csbtoks: {{pos}{\brl@text_cmd_emopen}...{..}{..}}
+%%
+%% \brl@mecab@posnum: char pos in the original source ignoring spaces.
+%%
+%%
+%% the role of {...} :
+%% (1) {} -> invisible comma.
+
+
+%%
+%% note: in the partial anaysis, mecab crashes in the case where
+%% there exists a space after XX.
+%% XX 
+%% AAA\t...
+%%
+
+\def\brl@mecab_insertcr{%
+  \ifbrl@mecab@nocrbefore%
+    \brl@mecab_appendtoks{\brl@mecab@cmd_cr}%
+    \brl@mecab@nocrbeforefalse%
+  \fi%
+}
+
+
+\protected\def\brl@mecab_preproc#1{%
+  \edef\brl@tmp{brl@mecab_dospecial_\string#1}%
+  % \show\brl@tmp
+  \ifcsname\brl@tmp\endcsname% determine \brl@mecab@nocrbeforetrue or false
+    \csname\brl@tmp\expandafter\endcsname%
+  \else%
+    \def\brl@mecab_preproc@prevchar{#1}% it is sufficient to preserve the ordinary char.
+    \brl@mecab@nocrbeforetrue% default
+    \brl@mecab_appendtoks{#1}%
+    \advance\brl@mecab@posnum\@ne%
+    \expandafter\brl@mecab_preproc%
+  \fi%
+}
+
+\@namedef{brl@mecab_dospecial_\string\brl@end}{%
+  \brl@mecab_insertcr%
+}%
+
+\@namedef{brl@mecab_dospecial_々}{% 々 is replaced by the prevchar
+  \brl@mecab@nocrbeforetrue% default
+  \expandafter\brl@mecab_appendtoks\expandafter{\brl@mecab_preproc@prevchar}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}%
+
+
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_glue}{%
+  \brl@mecab_insertcr%
+  \brl@mecab_appendsptoks%
+  \brl@mecab_preproc%
+}
+
+
+
+\def\brl@mecab_preproc_replacedef#1#2#3{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \brl@mecab@nocrbeforetrue% default
+    \brl@mecab_appendtoks{#2}%
+    \advance\brl@mecab@posnum#3%
+    \brl@mecab_preproc%
+  }
+}
+
+%
+% the followings are replaced here because ueb may use these symbols.
+%
+\brl@mecab_preproc_replacedef{"}{''}{\tw@}% to do.
+\brl@mecab_preproc_replacedef{\#}{♯}{\@ne}% symbol used in jp
+\brl@mecab_preproc_replacedef{\%}{％}{\@ne}% symbol used in jp
+\brl@mecab_preproc_replacedef{@}{＠}{\@ne}% symbol used in jp
+\brl@mecab_preproc_replacedef{*}{＊}{\@ne}% symbol used in jp
+\brl@mecab_preproc_replacedef{\$}{ドル}{\tw@}
+\brl@mecab_preproc_replacedef{+}{プラス}{\thr@@}
+\brl@mecab_preproc_replacedef{=}{＝}{\@ne}% 半角イコール
+
+\def\brl@mecab_preproc_arrowdef#1{% behave as if "）⇒ eq（" etc.
+  \@namedef{brl@mecab_dospecial_#1}{%
+    \brl@mecab@nocrbeforetrue% default
+    \ifbrl@math_insidetext%
+      \brl@mecab_appendtoks{）#1}%
+      \brl@mecab_appendyomitoks{\brl@text_cmd_virtualchar{\brl@code_math_equationsign}}{605}%
+      \brl@mecab_insertcr%
+      \brl@mecab_appendtoks{\brl@mecab@repl_symbol\brl@mecab@cmd_cr（}%
+      \advance\brl@mecab@posnum4\relax%
+    \else%
+      \brl@mecab_appendtoks{#1}%
+      \advance\brl@mecab@posnum\@ne%
+    \fi%
+    \brl@mecab_preproc%
+  }
+}
+
+\brl@mecab_preproc_arrowdef{⇔}%
+\brl@mecab_preproc_arrowdef{⇐}%
+\brl@mecab_preproc_arrowdef{⇒}%
+
+
+
+
+\@namedef{brl@mecab_dospecial_\string\BrailleDirect}#1{%
+  \brl@mecab_appendyomitoks{\unexpanded{#1}}{609}% trueid -> 609
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_noun\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+
+%
+%   $a+b=c,$ -> $a+b=c$,
+%   $a+b=c.$ -> $a+b=c$.
+%
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_dollar}#1#2{% #2 is the lastchar
+  \def\brl@mecab_last_next{%
+    \brl@mecab_appendyomitoks{\brl@text_cmd_dollar{#1}}{\brl@mecab@idmath}% trueid -> 846
+    \brl@mecab_last{\brl@mecab@repl_math}{#2}{7}{9}%
+  }%
+  %
+  \brl@mecab_last_comma#1\brl@end,\brl@end!\brl@end%
+  %
+  \brl@mecab_preproc%
+}
+
+\def\brl@mecab_last_comma#1,\brl@end#2\brl@end{% #2 "," or "!"
+  \if#2,% the last is ","
+    \brl@mecab_appendyomitoks{\brl@text_cmd_dollar{#1}}{\brl@mecab@idmath}% trueid delete ","
+    \brl@mecab_insertcr%
+    \brl@mecab_appendtoks{\brl@mecab@repl_math\brl@mecab@cmd_cr,}%
+    \brl@mecab@nocrbeforetrue% default
+    \advance\brl@mecab@posnum\tw@%
+    \expandafter\brl@mecab_last_cont%
+  \else%
+    \brl@mecab_last_period#1.\brl@end!\brl@end% #1=orig+\brl@end
+  \fi%
+}
+\def\brl@mecab_last_cont!\brl@end{}
+
+\def\brl@mecab_last_period#1.\brl@end#2\brl@end{% #2 "." or "!"
+  \if#2.% the last is "."
+    \brl@mecab_appendyomitoks{\brl@text_cmd_dollar{#1}}{\brl@mecab@idmath}% delete "."
+    \brl@mecab_insertcr%
+    \brl@mecab_appendtoks{\brl@mecab@repl_math\brl@mecab@cmd_cr.}%
+    \brl@mecab@nocrbeforetrue% default
+    \advance\brl@mecab@posnum\tw@%
+    \expandafter\brl@mecab_last_cont%
+  \else%
+    \brl@mecab_last_next%
+  \fi%
+}
+
+
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_number}#1{%
+  \expandafter\brl@mecab_appendyomitoks{\brl@text_cmd_dollar{#1}}{\brl@mecab@id}% 845 or 846 determined by mecab
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_digit\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_env}#1#2#3{% #3 is the lastchar
+  \brl@mecab_appendyomitoks{\brl@text_cmd_env{#1}{#2}}{\brl@mecab@idMath}% trueid -> 847
+  \brl@mecab_last{\brl@mecab@repl_Math}{#3}{107}{109}%%
+  \brl@mecab_preproc%
+}
+
+%%
+%% $a\text{です.}$ 次 -> つぎ
+%% $a$ 次 -> じ
+
+\def\brl@mecab_last#1#2#3#4{%
+  \ifcsname brl@mecab_last@\detokenize{#2}\endcsname%
+    \edef\brl@mecab@lastchar{\csname brl@mecab_last@#2\endcsname}%
+  \else%
+    \def\brl@mecab@lastchar{\tw@}%
+  \fi%
+  \brl@mecab_insertcr%
+  \ifcase\brl@mecab@lastchar%
+    \brl@mecab_appendtoks{#1\brl@mecab@repl_period\brl@mecab@cmd_cr}%
+    \brl@mecab_appendyomitoks{}{#3}% trueid -> 7
+    \advance\brl@mecab@posnum\tw@%
+  \or%
+    \brl@mecab_appendtoks{#1\brl@mecab@repl_comma\brl@mecab@cmd_cr}%
+    \brl@mecab_appendyomitoks{}{#4}% trueid -> 9
+    \advance\brl@mecab@posnum\tw@%
+  \else%
+    \brl@mecab_appendtoks{#1\brl@mecab@cmd_cr}%
+    \advance\brl@mecab@posnum\@ne%
+  \fi%
+}
+
+\@namedef{brl@mecab_last@.}{\z@}
+\@namedef{brl@mecab_last@．}{\z@}
+\@namedef{brl@mecab_last@。}{\z@}
+\@namedef{brl@mecab_last@,}{\@ne}
+\@namedef{brl@mecab_last@，}{\@ne}
+\@namedef{brl@mecab_last@、}{\@ne}
+%%
+%%
+%%
+
+
+
+%%
+%% \verb, \begin
+%%
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_verb}#1{%
+  \brl@mecab_appendyomitoks{\brl@text_cmd_verb{#1}}{850}% trueid 
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_noun\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_ttopen}#1\brl@text_cmd_ttclose{%
+  \brl@mecab_appendyomitoks{\brl@text_cmd_info{#1}}{854}% trueid -> ??
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_noun\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+
+%
+% {} -> \cmd_empty
+%
+% \empty -> _ (i.e. \brl@text_dospecial__)
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_empty}{% {} in document
+  \brl@mecab_appendyomitoks{_}{851}% trueid
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_comma\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_comma}{%
+  \brl@mecab_appendyomitoks{}{852}% trueid
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_comma\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+
+
+% ,\cmd_glue -> , because of 五,六
+\@namedef{brl@mecab_dospecial_,}{%
+  \brl@mecab@nocrbeforetrue% default
+  \brl@mecab_appendtoks{,}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc_comma%
+}
+
+\def\brl@mecab_preproc_comma@{\brl@text_cmd_glue}
+\def\brl@mecab_preproc_comma#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@mecab_preproc_comma@%
+    % \brl@mecab_insertcr%
+    \brl@mecab_appendsptoks%
+    \let\brl@tmp\empty%
+  \fi%
+  \expandafter\brl@mecab_preproc\brl@tmp
+}
+
+%% #1: id
+%% #2: reading
+%% #3: original
+% *,*,*,* しょくどく 触読.
+
+
+
+\@namedef{brl@mecab_dospecial_\string\BrailleReading}#1#2#3{%
+  % \brl@mecab_appendyomitoks{#1}{\brl@mecab@id}% any id
+  %
+  %
+  %
+  \def\brl@mecab@yomi{#2}%
+  \ifx\brl@mecab@yomi\brl@@ast%
+  \else% the reading is given.
+    \brl@mecab_rcheck{#2}{[#1]<#2>#3}%
+    \brl@mecab_advposnum#3\brl@end%
+  \fi%
+  % {%
+  %   \def\brl@text_cmd_glue{ }%
+  \edef\brl@tmp{{{#3}{\brl@mecab@yomi/\brl@mecab@yomiothers}}}%
+    % }%
+%  \brl@mecab_appendyomitoks{#1}{\brl@mecab@id}% any id
+  \expandafter\brl@mecab_appendyomitoks\brl@tmp{\brl@mecab@id}% any id
+  % \show\brl@tmp
+  %
+  \edef\brl@tmp{{\brl@mecab@repl_any\brl@mecab@cmd_tab #1,*,*,\brl@mecab@repl_any,\brl@mecab@repl_any,9,6\brl@mecab@cmd_cr}}%
+  %
+  \brl@mecab_insertcr%
+  \expandafter\brl@mecab_appendtoks\brl@tmp%
+  \brl@mecab_preproc%
+}
+
+
+
+%
+% \brl@mecab_rcheck
+%
+% user input may be wrong. give a candidate of the correct reading.
+%
+% #1 reading ->  ...\brl@text_cmd_ambb ?う \brl@text_cmd_ambe...
+% #2 [..]<..>{..}
+%
+% output : \brl@mecab@yomi, \brl@mecab@yomiothers
+%
+%
+% callee: BrailleReading
+% mecab_concat_6
+% mecab_concat_7
+
+\newif\ifbrl@mecab@doubtful
+
+
+\def\brl@mecab_rcheck#1#2{%
+  % \def\brl@tmp{{#1}{#2}}\show\brl@tmp
+  \def\brl@mecab_rcheck@cache{brl@mecab_rcheck_cache@\detokenize{#2}}%
+  \ifcsname\brl@mecab_rcheck@cache\endcsname%
+    \csname\brl@mecab_rcheck@cache\endcsname%
+  \else%
+    \brl@mecab@doubtfulfalse%
+    {%
+      \let\brl@mecab@prevchar\empty%
+      \aftergroup\def%
+      \aftergroup\brl@mecab@yomi%
+      \aftergroup{%
+        \brl@mecab_rcheck_#1\brl@end%
+      \aftergroup}%
+      \ifbrl@mecab@doubtful%
+        \aftergroup\brl@mecab@doubtfultrue%
+      \fi%
+    }%
+    \ifbrl@mecab@doubtful%
+      {%
+        % \def\brl@mecab_rcheck@u{う}%
+        % \def\brl@mecab_rcheck@U{ウ}%
+        % \xdef\brl@mecab@yomi{\brl@mecab@yomi}%
+        \let\brl@text_cmd_ambb\empty%
+        \let\brl@text_cmd_ambe\empty%
+        \def\brl@mecab_rcheck@u{ー}% う
+        \def\brl@mecab_rcheck@U{ー}% ウ
+        %
+        \xdef\brl@mecab@yomiothers{\brl@mecab@yomi}% こ^ちょー
+      }%
+    \else%
+      \let\brl@mecab@yomiothers\empty%
+    \fi%
+    {%
+      \brl@mecab_angle_amb% amb -> <>
+      \xdef\brl@mecab@yomi{\brl@mecab@yomi}% こ<^ちょう>
+    }%
+      \expandafter\edef\csname\brl@mecab_rcheck@cache\endcsname%
+    {%
+      \edef\noexpand\brl@mecab@yomi{\brl@mecab@yomi}%
+      \def\noexpand\brl@mecab@yomiothers{\brl@mecab@yomiothers}%
+    }%
+    % }%
+    % \expandafter\show\csname\brl@mecab_rcheck@cache\endcsname%
+    % \show\brl@mecab@yomi%
+    % \show\brl@mecab@yomiothers%
+  \fi%
+}
+
+
+
+\def\brl@mecab_append_prevchar{%
+  \ifx\brl@mecab@prevchar\empty%
+  \else%
+    \expandafter\aftergroup\brl@mecab@prevchar%
+  \fi%
+}
+
+\def\brl@mecab_rcheck_#1{%
+%
+  \ifcsname brl@mecab_rcheck@\string#1\endcsname%
+    \csname brl@mecab_rcheck@\string#1\expandafter\endcsname%
+  \else%
+    \brl@mecab_append_prevchar%
+    \def\brl@mecab@prevchar{#1}%
+    \expandafter\brl@mecab_rcheck_%
+  \fi%
+}
+
+\@namedef{brl@mecab_rcheck@\string\brl@end}{%
+  \brl@mecab_append_prevchar%
+}
+
+
+\def\brl@mecab_rcheck_s#1#2{% #1:ォュョ
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\brl@mecab_rcheck@u% ョウ
+    \def\brl@tmpfirst{#1}%
+    \expandafter\brl@mecab_rcheck_su%
+  \else%
+    \aftergroup\brl@mecab_rcheck@c%
+    \brl@mecab_append_prevchar%
+    \aftergroup#1%
+    \let\brl@mecab@prevchar\empty%
+    \expandafter\brl@mecab_rcheck_\expandafter#2%
+  \fi%
+}
+
+\def\brl@mecab_rcheck_su#1{%
+  \ifcsname brl@mecab_rcheckv@\string#1\endcsname% ビョウェ
+    \aftergroup\brl@mecab_rcheck@c%
+    \brl@mecab_append_prevchar% ビ
+    \expandafter\aftergroup\brl@tmpfirst% ョ
+    \aftergroup\brl@mecab_rcheck@c%
+    \aftergroup\brl@mecab_rcheck@u% ウ
+    \aftergroup#1%
+    \let\brl@tmp\empty%
+  \else% ビョウカ
+    \aftergroup\brl@text_cmd_ambb%
+    \aftergroup\brl@mecab_rcheck@c%
+    \brl@mecab_append_prevchar% ビ
+    \expandafter\aftergroup\brl@tmpfirst% ョ
+    \aftergroup\brl@mecab_rcheck@u% ウ
+    \aftergroup\brl@text_cmd_ambe%
+    \brl@mecab@doubtfultrue%
+    \def\brl@tmp{#1}% カ
+  \fi%
+  \let\brl@mecab@prevchar\empty%
+  \expandafter\brl@mecab_rcheck_\brl@tmp%
+}
+
+
+\def\brl@mecab_rcheck_u#1#2{% #1:くすつぬふむゆるぐずづぶぷおこそとのほもよろごぞどぼぽ
+  \brl@mecab_append_prevchar%
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\brl@mecab_rcheck@u% フウ
+    \def\brl@tmpfirst{#1}%
+    \expandafter\brl@mecab_rcheck_uu%
+  \else%
+    \def\brl@mecab@prevchar{#1}%
+    \expandafter\brl@mecab_rcheck_\expandafter#2%
+  \fi%
+}
+
+\def\brl@mecab_rcheck_uu#1{%
+  \ifcsname brl@mecab_rcheckv@\string#1\endcsname% フウェ
+    \expandafter\aftergroup\brl@tmpfirst% フ
+    \aftergroup\brl@mecab_rcheck@c%
+    \aftergroup\brl@mecab_rcheck@u% ウ
+    \aftergroup#1%
+    \let\brl@tmp\empty%
+  \else% フウカ
+    \aftergroup\brl@text_cmd_ambb%
+    \expandafter\aftergroup\brl@tmpfirst% フ
+    \aftergroup\brl@mecab_rcheck@u% ウ
+    \aftergroup\brl@text_cmd_ambe%
+    \brl@mecab@doubtfultrue%
+    \def\brl@tmp{#1}% カ
+  \fi%
+  \let\brl@mecab@prevchar\empty%
+  \expandafter\brl@mecab_rcheck_\brl@tmp%
+}
+
+
+
+\def\brl@mecab_rcheck_t#1{% #1:ぁぃぅぇゃ
+  \aftergroup\brl@mecab_rcheck@c%
+  \brl@mecab_append_prevchar%
+  \aftergroup#1%
+  \let\brl@mecab@prevchar\empty%
+  \brl@mecab_rcheck_%
+}
+
+\def\brl@mecab_rcheck_S#1#2{% #1:ォュョ
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\brl@mecab_rcheck@U% ョウ
+    \def\brl@tmpfirst{#1}%
+    \expandafter\brl@mecab_rcheck_SU%
+  \else%
+    \aftergroup\brl@mecab_rcheck@c%
+    \brl@mecab_append_prevchar%
+    \aftergroup#1%
+    \let\brl@mecab@prevchar\empty%
+    \expandafter\brl@mecab_rcheck_\expandafter#2%
+  \fi%
+}
+
+\def\brl@mecab_rcheck_SU#1{%
+  \ifcsname brl@mecab_rcheckV@\string#1\endcsname% ビョウェ
+    \aftergroup\brl@mecab_rcheck@c%
+    \brl@mecab_append_prevchar% ビ
+    \expandafter\aftergroup\brl@tmpfirst% ョ
+    \aftergroup\brl@mecab_rcheck@c%
+    \aftergroup\brl@mecab_rcheck@U% ウ
+    \aftergroup#1%
+    \let\brl@tmp\empty%
+  \else% ビョウカ
+    \aftergroup\brl@text_cmd_ambb%
+    \aftergroup\brl@mecab_rcheck@c%
+    \brl@mecab_append_prevchar% ビ
+    \expandafter\aftergroup\brl@tmpfirst% ョ
+    \aftergroup\brl@mecab_rcheck@U% ウ
+    \aftergroup\brl@text_cmd_ambe%
+    \brl@mecab@doubtfultrue%
+    \def\brl@tmp{#1}% カ
+  \fi%
+  \let\brl@mecab@prevchar\empty%
+  \expandafter\brl@mecab_rcheck_\brl@tmp%
+}
+
+
+\def\brl@mecab_rcheck_U#1#2{%
+  \brl@mecab_append_prevchar%
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\brl@mecab_rcheck@U% フウ
+    \def\brl@tmpfirst{#1}%
+    \expandafter\brl@mecab_rcheck_UU%
+  \else%
+    \def\brl@mecab@prevchar{#1}%
+    \expandafter\brl@mecab_rcheck_\expandafter#2%
+  \fi%
+}
+
+\def\brl@mecab_rcheck_UU#1{%
+  \ifcsname brl@mecab_rcheckV@\string#1\endcsname% フウェ
+    \expandafter\aftergroup\brl@tmpfirst% フ
+    \aftergroup\brl@mecab_rcheck@c%
+    \aftergroup\brl@mecab_rcheck@U% ウ
+    \aftergroup#1%
+    \let\brl@tmp\empty%
+  \else% フウカ
+    \aftergroup\brl@text_cmd_ambb%
+    \expandafter\aftergroup\brl@tmpfirst% フ
+    \aftergroup\brl@mecab_rcheck@U% ウ
+    \aftergroup\brl@text_cmd_ambe%
+    \brl@mecab@doubtfultrue%
+    \def\brl@tmp{#1}% カ
+  \fi%
+  \let\brl@mecab@prevchar\empty%
+  \expandafter\brl@mecab_rcheck_\brl@tmp%
+}
+
+
+
+
+\def\brl@mecab_rcheckudef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheck@#1}{\brl@mecab_rcheck_u#1}%
+    \expandafter\brl@mecab_rcheckudef%
+  \fi%
+}
+\def\brl@mecab_rchecksdef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheck@#1}{\brl@mecab_rcheck_s#1}%
+    \expandafter\brl@mecab_rchecksdef%
+  \fi%
+}
+
+\def\brl@mecab_rchecktdef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheck@#1}{\brl@mecab_rcheck_t#1}%
+    \expandafter\brl@mecab_rchecktdef%
+  \fi%
+}
+
+\def\brl@mecab_rcheckvdef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheckv@#1}{}%
+    \expandafter\brl@mecab_rcheckvdef%
+  \fi%
+}
+
+\def\brl@mecab_rcheckUdef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheck@#1}{\brl@mecab_rcheck_U#1}%
+    \expandafter\brl@mecab_rcheckUdef%
+  \fi%
+}
+
+\def\brl@mecab_rcheckSdef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheck@#1}{\brl@mecab_rcheck_S#1}%
+    \expandafter\brl@mecab_rcheckSdef%
+  \fi%
+}
+
+\def\brl@mecab_rcheckVdef#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \@namedef{brl@mecab_rcheckV@#1}{}%
+    \expandafter\brl@mecab_rcheckVdef%
+  \fi%
+}
+
+
+\brl@mecab_rcheckudef くすつぬふむゆるぐずづぶぷおこそとのほもよろごぞどぼぽ\brl@end
+\brl@mecab_rchecksdef ぉゅょ\brl@end% ひょう -> ひょー
+
+\brl@mecab_rcheckvdef ぁぃぅぇ\brl@end% after う
+
+\brl@mecab_rchecktdef ぁぃぅぇゃァィゥェャ\brl@end
+
+\brl@mecab_rcheckUdef クスツヌフムユルグズヅブプオコソトノホモヨロゴゾドボポ\brl@end
+\brl@mecab_rcheckSdef ォュョ\brl@end
+
+\brl@mecab_rcheckVdef ァィゥェ\brl@end% after ウ
+
+\def\brl@mecab_rcheck@u{う}
+\def\brl@mecab_rcheck@U{ウ}
+{\catcode`\^\active%
+\gdef\brl@mecab_rcheck@c{^}
+}
+
+
+%% \brl@mecab_spacedef
+%%
+%% \!
+%% \, \> \: \; \  ~ \quad \qquad
+%% \brl@text_cmd_space
+
+\def\brl@mecab_spacedef#1#2{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \brl@mecab_appendyomitoks{#1}{#2}% trueid -> ??
+    \brl@mecab_insertcr%
+    \brl@mecab_appendtoks{\brl@mecab@repl_comma\brl@mecab@cmd_cr}%
+    \advance\brl@mecab@posnum\@ne%
+    \brl@mecab_preproc%
+  }
+}
+
+\brl@mecab_spacedef{\brl@text_cmd_space}{820}
+\brl@mecab_spacedef{\!}{1021}
+\brl@mecab_spacedef{\,}{1022}
+\brl@mecab_spacedef{\>}{1023}
+\brl@mecab_spacedef{\:}{1024}
+\brl@mecab_spacedef{\;}{1025}
+\brl@mecab_spacedef{\ }{1026}
+\brl@mecab_spacedef{~}{1027}
+\brl@mecab_spacedef{\quad}{1028}
+\brl@mecab_spacedef{\qquad}{1029}
+
+
+%
+% BrailleRemark is expanded here.
+%
+\@namedef{brl@mecab_dospecial_\string\BrailleRemark}#1{%
+  \brl@mecab_preproc\brl@text_cmd_transopen#1\brl@text_cmd_transclose%
+}
+
+
+
+
+%% \brl@mecab_nounwithoptdef
+%%
+%% aaa \ref{bbb} ccc -> aaa ??? ccc -> AAA \ref{bbb} CCC
+%%
+
+
+\def\brl@mecab_nounwithoptdef#1{%
+  \@namedef{brl@mecab_dospecial_\string#1}##1{%
+    \brl@mecab_appendyomitoks{#1{##1}}{853}% trueid -> ??
+    \brl@mecab_insertcr%
+    \brl@mecab_appendtoks{\brl@mecab@repl_noun\brl@mecab@cmd_cr}%
+    \advance\brl@mecab@posnum\@ne%
+    \brl@mecab_preproc%
+  }
+}
+
+\brl@mecab_nounwithoptdef{\brl@text_cmd_noun}
+\brl@mecab_nounwithoptdef{\brl@text_cmd_eqquote}
+\brl@mecab_nounwithoptdef{\brl@text_cmd_virtualchar}
+
+
+
+
+
+%% \brl@mecab_symbdef
+%%
+%% aaa \dots ccc -> aaa ??? ccc -> AAA \dots CCC
+%%
+
+\def\brl@mecab_symbdef#1#2#3{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \brl@mecab_appendyomitoks{#2}{#3}% trueid -> ??
+    \brl@mecab_insertcr%
+    \brl@mecab_appendtoks{\brl@mecab@repl_symbol\brl@mecab@cmd_cr}%
+    \advance\brl@mecab@posnum\@ne%
+    \brl@mecab_preproc%
+  }
+}
+
+\brl@mecab_symbdef{\dots}{\dots}{917}
+\brl@mecab_symbdef{\&}{\&}{918}
+
+\brl@mecab_symbdef{\brl@text_cmd_desci}{\brl@text_cmd_desci}{620}
+\brl@mecab_symbdef{\brl@text_cmd_descii}{\brl@text_cmd_descii}{620}
+\brl@mecab_symbdef{\qedsymbol}{\qedsymbol}{621}
+
+\brl@mecab_symbdef{／}{\brl@text_cmd_space}{820}%
+
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_transopen}{%
+  \brl@mecab_appendyomitoks{\brl@text_cmd_transopen}{680}%
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_open\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_transclose}{%
+  \brl@mecab_appendyomitoks{\brl@text_cmd_transclose}{681}%
+  \brl@mecab_insertcr%
+  \brl@mecab_appendtoks{\brl@mecab@repl_close\brl@mecab@cmd_cr}%
+  \advance\brl@mecab@posnum\@ne%
+  \brl@mecab_preproc%
+}
+
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_label}#1#2{%
+  \brl@mecab_insertcr%
+  \brl@mecab_appendcsbtoks{\brl@char@cmd_label{#1}{#2}}%
+  \brl@mecab_preproc%
+}
+
+
+%% decorations and instructions
+%%
+%%
+%% csfa : \indopen
+%%        \footnotemark
+%%
+%% csfb : \indclose
+%%
+%% csb  : \label(no print)
+%%
+
+
+
+
+\def\brl@mecab_markfawithoptdef#1{%
+  \long\@namedef{brl@mecab_dospecial_\string#1}##1{%
+    \brl@mecab_insertcr%
+    \brl@mecab_appendcsfatoks{#1{##1}}%
+    \brl@mecab_preproc%
+  }
+}
+
+\brl@mecab_markfawithoptdef{\brl@text_cmd_footnotemark}
+
+\def\brl@mecab_markfadef#1#2{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \brl@mecab_insertcr%
+    \brl@mecab_appendcsfatoks{#2}%
+    \brl@mecab_preproc%
+  }
+}
+
+\def\brl@mecab_markfbdef#1#2{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \brl@mecab_insertcr%
+    \brl@mecab_appendcsfbtoks{#2}%
+    \brl@mecab_preproc%
+  }
+}
+
+\def\brl@mecab_markgobbledef#1{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \brl@mecab_preproc%
+  }
+}
+
+\brl@mecab_markgobbledef{\brl@text_cmd_rmopen}
+\brl@mecab_markgobbledef{\brl@text_cmd_rmclose}
+
+
+%%
+%% to do : treatment of fonts. {\bf {\it ...} ... } can not be treated.
+%%
+
+\brl@mecab_markfbdef{\brl@text_cmd_bfopen}{\brl@text_cmd_firstindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_emopen}{\brl@text_cmd_firstindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_itopen}{\brl@text_cmd_firstindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_sfopen}{\brl@text_cmd_firstindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_ulopen}{\brl@text_cmd_thirdindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_firstindopen}{\brl@text_cmd_firstindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_secondindopen}{\brl@text_cmd_secondindopen}
+\brl@mecab_markfbdef{\brl@text_cmd_thirdindopen}{\brl@text_cmd_thirdindopen}
+
+\brl@mecab_markfadef{\brl@text_cmd_bfclose}{\brl@text_cmd_firstindclose}
+\brl@mecab_markfadef{\brl@text_cmd_emclose}{\brl@text_cmd_firstindclose}
+\brl@mecab_markfadef{\brl@text_cmd_itclose}{\brl@text_cmd_firstindclose}
+\brl@mecab_markfadef{\brl@text_cmd_sfclose}{\brl@text_cmd_firstindclose}
+\brl@mecab_markfadef{\brl@text_cmd_ulclose}{\brl@text_cmd_thirdindclose}
+\brl@mecab_markfadef{\brl@text_cmd_firstindclose}{\brl@text_cmd_thirdindopen}
+\brl@mecab_markfadef{\brl@text_cmd_secondindclose}{\brl@text_cmd_secondindclose}
+\brl@mecab_markfadef{\brl@text_cmd_thirdindclose}{\brl@text_cmd_thirdindclose}
+
+
+
+
+
+
+%% \brl@mecab_alphdef
+%%
+%% a...zA...Z \brl@text_cmd_letter{}{}{} -> \a
+%%
+%% insert it at the place.
+%%
+
+
+\def\brl@mecab_alphdef#1{%
+  \@namedef{brl@mecab_dospecial_#1}{%
+    % init
+    \let\brl@mecab@idpnp\brl@mecab@idalph_lett%
+    \brl@mecab@wordtoks{#1}%
+    \brl@mecab_word%
+  }
+  \@namedef{brl@mecab_dospecial_word@#1}{%
+    \let\brl@mecab@idpnp\brl@mecab@idalph_lett%
+    \brl@mecab_appendwordtoks{#1}%
+    \brl@mecab_word%
+  }%
+}
+
+\def\brl@mecab_alphsymdef#1{%
+  \@namedef{brl@mecab_dospecial_word@#1}{%
+    \let\brl@mecab@idpnp\brl@mecab@idalph_lett%
+    \brl@mecab_appendwordtoks{#1}%
+    \brl@mecab_word%
+  }%
+}
+
+
+\@namedef{brl@mecab_dospecial_\string\brl@text_cmd_letter}#1#2#3{%
+  % init
+  \brl@mecab@wordtoks{\brl@text_cmd_letter{#1}{#2}{#3}}%
+  \brl@mecab_word%
+}
+\@namedef{brl@mecab_dospecial_word@\string\brl@text_cmd_letter}#1#2#3{%
+  % init
+  \brl@mecab_appendwordtoks{\brl@text_cmd_letter{#1}{#2}{#3}}%
+  \brl@mecab_word%
+}
+
+
+
+\def\brl@mecab_word#1{%
+  \ifcsname brl@mecab_dospecial_word@\string#1\endcsname%
+    \csname brl@mecab_dospecial_word@\string#1\expandafter\endcsname%
+  \else%
+    \brl@mecab_insertcr%
+    \edef\brl@tmp{\the\brl@mecab@wordtoks}%
+    \ifcsname brl@mecab_alph_dict@\detokenize\expandafter{\brl@tmp}\endcsname% unit or alph or word
+      \csname brl@mecab_alph_dict@\brl@tmp\endcsname%
+    \else%
+      \brl@mecab_appendtoks{\brl@mecab@repl_alphword\brl@mecab@cmd_cr}%
+      \edef\brl@tmp{{\brl@tmp}{\brl@mecab@idalph_word}}% trueid
+    \fi%
+    % \show\brl@tmp
+    \expandafter\brl@mecab_appendyomitoks\brl@tmp%
+    \advance\brl@mecab@posnum\@ne%
+    \edef\brl@tmp{\brl@mecab_preproc#1}%
+    \expandafter\brl@tmp%
+  \fi%
+}
+
+\brl@mecab_alphsymdef{0}% F16 etc.
+\brl@mecab_alphsymdef{1}
+\brl@mecab_alphsymdef{2}
+\brl@mecab_alphsymdef{3}
+\brl@mecab_alphsymdef{4}
+\brl@mecab_alphsymdef{5}
+\brl@mecab_alphsymdef{6}
+\brl@mecab_alphsymdef{7}
+\brl@mecab_alphsymdef{8}
+\brl@mecab_alphsymdef{9}
+\brl@mecab_alphsymdef{-}% CD-ROM
+\brl@mecab_alphsymdef{/}% DOS/V
+
+
+\@namedef{brl@mecab_dospecial_word@.}{% Dr.
+  \let\brl@mecab@idpnp\brl@mecab@idalph_lettp%
+  \brl@mecab_appendwordtoks{.}%
+  \brl@mecab_word%
+}%
+
+
+\brl@mecab_alphdef{A}
+\brl@mecab_alphdef{B}
+\brl@mecab_alphdef{C}
+\brl@mecab_alphdef{D}
+\brl@mecab_alphdef{E}
+\brl@mecab_alphdef{F}
+\brl@mecab_alphdef{G}
+\brl@mecab_alphdef{H}
+\brl@mecab_alphdef{I}
+\brl@mecab_alphdef{J}
+\brl@mecab_alphdef{K}
+\brl@mecab_alphdef{L}
+\brl@mecab_alphdef{M}
+\brl@mecab_alphdef{N}
+\brl@mecab_alphdef{O}
+\brl@mecab_alphdef{P}
+\brl@mecab_alphdef{Q}
+\brl@mecab_alphdef{R}
+\brl@mecab_alphdef{S}
+\brl@mecab_alphdef{T}
+\brl@mecab_alphdef{U}
+\brl@mecab_alphdef{V}
+\brl@mecab_alphdef{W}
+\brl@mecab_alphdef{X}
+\brl@mecab_alphdef{Y}
+\brl@mecab_alphdef{Z}
+
+\brl@mecab_alphdef{a}
+\brl@mecab_alphdef{b}
+\brl@mecab_alphdef{c}
+\brl@mecab_alphdef{d}
+\brl@mecab_alphdef{e}
+\brl@mecab_alphdef{f}
+\brl@mecab_alphdef{g}
+\brl@mecab_alphdef{h}
+\brl@mecab_alphdef{i}
+\brl@mecab_alphdef{j}
+\brl@mecab_alphdef{k}
+\brl@mecab_alphdef{l}
+\brl@mecab_alphdef{m}
+\brl@mecab_alphdef{n}
+\brl@mecab_alphdef{o}
+\brl@mecab_alphdef{p}
+\brl@mecab_alphdef{q}
+\brl@mecab_alphdef{r}
+\brl@mecab_alphdef{s}
+\brl@mecab_alphdef{t}
+\brl@mecab_alphdef{u}
+\brl@mecab_alphdef{v}
+\brl@mecab_alphdef{w}
+\brl@mecab_alphdef{x}
+\brl@mecab_alphdef{y}
+\brl@mecab_alphdef{z}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%%
+%% \brl@mecab_exec
+%%
+%% input: \brl@mecab@text
+%%
+%%
+%% output: \brl@mecab@result
+%%
+%% \ifbrl@option@file
+%%   \
+%% \else
+%%   \\
+
+
+\ifbrl@option@file%
+\newwrite\brl@mecab@sourcefile%
+\newread\brl@mecab@resultfile%
+
+\def\brl@mecab@cmd_cr{^^J}
+\ifbrl@option@oswin%
+  \def\brl@mecab@cmd_tab{^^I}
+\else%
+  {\catcode`\^^I=12\relax% file and windows
+    \gdef\brl@mecab@cmd_tab{^^I}% -translate-file=cp227.tcx -8bit
+  }
+\fi%
+
+\def\brl@mecab_exec{%
+  % write the replaced text.
+  % \show\brl@mecab@cmd_tab
+  \immediate\openout\brl@mecab@sourcefile=\jobname.mcb\relax%
+  \immediate\write\brl@mecab@sourcefile{\brl@mecab@text%
+    EOS%
+  }%
+  \immediate\closeout\brl@mecab@sourcefile%
+  % \show\brl@mecab@cmd_tab
+  %
+  \immediate\write18{\brl@mecab@translator}%
+  % read the wakachi gaki.
+  \immediate\openin\brl@mecab@resultfile=\jobname.mrt\relax%
+  {%
+    \catcode`\^\active%
+    \catcode`\ \active%
+    \catcode`\<\active%
+    \catcode`\>\active%
+    \endlinechar\m@ne% avoid space after {-1}
+    \immediate\global\read\brl@mecab@resultfile to\brl@mecab@result%
+  }%
+  \immediate\closein\brl@mecab@resultfile%
+}%
+
+
+%%
+%%
+%%
+\else% \ifbrl@option@file%
+
+\edef\brl@mecab@cmd_cr{\brl@@bs n}
+\edef\brl@mecab@cmd_tab{\brl@@bs t}
+
+%% 
+%% \brl@mecab_preprocdef: #1 -> #2
+%% 
+\def\brl@mecab_preprocdef#1#2#3{%
+  \@namedef{brl@mecab_dospecial_\string#1}{%
+    \edef\brl@tmp{{#2}}%
+    \brl@mecab@nocrbeforetrue%
+    \expandafter\brl@mecab_appendtoks\brl@tmp%{#2}%
+    \advance\brl@mecab@posnum#3\relax%
+    \brl@mecab_preproc%
+  }
+}
+
+\ifbrl@option@oslin% in echo of linux
+%   \expandafter\brl@mecab_preprocdef\expandafter'\expandafter{'\brl@@bs ''}{\@ne}%
+%   %\expandafter\brl@mecab_preprocdef\expandafter"\expandafter{"}{\@ne}%
+% \else%
+%   \expandafter\brl@mecab_preprocdef\expandafter'\expandafter{\brl@@bs x27}{\@ne}%
+%   \expandafter\brl@mecab_preprocdef\expandafter"\expandafter{\brl@@bs x22}{\@ne}%
+  \brl@mecab_preprocdef{'}{'\brl@@bs''}{\@ne}%
+  %\expandafter\brl@mecab_preprocdef\expandafter"\expandafter{"}{\@ne}%
+\else%
+  \brl@mecab_preprocdef{'}{\brl@@bs x27}{\@ne}%
+  \brl@mecab_preprocdef{"}{\brl@@bs x22}{\@ne}%
+\fi%
+\def\brl@mecab@quote{'}
+
+
+
+\ifbrl@lualatex% if lualatex, the number of letters is limited in \@@input. Thus we use io.popen. Note that "[==[" or "]==]" is not used in the source.
+
+\def\brl@mecab_exec{%
+  {%
+    \catcode`\^\active%
+    \catcode`\ \active%
+    \catcode`\<\active%
+    \catcode`\>\active%
+    \message{mecab:\brl@mecab@text}%
+    \expandafter\brl@mecab_exec_\directlua{%
+      local handle = io.popen([==[% quotation
+      echo \brl@mecab@quote\brl@mecab@text%
+      EOS\brl@mecab@quote | \brl@mecab@translator]==]) % quotation
+      local result = handle:read("*a")%
+      tex.print(result)%
+      handle:close()}%
+  }%
+}%
+
+\else%
+
+\def\brl@mecab_exec{%
+  {%
+    \catcode`\^\active%
+    \catcode`\ \active%
+    \catcode`\<\active%
+    \catcode`\>\active%
+    \expandafter\brl@mecab_exec_\@@input{|echo \brl@mecab@quote\brl@mecab@text%
+      EOS\brl@mecab@quote | \brl@mecab@translator}%
+  }%
+}%
+\fi%
+
+\def\brl@mecab_exec_#1\f{%
+  \gdef\brl@mecab@result{#1{-1}}%
+}
+\fi% \ifbrl@option@file%
+
+{\catcode`\^\active\protected\gdef^{}}% default: this is used for erasing ^ in multiple readings.
+{\catcode`\ \active\gdef {\brl@text_cmd_glue}}% default: in dictionary,
+% the readings including spaces such as に より is expanded as に\brl@text_cmd_glue より
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% postprocessor :
+%%
+%% \brl@mecab_corpus (for corpus)
+
+\ifbrl@option@jplog%
+
+\newwrite\brl@mecab@logfile%
+\immediate\openout\brl@mecab@logfile\jobname.jlg\relax%
+
+
+\def\brl@text_cmd_letter@#1#2#3{#1}
+
+% \brl@text_cmd_dollar is def_protected.
+\def\brl@text_cmd_dollar@#1#2{⠰数式}% original form during mecab. #2 is the lastchar or number of digits
+\def\brl@text_cmd_dollar@@#1{⠰数式}% original form during mecab
+
+\def\brl@text_cmd_verb@#1{\unexpanded{\verb《#1》}}% original form during mecab
+% \brl@text_cmd_env is def_protected.
+\def\brl@text_cmd_env@#1#2#3{\unexpanded{\begin{#1} 〜 \end{#1}}}% original form during mecab. #3 is the lastchar.
+\def\brl@text_cmd_env@@#1#2{\unexpanded{\begin{#1} 〜 \end{#1}}}% original form during mecab.
+
+\def\brl@text_cmd_eqquote@#1{⠶#1⠶}
+\def\brl@text_cmd_footnotemark@#1{\footnotemark}% original form during mecab
+
+
+\def\brl@text_cmd_phrase@#1{⠦#1⠴}
+\def\brl@text_cmd_alphabet@#1{⠰#1}
+\def\brl@text_cmd_number@#1{⠼#1}
+
+\def\BrailleRemark@#1{⠶⠶#1⠶⠶}
+
+\def\brl@math_cmd_env@#1{%
+  \csname brl@math_cmd_env@#1\endcsname%
+}
+
+\def\brl@math_cmd_env@array#1{%
+  \unexpanded{\begin{array}}%
+  \brl@math_cmd_env@array_#1\brl@end%
+  \unexpanded{\end{array}}%
+}
+\def\brl@math_cmd_env@array_#1{%
+  {#1}\brl@math_cmd_env_tmpl_%
+}
+
+
+\def\brl@math_cmd_env@split{\brl@math_cmd_env_tmpl{split}}%
+\def\brl@math_cmd_env@pmatrix{\brl@math_cmd_env_tmpl{pmatrix}}%
+\def\brl@math_cmd_env@matrix{\brl@math_cmd_env_tmpl{matrix}}%
+\def\brl@math_cmd_env@vmatrix{\brl@math_cmd_env_tmpl{vmatrix}}%
+\def\brl@math_cmd_env@Vmatrix{\brl@math_cmd_env_tmpl{Vmatrix}}%
+\def\brl@math_cmd_env@bmatrix{\brl@math_cmd_env_tmpl{bmatrix}}%
+\def\brl@math_cmd_env@Bmatrix{\brl@math_cmd_env_tmpl{Bmatrix}}%
+\def\brl@math_cmd_env@cases{\brl@math_cmd_env_tmpl{cases}}%
+\def\brl@math_cmd_env@aligned{\brl@math_cmd_env_tmpl{aligned}}%
+
+\def\brl@math_cmd_env_tmpl#1#2{%
+  \unexpanded{\begin{#1}}%
+  \brl@math_cmd_env_tmpl_#2\brl@end%
+  \unexpanded{\end{#1}}%
+}
+\def\brl@math_cmd_env_tmpl_#1{%
+  \ifx\brl@end#1%
+  \else%
+    #1 \noexpand\\ %
+    \expandafter\brl@math_cmd_env_tmpl_%
+  \fi%
+}
+
+\def\brl@mecab_log#1{% gives inputed form.
+  {%
+    \let\brl@text_cmd_letter\brl@text_cmd_letter@% normalized letter
+    \let\brl@text_cmd_dollar\brl@text_cmd_dollar@% orig
+    \let\brl@text_cmd_env\brl@text_cmd_env@% orig
+    \let\brl@text_cmd_verb\brl@text_cmd_verb@% orig
+    \let\brl@text_cmd_footnotemark\brl@text_cmd_footnotemark@% orig
+    %
+    \def\brl@text_cmd_glue{␣}%
+    \let\brl@text_cmd_noun\brl@@asis%
+    \let\brl@text_cmd_eqquote\brl@text_cmd_eqquote@%
+    \let\brl@text_cmd_phrase\brl@text_cmd_phrase@%
+    \let\brl@text_cmd_alphabet\brl@text_cmd_alphabet@%
+    \let\brl@text_cmd_number\brl@text_cmd_number@%
+    %
+    \let\brl@math_cmd_env\brl@math_cmd_env@% orig
+%    \let\brl@math_cmd_digit\brl@math_cmd_digit@%
+    \let\brl@math_cmd\brl@math_cmd@%
+    %
+    \let\BrailleRemark\BrailleRemark@%
+    \def\brl@text_cmd_breakable{↲}%
+    \def\brl@text_cmd_desci{⠠⠤}%
+    \def\brl@text_cmd_descii{⠐⠂}%
+    \def\brl@text_cmd_transopen{⠶⠶}%
+    \def\brl@text_cmd_transclose{⠶⠶}%
+    \def\brl@text_cmd_firstindopen{⠐⠤}%
+    \def\brl@text_cmd_firstindclose{⠤⠂}%
+    \def\brl@text_cmd_secondindopen{⠐⠤⠤}%
+    \def\brl@text_cmd_secondindclose{⠤⠤⠂}%
+    \def\brl@text_cmd_thirdindopen{⠰⠤⠤}%
+    \def\brl@text_cmd_thirdindclose{⠤⠤⠆}%
+    %
+    %
+    \let\brl@char@cmd_direct\@gobble%
+    %
+    %
+    %
+    \let\BrailleReading\brl@@thirdofthree%
+    %
+    %
+    \brl@mecab_log_seg%
+    \immediate\write\brl@mecab@logfile{input : #1}%
+    \brl@mecab_log_seg%
+    %
+    %% after mecab
+    \let\brl@text_cmd_ambb\empty% ambiguity begins
+    \let\brl@text_cmd_ambe\empty% ambiguity ends
+    %
+    \def\brl@text_cmd_glue{■}%
+    \def\brl@text_cmd_space{□}%
+%    \let\brl@text_cmd_remark\@gobble%
+%    \let\brl@text_cmd_reading\@gobble%
+    \let\brl@text_cmd_env\brl@text_cmd_env@@% orig
+    \let\brl@text_cmd_dollar\brl@text_cmd_dollar@@% orig
+    %
+    \brl@mecab_delete_hat%
+    %
+    \immediate\write\brl@mecab@logfile{output: \brl@text@text}%
+    \immediate\write\brl@mecab@logfile{\brl@@logseg\brl@@logseg}%
+  }%
+}
+
+\def\brl@mecab_log_item#1#2{\immediate\write\brl@mecab@logfile{#1: #2}}
+\def\brl@mecab_log_seg{\immediate\write\brl@mecab@logfile{\brl@@logseg}}%
+
+\else%
+  \let\brl@mecab_log\@gobble%
+  \let\brl@mecab_log_item\@gobbletwo
+  \let\brl@mecab_log_seg\empty
+\fi
+
+
+
+\ifbrl@option@corpus%
+
+\newwrite\brl@mecab@corpusfile
+\immediate\openout\brl@mecab@corpusfile\jobname.cor\relax%
+
+\newwrite\brl@mecab@dicfile
+\immediate\openout\brl@mecab@dicfile\jobname.dic\relax%
+
+{\catcode`\^^I=12\relax% file and windows
+  \gdef\brl@mecab@cmd_filetab{^^I}% -translate-file=cp227.tcx -8bit
+}
+
+
+
+
+%
+% input: \brl@mecab_corpus@yomi,
+% \brl@mecab_corpus@no -> \brl@mecab_dictionary_item
+%
+
+\def\brl@mecab_dictionary_do#1{%
+  \csname brl@mecab_dictionary_#1\endcsname%
+}
+
+\@namedef{brl@mecab_dictionary_0}{%
+  \def\brl@mecab_corpus@yomi{よみふめい}%
+  %
+  %
+  \brl@mecab_dictionary_item%
+}
+
+\@namedef{brl@mecab_dictionary_1}{}
+\@namedef{brl@mecab_dictionary_2}{}
+\@namedef{brl@mecab_dictionary_3}{}
+
+\@namedef{brl@mecab_dictionary_6}{%
+  %
+  %
+  %
+  \ifx\brl@mecab_corpus@yomiothers\empty%
+  \else%
+    \edef\brl@mecab_corpus@yomi{\brl@mecab_corpus@yomi/\brl@mecab_corpus@yomiothers}% yomi
+  \fi%
+  \brl@mecab_dictionary_item%
+}
+
+\@namedef{brl@mecab_dictionary_7}{%
+  %
+  %
+  %
+  %
+  \ifx\brl@mecab_corpus@yomiothers\empty%
+  \else%
+    \edef\brl@mecab_corpus@yomi{\brl@mecab_corpus@yomi/\brl@mecab_corpus@yomiothers}% yomi
+  \fi%
+  %
+  %
+  \brl@mecab_dictionary_item%
+}
+
+\def\brl@mecab_dictionary_item{%
+  \expandafter\expandafter\expandafter\brl@mecab_dictionary_item_\csname brl@mecab@pos_\the\brl@mecab@linenum\endcsname%
+}
+
+
+\def\brl@mecab_dictionary_item_#1#2#3#4#5#6#7#8{% pos
+  %
+  {%
+    \let\brl@text_cmd_glue\brl@@space%
+    \immediate\write\brl@mecab@dicfile{%
+      %\string
+      #1,*,*,*,%
+      %
+      \brl@mecab_corpus_star{#2},%
+      \brl@mecab_corpus_star{#3},%
+      \brl@mecab_corpus_star{#4},%
+      \brl@mecab_corpus_star{#5},%
+      %
+      \brl@mecab_corpus_star{#6},%
+      \brl@mecab_corpus_star{#7},%
+      %\string
+      #1,%
+      \brl@mecab_corpus@yomi,%
+      *,
+      *%
+    }%
+  }%
+}
+
+% #0   #1     #2  #3     #4     #5                            #6
+% {%h}{%f[7]}{%m}{%f[8]}{%f[9]}{{%f[0]}{%f[1]}{%f[2]}{%f[3]}}{{%f[4]}{%f[5]}{%f[6]}}
+%
+% {38}
+
+% {13}{を}{を}{1}{}{助詞,格助詞,一般,}{,,を}
+% {31}{^しゅと する}{主とする}{2}{}{動詞,自立,,}{サ変・−スル,基本形,主とする}
+% {53}{かくけい}{角形}{2}{0:っ:::}{名詞,接尾,助数詞,}{,,角形}
+
+%
+% \brl@mecab@yomi is not used in the actual corpus
+% it is for the purpose of checking
+%
+\def\brl@mecab_corpus_do#1#2{%
+  \expandafter\def\csname brl@mecab@pos_\the\brl@mecab@linenum\endcsname{#1}%
+  %
+  %
+  \expandafter\brl@mecab_corpus_item#1{#2}%
+  %
+  %
+}
+
+
+\def\brl@mecab_corpus_M{\let\brl@mecab_corpus@readings\empty}
+\def\brl@mecab_corpus_a{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_c{\def\brl@mecab_corpus@readings{,}}
+\def\brl@mecab_corpus_d{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_l{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_m{\let\brl@mecab_corpus@readings\empty}
+\def\brl@mecab_corpus_n{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_p{\def\brl@mecab_corpus@readings{.}}
+\def\brl@mecab_corpus_s{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_u{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_w{\let\brl@mecab_corpus@readings\brl@mecab@yomi}
+\def\brl@mecab_corpus_x{\def\brl@mecab_corpus@readings{x}}
+\def\brl@mecab_corpus_y{\def\brl@mecab_corpus@readings{y}}
+
+
+\def\brl@mecab_corpus_item#1#2#3#4#5#6#7#8#9{% pos
+  %
+  %\edef\brl@tmp{{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}{#9}}\show\brl@tmp
+  \ifnum#9=4\relax%
+    \csname brl@mecab_corpus_\brl@mecab@orig\endcsname%
+  \else%
+     \let\brl@mecab_corpus@readings\brl@mecab@yomi%
+  \fi%
+  %
+  {%
+    %
+    \let\brl@math_cmd\brl@math_cmd@%
+    \let\brl@text_cmd_dollar\brl@@asis%
+    \let\brl@text_cmd_glue\brl@@space%
+    \let\brl@text_cmd_letter\brl@@firstofthree%
+    \def\brl@tmp{#2}%
+    \immediate\write\brl@mecab@corpusfile{%
+      %
+      \brl@mecab_corpus@readings%
+      \brl@mecab@cmd_filetab%
+      #1%
+      \brl@mecab@cmd_filetab%
+      %
+      \brl@mecab_corpus_star{#2},%
+      \brl@mecab_corpus_star{#3},%
+      \brl@mecab_corpus_star{#4},%
+      \brl@mecab_corpus_star{#5},%
+      %
+      \ifx\brl@tmp\brl@mecab@meishi%
+        *,*%
+      \else%
+        \brl@mecab_corpus_star{#6},%
+        \brl@mecab_corpus_star{#7}%,
+      \fi%
+    }%
+  }%
+}
+\def\brl@mecab@meishi{名詞}
+
+\def\brl@mecab_corpus_star#1{%
+  \ifx$#1$% #1 never begins with $.
+    *% if #1 is \empty
+  \else%
+    #1%
+  \fi%
+}
+
+
+\def\brl@mecab_corpus_EOS_do{%
+  \immediate\write\brl@mecab@corpusfile{%
+    EOS%
+    \brl@mecab@cmd_filetab%
+    EOS}%
+}
+
+
+
+\def\brl@mecab_corpus_on{%
+  \let\brl@mecab_corpus\brl@mecab_corpus_do%
+  \let\brl@mecab_corpus_EOS\brl@mecab_corpus_EOS_do%
+  \let\brl@mecab_dictionary\brl@mecab_dictionary_do%
+}
+\def\brl@mecab_corpus_off{%
+  \let\brl@mecab_corpus\@gobbletwo%
+  \let\brl@mecab_corpus_EOS\empty%
+  \let\brl@mecab_dictionary\@gobble%
+}
+\brl@mecab_corpus_on
+\else% \ifbrl@option@corpus
+  \let\brl@mecab_corpus\@gobbletwo%
+  \let\brl@mecab_corpus_EOS\empty%
+  \let\brl@mecab_dictionary\@gobble%
+  \let\brl@mecab_corpus_on\empty%
+  \let\brl@mecab_corpus_off\empty%
+\fi% \ifbrl@option@corpus
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% postprocessor :
+%%
+%% \brl@mecab_postproc
+%%
+%
+% int(a|b|s)_0 dat_0 int(a|b|s)_1 dat_1 ... int(a|b|s)_n dat_n int(a|b|s)_{n+1}
+
+% \brl@mecab@id_X{id}
+% \brl@mecab@dat_X{{yomi}{orig}}
+% \brl@mecab@add_X{{type}{add(count)}}
+% \brl@mecab@diff_X{yomiothers}
+% \brl@mecab@intfa_X{after toks}
+% \brl@mecab@ints_X{space}
+% \brl@mecab@intfb_X{before toks}
+
+
+
+
+\newif\ifbrl@mecab@insertsp
+
+\def\brl@mecab_postproc#1{%
+  \def\brl@mecab@id{#1}%
+  \ifx\brl@mecab@id\brl@mecab@idend%
+    \brl@mecab_corpus_EOS%
+    \brl@mecab_postproc_intermed% the last cs. pos is not needed.
+    \edef\brl@mecab@linemax{\the\brl@mecab@linenum}%
+    \brl@mecab@linenum\z@%
+    \def\brl@mecab@endnum{\m@ne}%
+    \expandafter\brl@mecab_chgent%
+  \else%
+    \expandafter\brl@mecab_postproc_%
+  \fi%
+}
+
+
+
+\def\brl@mecab_postproc_#1#2#3#4#5#6{%
+  %
+  % \def\brl@tmp{{#1}{#2}{#3}{#4}{#5}{#6}}\show\brl@tmp
+  %
+  \csname brl@mecab_postproc_#3\endcsname{#1}{#2}{#3}{#4}%
+  %
+  % \show\brl@mecab@count
+  \brl@mecab_postproc_intermed% yomi may be changed
+  %
+  %
+  %
+  \brl@mecab_set{\brl@mecab@id}{\brl@mecab@yomi}{\brl@mecab@orig}{\brl@mecab@type}{\brl@mecab@count}%
+  %
+  \brl@mecab_corpus{{\brl@mecab@orig}#5#6}{#3}% #2 and the last of #6 may differ. e.g. \d
+  \brl@mecab_log_item{before(\the\brl@mecab@linenum)}{{\brl@mecab@id}{#1}{#2}{#3}{#4}{#5}{#6}}%
+  \brl@mecab_log_item{　　　(\the\brl@mecab@linenum)}{{\brl@mecab@id}{\brl@mecab@yomi}{\brl@mecab@orig}{\brl@mecab@type}{\brl@mecab@count}}%
+  %
+  \advance\brl@mecab@linenum\@ne%
+  %
+  \brl@mecab_advposnum#2\brl@end%
+  \brl@mecab_postproc%
+}
+
+\def\brl@mecab_advposnum#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \advance\brl@mecab@posnum\@ne% pos +1
+    \expandafter\brl@mecab_advposnum%
+  \fi%
+}
+
+%
+%
+%
+
+\@namedef{brl@mecab_postproc_0}#1#2#3#4{% unk.def: unknown symbols
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{0}%
+  \def\brl@mecab@count{#4}%
+}
+\@namedef{brl@mecab_postproc_1}#1#2#3#4{% hira kata unique yomi
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{1}%
+  \def\brl@mecab@count{#4}%
+}
+\@namedef{brl@mecab_postproc_2}#1#2#3#4{% kanji unique yomi
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{2}%
+  \def\brl@mecab@count{#4}%
+}
+%
+% choose
+% \brl@mecab@term = math etc.
+% \brl@mecab@term_math/38_根 = 2 etc.
+%
+\@namedef{brl@mecab_postproc_3}#1#2#3#4{% kanji several yomi
+  \ifcsname brl@mecab@term_\brl@mecab@term/\brl@mecab@id _#2\endcsname%
+    \edef\brl@mecab@readnum{\csname brl@mecab@term_\brl@mecab@term/\brl@mecab@id _#2\endcsname}%
+  \else%
+    \def\brl@mecab@readnum{1}%
+  \fi%
+  \ifcsname brl@mecab_postproc_3@\brl@mecab@id\endcsname%
+    \brl@mecab_choose_yomi#4/\brl@end%
+    \let\brl@mecab@count\brl@mecab@yomi% yomiothers are discarded
+  \else%
+    \def\brl@mecab@count{#4}%
+  \fi%
+  %
+  \brl@mecab_choose_yomi#1/\brl@end%
+  %
+  %
+  \brl@mecab_set@diff{\the\brl@mecab@linenum}{\brl@mecab@yomiothers}%
+  %
+  %
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{3}%
+}
+
+\@namedef{brl@mecab_postproc_3@\brl@mecab@idmw}{}
+% \@namedef{brl@mecab_postproc_3@\brl@mecab@idnoun_sah}{}%
+\@namedef{brl@mecab_postproc_3@\brl@mecab@idnoun_gen}{}%
+% \@namedef{brl@mecab_postproc_3@\brl@mecab@idnoun_adj}{}%
+
+
+%
+% #3 -> #4 : #4 is true type
+%
+\@namedef{brl@mecab_postproc_4}#1#2#3#4{% cs: M, m, c, d, etc.
+  \expandafter\brl@mecab_pullnountoks\the\brl@mecab@yomitoks\brl@end%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{#4}%
+  \def\brl@mecab@count{}%
+}
+
+\@namedef{brl@mecab_postproc_5}#1#2#3#4{% number: 123 etc.
+  \def\brl@mecab@yomi{#2}% same as orig
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{1}% known
+  \def\brl@mecab@count{#4}%
+}
+\@namedef{brl@mecab_postproc_6}#1#2#3#4{% unk.def or unk user defined
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{6}%
+  \def\brl@mecab@count{#4}%
+}
+\@namedef{brl@mecab_postproc_7}#1#2#3#4{% unk.def: hira kata
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{7}%
+  \def\brl@mecab@count{#4}%
+}
+
+\@namedef{brl@mecab_postproc_8}#1#2#3#4{% cs: u -> unit
+  \expandafter\brl@mecab_pullnountoks\the\brl@mecab@yomitoks\brl@end%
+  \let\brl@mecab@orig\brl@mecab@yomi%
+  \expandafter\brl@math_strtoletters\expandafter{\brl@mecab@yomi}%
+  \edef\brl@mecab@yomi{\brl@text_cmd_unit{\brl@math@result}}%
+  \def\brl@mecab@type{1}%
+  \def\brl@mecab@count{}
+  % \def\brl@mecab@count{{0}{く}{}{}{}{}}
+}
+
+% a 9,0 9,5 9,7 is prepared as specialsymbols for future implement.
+%
+\@namedef{brl@mecab_postproc_9}#1#2#3#4{% cs: a
+  \expandafter\brl@mecab_pullnountoks\the\brl@mecab@yomitoks\brl@end%
+  %
+  \expandafter\brl@mecab_postproc_userdef\brl@mecab@yomi%
+  \def\brl@mecab@type{6}%
+  \def\brl@mecab@count{}%
+}
+
+\def\brl@mecab_postproc_userdef#1#2{%
+  \def\brl@mecab@orig{#1}%
+  \def\brl@mecab@yomi{#2}%
+}
+
+
+% \@namedef{brl@mecab_postproc_10}#1#2#3#4{% cs: l, w
+%   \expandafter\brl@mecab_pullnountoks\the\brl@mecab@yomitoks\brl@end%
+%   \def\brl@mecab@orig{#2}%
+%   \def\brl@mecab@type{10}%
+%   \def\brl@mecab@count{#4}%
+% }
+
+% \@namedef{brl@mecab_postproc_11}#1#2#3#4{%
+%   \def\brl@mecab@yomi{#1}%
+%   \def\brl@mecab@orig{#2}%
+%   \def\brl@mecab@type{11}%
+%   \def\brl@mecab@count{#4}%
+% }
+
+%
+% #3 -> #4 : #4 is true type
+%
+\@namedef{brl@mecab_postproc_10}#1#2#3#4{% change type
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{#4}%
+  \def\brl@mecab@count{}%
+}
+
+
+\@namedef{brl@mecab_postproc_12}#1#2#3#4{% words including <num> : 五、六, 七五三 etc.
+  {%
+    \brl@mecab_angle_num%
+    \xdef\brl@mecab@yomi{#1}%
+  }%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{2}%
+  \def\brl@mecab@count{#4}%
+}
+
+\@namedef{brl@mecab_postproc_13}#1#2#3#4{% ％, ♯, ＊
+  \def\brl@mecab@yomi{#1}%
+  \def\brl@mecab@orig{#2}%
+  \def\brl@mecab@type{13}%
+  \def\brl@mecab@count{#4}%
+}
+
+% \@namedef{brl@mecab_postproc_14}#1#2#3#4{% cs: y
+%   \expandafter\brl@mecab_pullnountoks\the\brl@mecab@yomitoks\brl@end%
+%   \def\brl@mecab@orig{#2}%
+%   \def\brl@mecab@type{15}%
+%   \def\brl@mecab@count{#4}%
+% }
+
+% \@namedef{brl@mecab_postproc_15}#1#2#3#4{% 括弧閉
+%   \def\brl@mecab@yomi{#1}%
+%   \def\brl@mecab@orig{#2}%
+%   \def\brl@mecab@type{15}%
+%   \def\brl@mecab@count{#4}%
+% }
+
+% output:
+% brl@mecab@yomi
+% brl@mecab@yomiothers
+%
+\def\brl@mecab_choose_yomi{%
+  \count@\@ne%
+  \let\brl@mecab@yomiothers\@gobble%
+  \brl@mecab_choose_yomi_%
+}
+
+\def\brl@mecab_choose_yomi_#1/{%
+  \ifnum\brl@mecab@readnum=\count@%
+    \def\brl@mecab@yomi{#1}% the main reading
+    \expandafter\brl@mecab_choose_yomi_end%
+  \else%
+    % 
+    \edef\brl@mecab@yomiothers{\brl@mecab@yomiothers/#1}%
+    \advance\count@\@ne%
+    \expandafter\brl@mecab_choose_yomi_%
+  \fi%
+}
+
+\def\brl@mecab_choose_yomi_end{%
+  \@ifnextchar\brl@end{\@gobble}{\brl@mecab_choose_yomi_end_}%
+}
+\def\brl@mecab_choose_yomi_end_#1/\brl@end{%
+  % 
+  \edef\brl@mecab@yomiothers{\brl@mecab@yomiothers/#1}%
+}
+
+\def\brl@mecab_pullnountoks#1#2#3\brl@end{%
+  \def\brl@mecab@yomi{#1}%
+  \edef\brl@mecab@id{#2}%
+  \brl@mecab@yomitoks{#3}%
+}
+
+
+% dat: {id}{yomi}{orig}{type}{add}{pos}
+%
+%
+\def\brl@mecab_set#1#2#3#4#5{%
+  \expandafter\edef\csname brl@mecab@id_\the\brl@mecab@linenum\endcsname{#1}%
+  \expandafter\edef\csname brl@mecab@dat_\the\brl@mecab@linenum\endcsname{{#2}{#3}}%
+  \expandafter\edef\csname brl@mecab@add_\the\brl@mecab@linenum\endcsname{{#4}{#5}}%
+}
+
+\def\brl@mecab_set@id#1#2{%
+  \expandafter\edef\csname brl@mecab@id_#1\endcsname{#2}%
+}
+
+\def\brl@mecab_set@dat#1#2#3{%
+  \expandafter\edef\csname brl@mecab@dat_#1\endcsname{{#2}{#3}}%
+}
+
+\def\brl@mecab_set@add#1#2#3{%
+  \expandafter\edef\csname brl@mecab@add_#1\endcsname{{#2}{#3}}%
+}
+
+\def\brl@mecab_get@id#1#2{%
+  \ifnum\brl@mecab@linemax>#1\relax%
+    \ifnum#1<\z@%
+      \let#2\brl@mecab@idend%
+    \else%
+      \edef#2{\csname brl@mecab@id_#1\endcsname}%
+    \fi%
+  \else%
+    \let#2\brl@mecab@idend%
+  \fi%
+}
+
+\def\brl@mecab_get@dat#1{%
+  \edef\brl@tmp{\csname brl@mecab@dat_#1\endcsname}%
+  \expandafter\brl@mecab_get@dat_\brl@tmp%
+}
+
+\def\brl@mecab_get@add#1{%
+  \edef\brl@tmp{\csname brl@mecab@add_#1\endcsname}%
+  \expandafter\brl@mecab_get@dat_\brl@tmp%
+}
+
+\def\brl@mecab_get@dat_#1#2#3#4{%
+  \def#3{#1}%
+  \def#4{#2}%
+}
+
+\def\brl@mecab_set@diff#1#2{%
+  \expandafter\edef\csname brl@mecab@diff_#1\endcsname{#2}%
+}
+
+\def\brl@mecab_get@diff#1#2{%
+  \edef#2{\csname brl@mecab@diff_#1\endcsname}%
+}
+
+%
+% linenum = -1 is BOS
+%
+\brl@mecab_set@id{-1}{\brl@mecab@idend}
+\brl@mecab_set@dat{-1}{}{}
+\brl@mecab_set@add{-1}{}{}
+
+
+
+\def\brl@mecab_postproc_intermed{%
+  %
+  % treat cs after
+  %
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_insertcsfafter%
+  % \brl@mecab_insertcsafter%
+  %
+  \expandafter\def\csname brl@mecab@intfa_\the\brl@mecab@linenum\expandafter\endcsname\expandafter{\the\brl@mecab@dcstoks}%
+  %
+  %
+  \brl@mecab@insertspfalse%
+  \brl@mecab_insertsp%
+  \expandafter\edef\csname brl@mecab@ints_\the\brl@mecab@linenum\endcsname{\ifbrl@mecab@insertsp\brl@text_cmd_glue\fi}%
+  %
+  % treat cs before
+  %
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_insertcsfbefore%
+  %
+  %
+  \expandafter\def\csname brl@mecab@intfb_\the\brl@mecab@linenum\expandafter\endcsname\expandafter{\the\brl@mecab@dcstoks}%
+  %
+  %
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_insertcsbefore%
+  %
+  %
+  \expandafter\def\csname brl@mecab@intb_\the\brl@mecab@linenum\expandafter\endcsname\expandafter{\the\brl@mecab@dcstoks}%
+}
+
+
+
+
+\def\brl@mecab_insertcsbefore{%
+  \ifnum\brl@mecab@csbpos>\brl@mecab@posnum%
+  \else%
+    %
+    \expandafter\brl@mecab_appenddcstoks\brl@mecab@csb%
+    \brl@mecab_pullcsbtoks%
+    \expandafter\brl@mecab_insertcsbefore% another cs may be inserted
+  \fi%
+}
+
+
+\def\brl@mecab_insertcsfbefore{%
+  \ifnum\brl@mecab@csfbpos>\brl@mecab@posnum%
+  \else%
+    \expandafter\brl@mecab_appenddcstoks\brl@mecab@csfb%
+    \brl@mecab_pullcsfbtoks%
+    \expandafter\brl@mecab_insertcsfbefore%
+  \fi%
+}
+
+\def\brl@mecab_insertcsfafter{%
+  \ifnum\brl@mecab@csfapos>\brl@mecab@posnum%
+  \else%
+    \expandafter\brl@mecab_appenddcstoks\brl@mecab@csfa%
+    \brl@mecab_pullcsfatoks%
+    \expandafter\brl@mecab_insertcsfafter% another cs may be inserted
+  \fi%
+}
+
+\def\brl@mecab_insertsp{%
+  \ifnum\brl@mecab@sppos>\brl@mecab@posnum%
+  \else%
+    \brl@mecab@insertsptrue% many sp's is reduced to one.
+    \brl@mecab_pullsptoks%
+    \expandafter\brl@mecab_insertsp% sp label sp
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% postprocessor :
+%%
+%% \brl@mecab_chgent
+
+
+
+%%
+\def\brl@mecab_chgent{%
+  \ifnum\brl@mecab@linemax>\brl@mecab@linenum%
+    %
+    %
+    %
+    \expandafter\brl@mecab_chgent_loop%
+  \else%
+    \brl@mecab@linenum\z@%
+    \brl@mecab_log_seg%
+    \expandafter\brl@mecab_concat%
+  \fi%
+}
+
+\def\brl@mecab_chgent_loop{%
+  %
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@id}%
+  \ifcsname brl@mecab_item_\brl@mecab@id\endcsname% the treatment of the words dependent on the next words.
+    %
+    %
+    %
+    \csname brl@mecab_item_\brl@mecab@id\expandafter\endcsname% the treatment of the words dependent on the next words.
+    %
+  \else%
+    %
+    \advance\brl@mecab@linenum\@ne%
+  \fi%
+  %
+  \brl@mecab_chgent%
+}
+
+
+
+\def\brl@mecab_replacedef#1#2#3{
+  \@namedef{brl@mecab_item_#1}{%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{#2}%
+    \brl@mecab_set@dat{\the\brl@mecab@linenum}{#3}{#3}%
+  }
+}
+
+
+\brl@mecab_replacedef{900}{630}{（}
+\brl@mecab_replacedef{901}{631}{）}
+\brl@mecab_replacedef{902}{664}{“}
+\brl@mecab_replacedef{903}{665}{”}
+\brl@mecab_replacedef{904}{634}{［}
+\brl@mecab_replacedef{905}{635}{］}
+\brl@mecab_replacedef{906}{660}{「}
+\brl@mecab_replacedef{907}{660}{」}
+
+\brl@mecab_replacedef{636}{632}{（}%《
+\brl@mecab_replacedef{637}{633}{）}%》
+\brl@mecab_replacedef{638}{630}{⸨}%〈
+\brl@mecab_replacedef{639}{631}{⸩}%〉
+\brl@mecab_replacedef{640}{634}{［}%【
+\brl@mecab_replacedef{641}{635}{］}%】
+\brl@mecab_replacedef{642}{634}{［}%〔
+\brl@mecab_replacedef{643}{635}{］}%〕
+
+\brl@mecab_replacedef{666}{660}{「}%‘
+\brl@mecab_replacedef{667}{661}{」}%’
+
+\brl@mecab_replacedef{852}{\brl@mecab@idskip}{}% \brl@text_cmd_comma
+
+%\brl@mecab_replacedef{908}{908}{.} needs detailed investigation
+\brl@mecab_replacedef{909}{9}{、}%
+\brl@mecab_replacedef{910}{611}{；}
+\brl@mecab_replacedef{911}{611}{：}
+\brl@mecab_replacedef{912}{7}{！}
+\brl@mecab_replacedef{913}{7}{？}
+\brl@mecab_replacedef{914}{600}{―}
+\brl@mecab_replacedef{915}{820}{\brl@text_cmd_space}% /
+%\brl@mecab_replacedef{916}{600}{―}
+\brl@mecab_replacedef{916}{601}{〜}
+\brl@mecab_replacedef{917}{600}{…}
+\brl@mecab_replacedef{918}{607}{＆}
+\brl@mecab_replacedef{1010}{661}{」}%'
+
+% \brl@mecab_replacedef{1020}{\brl@mecab@idskip}{}% \brl@text_cmd_space
+\brl@mecab_replacedef{1021}{\brl@mecab@idskip}{}% \!
+\brl@mecab_replacedef{1022}{\brl@mecab@idskip}{}% \,
+\brl@mecab_replacedef{1023}{\brl@mecab@idskip}{}% \>
+\brl@mecab_replacedef{1024}{\brl@mecab@idskip}{}% \:
+\brl@mecab_replacedef{1025}{\brl@mecab@idskip}{}% \;
+\brl@mecab_replacedef{1026}{\brl@mecab@idskip}{}% \␣
+\brl@mecab_replacedef{1027}{\brl@mecab@idskip}{}% ~
+\brl@mecab_replacedef{1028}{\brl@mecab@idskip}{}% \quad
+\brl@mecab_replacedef{1029}{\brl@mecab@idskip}{}% \qquad
+
+% .,*,*,*,記号,句点,*,*,*,*,.,.,1,*
+% 。,*,*,*,記号,句点,*,*,*,*,。,。,1,*
+% ．,*,*,*,記号,句点,*,*,*,*,．,。,2,*
+
+%
+% .~ .\␣  -> ．
+% .␣ -> 。
+% .X -> .X
+%
+% .,*,*,*,記号,句点,*,*,*,*,.,.,*,*
+\@namedef{brl@mecab_item_908}{%
+  \edef\brl@tmp{\csname brl@mecab@ints_\the\numexpr\brl@mecab@linenum+\@ne\relax\endcsname}% next space
+  \ifx\brl@tmp\empty% no space
+    \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+    \ifcsname brl@mecab_item_periodone@\brl@mecab@nextid\endcsname% .~ etc
+      \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+      \advance\brl@mecab@linenum\@ne%
+      \brl@mecab_set@id{\the\brl@mecab@linenum}{7}%
+      \brl@mecab_set@dat{\the\brl@mecab@linenum}{．}{．}%
+    \else%
+      \ifcsname brl@mecab_item_periodzero@\brl@mecab@nextid\endcsname% .~ etc
+      \else%
+        \brl@mecab_set@id{\the\brl@mecab@linenum}{7}%
+        \brl@mecab_set@dat{\the\brl@mecab@linenum}{。}{。}%
+      \fi%
+    \fi%
+  \else%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{7}%
+    \brl@mecab_set@dat{\the\brl@mecab@linenum}{。}{。}%
+  \fi%
+  \advance\brl@mecab@linenum\@ne%
+}
+
+
+
+\@namedef{brl@mecab_item_452@51}{}
+\@namedef{brl@mecab_item_452@52}{}
+\@namedef{brl@mecab_item_452@54}{}
+\@namedef{brl@mecab_item_452}{% 非
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@nextid}%
+  \ifcsname brl@mecab_item_452@\brl@mecab@nextid\endcsname% 接尾
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{453}%
+  \fi%
+  \advance\brl@mecab@linenum\@ne%
+}
+
+
+\@namedef{brl@mecab_item_periodone@1026}{}% \␣
+\@namedef{brl@mecab_item_periodone@1027}{}% ~
+
+\@namedef{brl@mecab_item_periodzero@\brl@mecab@idnum_arabic}{}%
+
+
+%% idmathnum -> idnum_arabic
+\@namedef{brl@mecab_item_\brl@mecab@idmathnum}{% \d
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@tmp}%
+  {%
+    \let\brl@text_cmd_dollar\brl@@asis%
+    \let\brl@math_cmd\brl@math_cmd@% applied only to digit
+    \xdef\brl@tmp{\brl@mecab@yomi}%
+  }%
+  %
+  \brl@mecab_set{\brl@mecab@idnum_arabic}{\brl@tmp}{\brl@tmp}{4}{}%
+}
+
+
+\@namedef{brl@mecab_item_\brl@mecab@idcommamath}{%
+  \brl@mecab_set@dat{\the\brl@mecab@linenum}{\brl@text_cmd_commamath}{,}%
+  \advance\brl@mecab@linenum\@ne%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Numbers
+%%
+
+% OK
+\@namedef{brl@mecab_item_\brl@mecab@idnum_lbase}{% (万|億|兆)
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  \advance\brl@mecab@linenum\@ne%
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \let\brl@mecab@prevdigit\empty%
+    \edef\brl@mecab@prevbase{\csname brl@mecab_num@exp_\brl@mecab@orig\endcsname}%
+    \expandafter\brl@mecab_num_arabic_mw%
+  \fi%
+}
+
+% OK
+\@namedef{brl@mecab_item_\brl@mecab@idnum_alone}{% (偶数|奇数|有限|無限|可算|半|零|数千|何千|幾千|連千)
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  \advance\brl@mecab@linenum\@ne%
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \edef\brl@mecab@prevdigit{\csname brl@mecab_num@digit_\brl@mecab@orig\endcsname}%
+    \expandafter\brl@mecab_num_arabic_mw%
+  \fi%
+}
+
+% OK
+\@namedef{brl@mecab_item_\brl@mecab@idnum_indefar}{% (数|何|幾)
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  \advance\brl@mecab@linenum\@ne%
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \edef\brl@mecab@prevdigit{\csname brl@mecab_num@digit_\brl@mecab@orig\endcsname}%
+    \expandafter\brl@mecab_num_arabic_mw%
+  \fi%
+}
+
+% OK
+\@namedef{brl@mecab_item_\brl@mecab@idnum_indefjpa}{% (数十|何十|幾十|連十) etc.
+  % \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  \advance\brl@mecab@linenum\@ne%
+  %
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \let\brl@mecab@prevdigit\empty%
+    \def\brl@mecab@prevbase{\@ne}% 10
+    \expandafter\brl@mecab_num_arabic_mw%
+  \fi%
+}
+
+% OK
+\@namedef{brl@mecab_item_\brl@mecab@idnum_indefjpb}{% (数百|何百|幾百) etc. ひゃ
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  \advance\brl@mecab@linenum\@ne%
+  %
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \expandafter\brl@mecab_num_jp_mw%
+  \else
+    \brl@mecab_set@dat{\the\numexpr\brl@mecab@linenum+\m@ne\relax}{\brl@mecab@yomi く}{\brl@mecab@orig}%
+  \fi%
+}
+
+
+% OK
+\def\brl@mecab_num_lastnum#1#2#3#4{%
+  \def\brl@mecab@prevdigit{#4}%
+}
+
+
+\@namedef{brl@mecab_item_\brl@mecab@idnum_indefsp}{% (連) etc.
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  %
+  \advance\brl@mecab@linenum\@ne%
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \expandafter\brl@mecab_num_lastnum\brl@mecab@yomi%
+    %
+    %
+    \expandafter\brl@mecab_num_arabic_indefmw%
+  \fi%
+}
+
+
+
+\@namedef{brl@mecab_item_\brl@mecab@idnum_indefjpc}{% (連百) etc.
+  % 
+  % 
+  \advance\brl@mecab@linenum\@ne%
+  %
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \let\brl@mecab@prevdigit\empty%
+    \def\brl@mecab@prevbase{\tw@}% 100
+    \expandafter\brl@mecab_num_arabic_mw%
+  \fi%
+}
+
+
+
+%%
+%% note that the sequence 
+%% \brl@mecab@idnum_arabic, \brl@mecab@idnum_arabic never happens,
+%% while any of
+%% \brl@mecab@idnum_kanji, \brl@mecab@idnum_kanji
+%% \brl@mecab@idnum_kanji, \brl@mecab@idnum_arabic
+%% \brl@mecab@idnum_arabic, \brl@mecab@idnum_kanji 
+%% will happen.
+%%
+%%
+
+\newcount\brl@mecab_num@exp
+\newcount\brl@mecab_num@len
+
+%
+% output: len 
+%
+\def\brl@mecab_num_count#1{%
+%  \edef\brl@tmp{#1}\show\brl@tmp
+  \count@114\relax%
+  \expandafter\brl@mecab_num_count_#1zyxwvutsr\brl@end%
+}
+
+\def\brl@mecab_num_count_#1#2#3#4#5#6#7#8#9{%
+  \brl@mecab_num@len\numexpr\number`#9-\count@\relax%
+  \ifnum\brl@mecab_num@len<\z@% length >= 9
+    \advance\count@-9\relax%
+    \expandafter\brl@mecab_num_count_%
+  \else%
+    \expandafter\brl@mecab_num_count_finish%
+  \fi%
+}
+
+\def\brl@mecab_num_count_finish#1\brl@end{}
+
+
+% loop :
+%
+% \@namedef{brl@mecab_item_\brl@mecab@idnum_arabic}
+% \@namedef{brl@mecab_item_\brl@mecab@idnum_kanji}
+% \@namedef{brl@mecab_item_\brl@mecab@idnum_sbase}
+%
+%
+% (num + sbase) -> loop
+% [num] -> finish
+% (num_kanji + sbase) -> loop
+% [num_kanji] -> finish
+% (num_sbase) -> loop
+% [num_sbase] -> finish
+%
+% (procedure) determines
+% \brl@mecab_num@exp 10^3
+% \brl@mecab_num@number 123
+% \brl@mecab_num@origall 200千
+%
+% [procedure] determines
+% \brl@mecab_num@exp 10^3
+% \brl@mecab_num@number 123
+%
+
+% OK
+% 1234567890
+\@namedef{brl@mecab_item_\brl@mecab@idnum_arabic}{%
+  %
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}% digits
+  %
+  %
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  %
+  \let\brl@mecab_num@indefdigit\empty% 123_4
+  %
+  \brl@mecab_num_count{\brl@mecab@yomi}% len
+  %
+  \ifx\brl@mecab@nextid\brl@mecab@idnum_sbase% (num + sbase)
+    %
+    % init
+    %
+    \brl@mecab_num@exp\@M% 10^3
+    \let\brl@mecab_num@number\empty% 123
+    \let\brl@mecab_num@origall\empty%\brl@mecab@orig%
+    %
+    \let\brl@mecab_num@digits\brl@mecab@yomi%
+    \let\brl@mecab_num@dorig\brl@mecab@orig%
+    \expandafter\brl@mecab_item_idnum_sbase%
+    %
+  \else% [idnum_arabic]
+    %
+    %
+    \brl@mecab_num@exp\z@%
+    \let\brl@mecab_num@number\brl@mecab@yomi%
+    \let\brl@mecab_num@origall\brl@mecab@orig%
+    %
+    %
+    %
+    \expandafter\brl@mecab_num_finish%
+  \fi%
+}
+
+
+% OK
+% 一二三四五六七八九零
+\@namedef{brl@mecab_item_\brl@mecab@idnum_kanji}{%
+  %
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}% digits
+  %
+  %
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  %
+  \let\brl@mecab_num@indefdigit\empty% 123_4
+  %
+  % \show\brl@mecab@nextid
+  % \show\brl@mecab@idnum_sbase%
+  \ifx\brl@mecab@nextid\brl@mecab@idnum_sbase%
+    %
+    \brl@mecab_num@len\@ne%
+    %
+    % init
+    %
+    \brl@mecab_num@exp\@M%
+    \let\brl@mecab_num@number\empty%
+    \let\brl@mecab_num@origall\empty%
+    %
+    \let\brl@mecab_num@digits\brl@mecab@yomi%
+    \let\brl@mecab_num@dorig\brl@mecab@orig%
+    %
+    \expandafter\brl@mecab_item_idnum_sbase%
+    %
+  \else%
+    %
+    \brl@mecab_num@exp\z@%
+    \let\brl@mecab_num@number\brl@mecab@yomi%
+    \let\brl@mecab_num@origall\brl@mecab@orig%
+    %
+    % 
+    \expandafter\brl@mecab_num_finish%
+  \fi%
+}
+
+% OK
+\@namedef{brl@mecab_item_\brl@mecab@idnum_sbase}{%
+  %
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}% sbase
+  %
+  % init
+  \brl@mecab_num@exp\brl@mecab@yomi\relax%
+  \def\brl@mecab_num@number{1}%
+  \let\brl@mecab_num@indefdigit\empty% 123_4
+  \let\brl@mecab_num@origall\brl@mecab@orig%
+  %
+  % number & exp
+  \brl@mecab_num%
+}
+
+
+%
+% num + sbase
+% sbase + sbase
+%
+% input: \brl@mecab_num@exp, \brl@mecab_num@number,
+%        \brl@mecab_num@len, \brl@mecab_num@digits
+%
+\def\brl@mecab_item_idnum_sbase{%
+  %
+  \brl@mecab_get@dat{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@yomi}{\brl@mecab@orig}% sbase
+  %
+  %
+  %
+  \count@\numexpr\brl@mecab_num@exp-\brl@mecab_num@len-\brl@mecab@yomi\relax%
+  % \showthe\brl@mecab_num@exp
+  % \showthe\count@
+  %
+  \ifnum\count@<\z@% 十 百
+    %
+    \brl@mecab_num_complete%
+    \def\brl@mecab_num@lbase{\z@}%
+    \let\brl@mecab@id\brl@mecab@idnumber%
+    \expandafter\brl@mecab_num_arabic_finish%
+    %
+    %
+  \else% (num + sbase)
+    %
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+    \advance\brl@mecab@linenum\@ne%
+    %
+    \brl@mecab_num_concat% \count@
+    \edef\brl@mecab_num@origall{\brl@mecab_num@origall\brl@mecab_num@dorig\brl@mecab@orig}%
+    \brl@mecab_num@exp\brl@mecab@yomi\relax%
+    %
+    % number & exp
+    \expandafter\brl@mecab_num%
+  \fi%
+}
+
+
+%
+% \brl@mecab_num@exp : 3
+% \brl@mecab_num@number : 123
+% -> 123*10^3
+%
+% \brl@mecab_num@exp : 0
+% \brl@mecab_num@number : 123
+% \brl@mecab_num@indefdigit : 4
+% -> 123_4
+%
+%
+%
+\def\brl@mecab_num{%
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  %
+  \ifcsname brl@mecab_num_\brl@mecab@nextid\endcsname%
+    \csname brl@mecab_num_\brl@mecab@nextid\expandafter\endcsname%
+  \else%
+    \expandafter\brl@mecab_num_finish% D-E-J
+  \fi%
+}
+
+\@namedef{brl@mecab_num_\brl@mecab@idnum_arabic}{%
+  %
+  \brl@mecab_get@dat{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@yomi}{\brl@mecab@orig}% digits
+  %
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@nextid}%
+  %
+  \let\brl@mecab_num@digits\brl@mecab@yomi% digits
+  \let\brl@mecab_num@dorig\brl@mecab@orig%
+  \brl@mecab_num_count{\brl@mecab@yomi}% len
+  %
+  \ifx\brl@mecab@nextid\brl@mecab@idnum_sbase%
+    %
+    %
+    \expandafter\brl@mecab_num_sbase%
+    %
+  \else%
+    %
+    \count@\numexpr\brl@mecab_num@exp-\brl@mecab_num@len\relax%
+    \ifnum\count@<\z@%
+      %
+      \brl@mecab_num_complete%
+      \def\brl@mecab_num@lbase{\z@}%
+      \let\brl@mecab@id\brl@mecab@idnumber%
+      \def\brl@mecab_next{\brl@mecab_num_arabic_finish}%
+      % \brl@mecab_num_arabic_finish%
+      %  5十 500 new number
+      % let\brl@mecab_next\empty%
+      %
+    \else% 5百 50
+      %
+      \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+      \advance\brl@mecab@linenum\@ne%
+      %
+      \brl@mecab_num_concat%
+      \edef\brl@mecab_num@origall{\brl@mecab_num@origall\brl@mecab@orig}%
+      \brl@mecab_num@exp\z@%
+      %
+      % number & exp
+      %
+      \def\brl@mecab_next{\brl@mecab_num_finish}% D-E-J
+    \fi%
+    %
+    \expandafter\brl@mecab_next%
+    %
+  \fi%
+}
+
+
+\@namedef{brl@mecab_num_\brl@mecab@idnum_kanji}{%
+  %
+  \brl@mecab_get@dat{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@yomi}{\brl@mecab@orig}% digits
+  %
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@nextid}%
+  %
+  \let\brl@mecab_num@digits\brl@mecab@yomi%
+  \let\brl@mecab_num@dorig\brl@mecab@orig%
+  \brl@mecab_num@len\@ne%
+  %
+  \ifx\brl@mecab@nextid\brl@mecab@idnum_sbase%
+    %
+    %
+    \expandafter\brl@mecab_num_sbase%
+    %
+  \else%
+    %
+    \count@\numexpr\brl@mecab_num@exp-\brl@mecab_num@len\relax%
+    \ifnum\count@<\z@%
+      %
+      \brl@mecab_num_complete%
+      \def\brl@mecab_num@lbase{\z@}%
+      \let\brl@mecab@id\brl@mecab@idnumber%
+      \def\brl@mecab_next{\brl@mecab_num_arabic_finish}%
+      %
+      % 
+      %
+      %
+    \else% 5百 50
+      %
+      \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+      \advance\brl@mecab@linenum\@ne%
+      %
+      \brl@mecab_num_concat%
+      \edef\brl@mecab_num@origall{\brl@mecab_num@origall\brl@mecab@orig}%
+      \brl@mecab_num@exp\z@%
+      %
+      % number & exp
+      %
+      \def\brl@mecab_next{\brl@mecab_num_finish}% D-E-J
+    \fi%
+    %
+    \expandafter\brl@mecab_next%
+    %
+  \fi%
+}
+
+
+\def\brl@mecab_num_indefsp#1#2#3#4{% \cmd_number{1}\cmd_number{2} etc.
+  \def\brl@mecab_num@digits{#2}%
+  \def\brl@mecab_num@indefdigit{\brl@text_cmd_number#4}% cmd_number may be gobbled
+}
+
+\@namedef{brl@mecab_num_\brl@mecab@idnum_indefsp}{% 一、二
+  %
+  \brl@mecab_get@dat{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@yomi}{\brl@mecab@orig}% digit_digit
+  %
+  %
+  %
+  % \show\brl@mecab@yomi
+  % \show\brl@mecab@nextid
+  \expandafter\brl@mecab_num_indefsp\brl@mecab@yomi%
+  %
+  % \show\brl@mecab_num@indefdigit
+  \brl@mecab_num@len\@ne%
+  %
+  %
+  %
+  \count@\numexpr\brl@mecab_num@exp-\brl@mecab_num@len\relax%
+  % \showthe\count@
+  \ifnum\count@<\z@%
+    %
+    \brl@mecab_num_complete%
+    \def\brl@mecab_num@lbase{\z@}%
+    \let\brl@mecab@id\brl@mecab@idnumber%
+    \expandafter\brl@mecab_num_arabic_finish%
+    %
+  \else% 5百 5_6
+    %
+    \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@nextid}% used in num_finish
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+    \advance\brl@mecab@linenum\@ne%
+      %
+    \brl@mecab_num_concat%
+    \edef\brl@mecab_num@origall{\brl@mecab_num@origall\brl@mecab@orig}%
+    \brl@mecab_num@exp\z@%
+    %
+    % number & exp
+    %
+    %
+    \expandafter\brl@mecab_num_finish% D-E-J
+  \fi%
+  %
+}
+
+
+
+\@namedef{brl@mecab_num_\brl@mecab@idnum_sbase}{%
+  %
+  %
+  %
+  %
+  \def\brl@mecab_num@digits{1}%
+  \let\brl@mecab_num@dorig\empty%
+  \brl@mecab_num@len\@ne%
+  %
+  % number & exp
+  \brl@mecab_item_idnum_sbase%
+}
+
+% input: \brl@mecab_num@exp, \brl@mecab_num@number,
+%        \brl@mecab_num@len, \brl@mecab_num@digits
+
+\def\brl@mecab_num_sbase{%
+  %
+  \brl@mecab_get@dat{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@yomi}{\brl@mecab@orig}% sbase
+  %
+  %
+  %
+  \count@\numexpr\brl@mecab_num@exp-\brl@mecab_num@len-\brl@mecab@yomi\relax%
+  % \showthe\count@
+  \ifnum\count@<\z@% 十 百
+    \brl@mecab_num_complete%
+    \def\brl@mecab_num@lbase{\z@}%
+    \let\brl@mecab@id\brl@mecab@idnumber%
+    \expandafter\brl@mecab_num_arabic_finish%
+    %
+  \else% (num + sbase)
+    %
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+    \advance\brl@mecab@linenum\@ne%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+    \advance\brl@mecab@linenum\@ne%
+    %
+    \brl@mecab_num_concat% \count@
+    \edef\brl@mecab_num@origall{\brl@mecab_num@origall\brl@mecab_num@dorig\brl@mecab@orig}%
+    \brl@mecab_num@exp\brl@mecab@yomi\relax%
+    %
+    % number & exp
+    \expandafter\brl@mecab_num%
+  \fi%
+}
+
+% % (数十|何十|幾十|連十) etc.
+% \def\brl@mecab@idnum_indefjpa{806}% WWW XXX -> WWW:jp XXX:ar=X0
+
+% % (数百|何百|幾百) etc.
+% \def\brl@mecab@idnum_indefjpb{807}% WWW XXX -> WWW:jp XXX:jp (conj)
+
+% % (連百) etc.
+% \def\brl@mecab@idnum_indefjpc{809}% WWW XXX -> WWW:jp XXX:arabic
+
+\@namedef{brl@mecab_num_\brl@mecab@idnum_indefjpa}{%
+  %
+  %
+  %
+  \brl@mecab_num_complete%
+  \def\brl@mecab_num@lbase{\z@}%
+  \let\brl@mecab@id\brl@mecab@idnumber%
+  %
+  \count@\numexpr\brl@mecab_num@exp-\tw@\relax%
+  \ifnum\count@<\z@% 十 百
+    %
+    %
+    \expandafter\brl@mecab_num_arabic_finish%
+    %
+  \else%
+    %
+    % no need to origall because indefjpa is treated independently
+    \expandafter\brl@mecab_num_jp_finish%
+    %
+  \fi%
+}
+
+\def\brl@mecab_num_indefjp{%
+  %
+  %
+  \brl@mecab_num_complete%
+  \def\brl@mecab_num@lbase{\z@}%
+  \let\brl@mecab@id\brl@mecab@idnumber%
+  %
+  \count@\numexpr\brl@mecab_num@exp-\thr@@\relax%
+  \ifnum\count@<\z@% 十 百
+    %
+    \expandafter\brl@mecab_num_arabic_finish%
+    %
+  \else%
+    %
+    %
+    \expandafter\brl@mecab_num_jp_finish%
+    %
+  \fi%
+}
+
+
+\expandafter\let\csname brl@mecab_num_\brl@mecab@idnum_indefjpb\endcsname\brl@mecab_num_indefjp
+\expandafter\let\csname brl@mecab_num_\brl@mecab@idnum_indefjpc\endcsname\brl@mecab_num_indefjp
+
+
+% input: \brl@mecab_num@number, \brl@mecab_num@exp
+%        \brl@mecab_num@digits, \count@
+% output: \brl@mecab_num@number XXX00YYY
+%
+\def\brl@mecab_num_concat{%
+  \ifx\brl@mecab_num@number\empty%
+    %
+    \let\brl@mecab_num@number\brl@mecab_num@digits%
+  \else%
+    {\aftergroup\edef%
+      \aftergroup\brl@mecab_num@number%
+      \aftergroup{%
+        \aftergroup\brl@mecab_num@number%
+        \brl@mecab_num_fillzero%
+        \aftergroup\brl@mecab_num@digits%
+      \aftergroup}%
+    }%
+  \fi%
+}
+
+\def\brl@mecab_num_fillzero{%
+  \ifnum\count@>\z@%
+    \advance\count@\m@ne%
+    \aftergroup0%
+    \expandafter\brl@mecab_num_fillzero%
+  \fi%
+}
+
+% fill 0
+% input: \brl@mecab_num@number, \brl@mecab_num@exp
+% output: \brl@mecab_num@number
+\def\brl@mecab_num_complete{%
+  \count@\brl@mecab_num@exp%
+  {\aftergroup\edef%
+    \aftergroup\brl@mecab_num@number%
+    \aftergroup{%
+      \aftergroup\brl@mecab_num@number%
+      \brl@mecab_num_fillzero%
+      \aftergroup}%
+  }%
+}
+
+
+%
+% input: \brl@mecab_num@number, \brl@mecab_num@lbase, \brl@mecab_num@indefdigit, \brl@mecab_num@origall
+% output: \brl@mecab@prevbase, \brl@mecab@prevdigit
+%
+%
+% 12345000 -> 1234万 5000
+%
+
+\def\brl@mecab_num_arabic_finish{%
+  %
+  %
+  \brl@mecab_num_count{\brl@mecab_num@number}% len
+  \advance\brl@mecab_num@len\m@ne%
+  \count@\brl@mecab_num@len%
+  %
+  \divide\count@4\relax%
+  \multiply\count@4\relax%
+  %
+  \csname brl@mecab_num_arabic@\the\numexpr\brl@mecab_num@len-\count@\relax\expandafter\endcsname\brl@mecab_num@number%
+  %
+  % \showthe\brl@mecab@numtoks
+  %
+  \let\brl@mecab@prevdigit\empty%
+  \ifnum\brl@mecab@prevbase=\z@%
+    \ifnum\@tempcnta=\z@%
+      \let\brl@mecab@prevbase\empty%
+    \else%
+      \brl@mecab_num_detprev{\the\@tempcnta}%
+    \fi%
+  \fi%
+  %
+  %
+  \brl@mecab_set{\brl@mecab@id}{\the\brl@mecab@numtoks}{\brl@mecab_num@origall}{2}{}%
+  \advance\brl@mecab@linenum\@ne%
+  % \show\aa
+  % \showthe\brl@mecab@linenum%
+  % \show\brl@tmp
+}
+
+
+\def\brl@mecab_num_arabic{%
+  \advance\count@\brl@mecab_num@lbase\relax%
+  %
+  \edef\brl@tmp{{\brl@text_cmd_number{\the\@tempcnta}\csname brl@mecab_num@yomi_\the\count@\endcsname}}%
+  \brl@mecab@numtoks\brl@tmp%
+  \edef\brl@mecab@prevbase{\the\count@}%
+  %
+  %
+  %
+  \ifnum\brl@mecab_num@lbase<\count@%
+    \expandafter\brl@mecab_num_arabic_loop%
+  \fi%
+}
+
+\def\brl@mecab_num_arabic_loop#1#2#3#4{%
+  \@tempcnta#1#2#3#4\relax%
+  %
+  \advance\count@-4\relax%
+  \ifnum\@tempcnta>\z@%
+    \ifnum\brl@mecab_num@lbase=\count@% last or not
+      \edef\brl@tmp{{\brl@text_cmd_glue\brl@text_cmd_number{\the\@tempcnta}\brl@mecab_num@indefdigit\csname brl@mecab_num@yomi_\the\count@\endcsname}}%
+    \else
+      \edef\brl@tmp{{\brl@text_cmd_glue\brl@text_cmd_number{\the\@tempcnta}\csname brl@mecab_num@yomi_\the\count@\endcsname}}%
+    \fi%
+    \expandafter\brl@mecab_appendnumtoks\brl@tmp%
+    \edef\brl@mecab@prevbase{\the\count@}%
+  \fi%
+  \ifnum\brl@mecab_num@lbase<\count@%
+    \expandafter\brl@mecab_num_arabic_loop%
+  \fi%
+}
+
+
+\@namedef{brl@mecab_num_arabic@3}#1#2#3#4{%
+  \@tempcnta#1#2#3#4\relax%
+  \brl@mecab_num_arabic%
+}
+\@namedef{brl@mecab_num_arabic@2}#1#2#3{%
+  \@tempcnta#1#2#3\relax%
+  \brl@mecab_num_arabic%
+}
+\@namedef{brl@mecab_num_arabic@1}#1#2{%
+  \@tempcnta#1#2\relax%
+  \brl@mecab_num_arabic%
+}
+\@namedef{brl@mecab_num_arabic@0}#1{%
+  \@tempcnta#1\relax%
+  \brl@mecab_num_arabic%
+}
+
+
+
+%
+% input: \brl@mecab_num@number, \brl@mecab_num@lbase=0, \brl@mecab_num@indefdigit, \brl@mecab_num@origall
+% output: \brl@mecab@prevbase, \brl@mecab@prevdigit
+%
+% the last four digit is read in japanese
+%
+%
+\def\brl@mecab_num_jp_finish{% 1500千数百匹
+  %
+  %
+  \brl@mecab_num_count{\brl@mecab_num@number}% len
+  %
+  \advance\brl@mecab_num@len\m@ne%
+  \count@\brl@mecab_num@len%
+  \divide\count@4\relax%
+  \multiply\count@4\relax%
+  %
+  %
+  %
+  %
+  % \show\brl@mecab_num@number% 1500000
+  % \showthe\brl@mecab_num@len% 6
+  % \showthe\count@% 4
+  \csname brl@mecab_num_jp@\the\numexpr\brl@mecab_num@len-\count@\relax\expandafter\endcsname\brl@mecab_num@number%
+  %
+  % \show\brl@mecab_num@number
+  % \showthe\brl@mecab@numtoks
+  \ifnum3<\brl@mecab_num@len%
+    \brl@mecab_appendnumtoks{\brl@text_cmd_glue}%
+  \fi%
+  %
+  \brl@mecab_num_count{\the\@tempcnta}% len = 3 or 4
+  \csname brl@mecab_num_jp_const@\the\brl@mecab_num@len\expandafter\endcsname\the\@tempcnta%
+  %
+  \expandafter\brl@mecab_appendnumtoks\brl@tmp%
+  %
+  \brl@mecab_set{\brl@mecab@idnumber}{\the\brl@mecab@numtoks}{\brl@mecab_num@origall}{2}{}%
+  \advance\brl@mecab@linenum\@ne%
+}
+
+\def\brl@mecab_num_jp{%
+  %
+  \ifnum\z@<\count@%
+    % \ifnum\@tempcnta>\z@%
+    \edef\brl@tmp{{\brl@text_cmd_number{\the\@tempcnta}\csname brl@mecab_num@yomi_\the\count@\endcsname}}%
+    \brl@mecab@numtoks\brl@tmp%
+    % \fi%
+    \advance\count@-4\relax%
+    \expandafter\brl@mecab_num_jp_loop%
+  \else%
+    \brl@mecab@numtoks{}%
+  \fi%
+}
+
+\def\brl@mecab_num_jp_loop#1#2#3#4{%
+  \@tempcnta#1#2#3#4\relax%
+  %
+  \ifnum\z@<\count@%
+    \ifnum\@tempcnta>\z@%
+      \edef\brl@tmp{{\brl@text_cmd_glue\brl@text_cmd_number{\the\@tempcnta}\csname brl@mecab_num@yomi_\the\count@\endcsname}}%
+      \expandafter\brl@mecab_appendnumtoks\brl@tmp%
+    \fi%
+    \advance\count@-4\relax%
+    \expandafter\brl@mecab_num_jp_loop%
+  \fi%
+}
+
+
+\@namedef{brl@mecab_num_jp@3}#1#2#3#4{%
+  \@tempcnta#1#2#3#4\relax%
+  \brl@mecab_num_jp%
+}
+\@namedef{brl@mecab_num_jp@2}#1#2#3{%
+  \@tempcnta#1#2#3\relax%
+  \brl@mecab_num_jp%
+}
+\@namedef{brl@mecab_num_jp@1}#1#2{%
+  \@tempcnta#1#2\relax%
+  \brl@mecab_num_jp%
+}
+\@namedef{brl@mecab_num_jp@0}#1{%
+  \@tempcnta#1\relax%
+  \brl@mecab_num_jp%
+}
+
+
+\@namedef{brl@mecab_num_jp_const@4}#1#2#3#4{%
+  \edef\brl@tmp{{\csname brl@mecab_num@yomi_3_#1\endcsname%
+      \ifnum#2=\z@%
+      \else%
+        \brl@text_cmd_glue%
+      \fi%
+      \csname brl@mecab_num@yomi_2_#2\endcsname%
+  }}% #3 #4 must be 0
+}
+\@namedef{brl@mecab_num_jp_const@3}#1#2#3{%
+  \edef\brl@tmp{{\csname brl@mecab_num@yomi_2_#1\endcsname%
+  }}% #2 #3 must be 0
+}
+
+% never happens
+% \@namedef{brl@mecab_num_jp_const@2}#1#2{%
+% }
+% \@namedef{brl@mecab_num_jp_const@1}#1{%
+% }
+
+
+
+% \brl@mecab_num_finish
+%
+% input: \brl@mecab_num@number, \brl@mecab_num@exp, \brl@mecab_num@origall
+% \brl@mecab@nextid
+%
+%
+\def\brl@mecab_num_finish{%
+  %
+  \brl@mecab_num_complete% fillzero
+  %
+  %
+  \ifcsname brl@mecab_num_finish_\brl@mecab@nextid\endcsname%
+%
+    \csname brl@mecab_num_finish_\brl@mecab@nextid\expandafter\endcsname%
+    %
+    %
+  \else%
+    \def\brl@mecab_num@lbase{\z@}%
+    \let\brl@mecab@id\brl@mecab@idnumber%
+    \brl@mecab_num_arabic_finish% OK
+    %
+  \fi%
+}
+
+
+
+\@namedef{brl@mecab_num_finish_\brl@mecab@idnum_indefar}{%
+  \def\brl@mecab_num@lbase{\z@}%
+  \let\brl@mecab@id\brl@mecab@idnumbernosp%
+  % no need to origall because indefjpa is treated independently
+  \brl@mecab_num_arabic_finish% OK
+}
+
+\@namedef{brl@mecab_num_finish_\brl@mecab@idnum_lbase}{%
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+  \advance\brl@mecab@linenum\@ne%
+  %
+  %
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}% sbase
+  %
+  %
+  \edef\brl@mecab_num@lbase{\csname brl@mecab_num@exp_\brl@mecab@orig\endcsname}%
+  %
+  \edef\brl@mecab_num@origall{\brl@mecab_num@origall\brl@mecab@orig}%
+  \let\brl@mecab@id\brl@mecab@idnumber%
+  \brl@mecab_num_arabic_finish% prevbase, prevdigit OK
+  %
+  %
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@nextid\brl@mecab@idmw%
+    \expandafter\brl@mecab_num_arabic_mw%
+  \fi%
+}
+
+
+
+\@namedef{brl@mecab_num_finish_\brl@mecab@idmw}{%
+  \def\brl@mecab_num@lbase{\z@}%
+  \let\brl@mecab@id\brl@mecab@idnumber%
+  \brl@mecab_num_arabic_finish% OK
+  %
+  \ifx\brl@mecab_num@indefdigit\empty%
+    \ifnum\brl@mecab_num@len<\tw@% discard \brl@mecab@yomi
+      % \show\brl@mecab_num@number
+      % \showthe\brl@mecab_num@len
+      % \show\brl@mecab@yomi
+      \let\brl@mecab@yomi\brl@mecab_num@number%
+      \expandafter\brl@mecab_num_arabic_mww%
+    \else%
+      \expandafter\brl@mecab_num_arabic_mw%
+    \fi%
+  \else%
+    \edef\brl@mecab@prevdigit{\expandafter\@gobble\brl@mecab_num@indefdigit}%
+    \expandafter\brl@mecab_num_arabic_indefmw%
+  \fi%
+  % \show\brl@mecab@prevdigit
+  % %\show\brl@mecab_num@number
+  % \showthe\brl@mecab_num@len
+  %
+}
+
+%
+%
+% input: \brl@mecab@prevbase, \brl@mecab@prevdigit
+%
+\def\brl@mecab_num_arabic_mw{%
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab_num@mw}{\brl@mecab@mworig}% \brl@mecab_num@mw : default
+  \brl@mecab_get@add{\the\brl@mecab@linenum}{\brl@mecab_num@type}{\brl@mecab_num@count}%
+  %\show\brl@mecab_num@count
+  \expandafter\brl@mecab_mw_arabic\brl@mecab_num@count% setdat
+  \advance\brl@mecab@linenum\@ne%
+}
+
+% X + mw or XX + mw
+% input: \brl@mecab@orig : X or XX
+%
+\def\brl@mecab_num_arabic_mww{%
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab_num@mw}{\brl@mecab@mworig}% \brl@mecab_num@mw : default
+  \brl@mecab_get@add{\the\brl@mecab@linenum}{\brl@mecab_num@type}{\brl@mecab_num@count}%
+  \expandafter\brl@mecab_mww_arabic\brl@mecab_num@count% setdat
+  \advance\brl@mecab@linenum\@ne%
+}
+
+% input: \brl@mecab@prevdigit
+%
+\def\brl@mecab_num_arabic_indefmw{%
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab_num@mw}{\brl@mecab@mworig}% \brl@mecab_num@mw : default
+  \brl@mecab_get@add{\the\brl@mecab@linenum}{\brl@mecab_num@type}{\brl@mecab_num@count}%
+  % \show\brl@mecab_num@count
+  \expandafter\brl@mecab_indefmw_arabic\brl@mecab_num@count% setdat
+  \advance\brl@mecab@linenum\@ne%
+}
+
+
+% input: \brl@mecab@orig : 数百
+%
+\def\brl@mecab_num_jp_mw{% treat only 百
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab_num@mw}{\brl@mecab@mworig}% \brl@mecab_num@mw : default
+  \brl@mecab_get@add{\the\brl@mecab@linenum}{\brl@mecab_num@type}{\brl@mecab_num@count}%
+  % \show\brl@mecab_num@count
+  \expandafter\brl@mecab_mw_jp\brl@mecab_num@count% setdat
+  \advance\brl@mecab@linenum\@ne%
+}
+
+
+
+%
+% input
+%
+% {0}{っ}{{ぺん}{}{べん}{}{}{ぺん}}{}{{べん}}{{ぺん}{ぺん}{べん}{べん}}
+% #1 : 1つ, 2つ, etc. wa-reading
+% #2 : ひゃく, ひゃっ
+% #3 : 1ぺん,2へん,3べん,...,9へん
+% #4 : 3,4か
+% #5 : 何遍, 幾遍 -> なんべん, いくへん
+% #6 : 十遍, 百遍, 千遍, 万遍 -> 10ぺん, 100ぺん, 1000べん, まんべん
+%
+% output:
+%
+
+%.  9: prevbase \empty, \prevdigit 9
+% 十9: prevbase 1, prevdigit 9
+% 十 : prevbase 1, prevdigit \empty
+% 万 : prevbase 4, prevdigit \empty
+% 0  : prevbase \empty, prevdigit \empty
+% あ : prevbase \empty, prevdigit \empty
+% Eng: prevbase \empty, prevdigit \empty
+
+% input: \brl@mecab@yomi, \brl@mecab@orig
+%
+\def\brl@mecab_mw_jp#1#2#3#4#5#6{% treat only 百
+  \brl@mecab_set@dat{\the\numexpr\brl@mecab@linenum+\m@ne\relax}{\brl@mecab@yomi #2}{\brl@mecab@orig}% ひゃく or ひゃっ
+  \def\brl@mecab_mw@pos{\tw@}%
+  \count@\z@%
+  \brl@mecab_mw_choose#6\brl@end% choose measure word
+}
+
+% X + mw or XX + mw
+%
+% input: \brl@mecab@yomi, \brl@mecab@orig, \brl@mecab@mworig
+%
+
+\def\brl@mecab_mww_arabic#1{%
+  %
+  % \edef\brl@tmp{\brl@mecab@yomi#1}\show\brl@tmp
+  \ifnum\brl@mecab@yomi>#1\relax%
+%    \show\aa
+    \expandafter\brl@mecab_mw_arabic_%
+  \else%
+    \expandafter\brl@mecab_mww_arabic_%
+  \fi%
+}
+
+
+\def\brl@mecab@mwspecialday{1日}% needs a special treatment
+\edef\brl@mecab@mwspecialmon{{\brl@mecab@idmw}{がつ}{月}}
+\def\brl@mecab_mww_arabic_#1#2#3#4#5{% among wa_reading
+  %
+  \let\brl@mecab_mw@pos\brl@mecab@yomi%
+  \edef\brl@mecab@mworig{\brl@mecab@yomi\brl@mecab@mworig}%
+  %
+  \def\brl@mecab@mw_mw{#2}%
+  \ifx\brl@mecab@mworig\brl@mecab@mwspecialday%
+    \expandafter\brl@mecab_mww_arabic_special%
+  \else%
+    \expandafter\brl@mecab_mww_arabic_ordinary%
+  \fi%
+}
+
+\def\brl@mecab_mww_arabic_special{%
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum-2\relax}{\brl@tmpa}%
+  \brl@mecab_get@dat{\the\numexpr\brl@mecab@linenum-2\relax}{\brl@tmpb}{\brl@tmpc}%
+  \edef\brl@tmp{{\brl@tmpa}{\brl@tmpb}{\brl@tmpc}}%
+  \ifx\brl@tmp\brl@mecab@mwspecialmon% ついたち
+    \brl@mecab_set@id{\the\numexpr\brl@mecab@linenum+\m@ne\relax}{\brl@mecab@idskip}%
+    \brl@mecab_set{\brl@mecab@idnumber}{ついたち}{1日}{2}{}%
+  \else%
+    \brl@mecab_mww_arabic_ordinary%
+  \fi%
+}
+
+\def\brl@mecab_mww_arabic_ordinary{%
+  \count@\z@%
+  \expandafter\brl@mecab_mw_choose\brl@mecab@mw_mw\brl@end% choose measure word
+  \ifx\brl@mecab@mwyomi\empty% not found.
+    % default
+  \else% found
+    \brl@mecab_set@id{\the\numexpr\brl@mecab@linenum+\m@ne\relax}{\brl@mecab@idskip}%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnumber}% X + mw is treated as idnumber
+    \brl@mecab_set@add{\the\brl@mecab@linenum}{2}{}% different
+  \fi%
+}
+
+\def\brl@mecab_indefmw_arabic#1#2#3#4#5#6{%
+  \count@\z@%
+  \let\brl@mecab_mw@pos\brl@mecab@prevdigit%
+  \def\brl@tmp{#4}%
+  \ifx\brl@tmp\empty%
+    \ifnum#1=\z@%
+      \brl@mecab_mw_choose#3\brl@end% choose measure word
+      % else default
+    \fi%
+  \else%
+    \brl@mecab_mw_choose#4\brl@end% choose measure word
+  \fi%
+}
+
+
+% input: \brl@mecab@prevbase, \brl@mecab@prevdigit, \brl@mecab@mworig
+
+\def\brl@mecab_mw_arabic#1{%
+  \brl@mecab_mw_arabic_%
+}
+
+\def\brl@mecab_mw_arabic_#1#2#3#4#5{%
+%  \def\brl@tmp{#1#2#3#4#5}\show\brl@tmp
+  \count@\z@%
+  \ifx\brl@mecab@prevdigit\empty%
+    \ifx\brl@mecab@prevbase\empty% keep the default
+    \else% base
+      \let\brl@mecab_mw@pos\brl@mecab@prevbase%
+      \brl@mecab_mw_choose#5\brl@end% choose measure word
+    \fi%
+  \else% digit
+    \ifnum\brl@mecab@prevdigit<\z@%
+      \edef\brl@mecab_mw@pos{\expandafter\@gobble\brl@mecab@prevdigit}% delete "-"
+      \brl@mecab_mw_choose#4\brl@end% choose measure word
+    \else%
+      \let\brl@mecab_mw@pos\brl@mecab@prevdigit%
+      \brl@mecab_mw_choose#2\brl@end% choose measure word
+    \fi%
+  \fi%
+}
+
+
+
+\def\brl@mecab_mw_choose#1{%
+  \def\brl@mecab@mwyomi{#1}%
+  \ifx\brl@mecab@mwyomi\brl@@end% default
+    \let\brl@mecab@mwyomi\empty%
+  \else%
+    \expandafter\brl@mecab_mw_choose_loop%
+  \fi%
+}
+
+\def\brl@mecab_mw_choose_loop{%
+  \advance\count@\@ne%
+  \ifnum\brl@mecab_mw@pos=\count@%
+    \ifx\brl@mecab@mwyomi\empty% default
+    \else%
+      \brl@mecab_set@dat{\the\brl@mecab@linenum}{\brl@mecab@mwyomi}{\brl@mecab@mworig}%
+    \fi%
+    \expandafter\brl@mecab_mw_choose_end%
+  \else%
+    \expandafter\brl@mecab_mw_choose%
+  \fi%
+}
+
+\def\brl@mecab_mw_choose_end#1\brl@end{}%
+
+
+
+
+
+
+%%
+%% Alphabet
+%%
+\newif\ifbrl@mecab@allnonwords
+\newif\ifbrl@mecab@word
+
+\@namedef{brl@mecab_item_\brl@mecab@idalph_lett}{%
+  \ifnum\brl@mecab@endnum<\brl@mecab@linenum%
+    \brl@mecab@allnonwordstrue%
+    \edef\brl@mecab@startnum{\the\brl@mecab@linenum}%
+    \edef\brl@mecab@canendnum{\the\brl@mecab@linenum}%
+    \brl@mecab@wordtrue%
+    \expandafter\brl@mecab_item_alph%
+  \else% once investigated
+    \advance\brl@mecab@linenum\@ne% this is alphlett
+  \fi%
+}
+
+\@namedef{brl@mecab_item_\brl@mecab@idalph_lettp}{%
+  \ifnum\brl@mecab@endnum<\brl@mecab@linenum%
+    \brl@mecab@allnonwordstrue%
+    \edef\brl@mecab@startnum{\the\brl@mecab@linenum}%
+    \edef\brl@mecab@canendnum{\the\brl@mecab@linenum}%
+    \brl@mecab@wordtrue%
+    \expandafter\brl@mecab_item_alph%
+  \else% once investigated
+    \advance\brl@mecab@linenum\@ne% this is alphlett
+  \fi%
+}
+
+
+\@namedef{brl@mecab_item_\brl@mecab@idalph_word}{%
+  \brl@mecab@allnonwordsfalse%
+  \edef\brl@mecab@startnum{\the\brl@mecab@linenum}%
+  \edef\brl@mecab@canendnum{\the\brl@mecab@linenum}%
+  \brl@mecab@wordtrue%
+  \brl@mecab_item_alph%
+}
+
+\def\brl@mecab_item_alph{%
+  \advance\brl@mecab@linenum\@ne%
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@id}%
+  \ifnum\brl@mecab@id<\brl@mecab@context_jp\relax% japanese incl. end
+    \def\brl@mecab_next{\brl@mecab_item_alph_finish}%
+  \else%
+    \ifcsname brl@mecab@jp_\brl@mecab@id\endcsname% symbols with changed context
+      \def\brl@mecab_next{\brl@mecab_item_alph_finish}%
+    \else%
+      \edef\brl@tmp{\csname brl@mecab@intfa_\the\brl@mecab@linenum\endcsname\csname brl@mecab@intfb_\the\brl@mecab@linenum\endcsname}% 
+      \ifx\brl@tmp\empty%
+        \def\brl@mecab_next{\brl@mecab_item_alph_loop}%
+      \else% if there is ind between english words, then enmode is stopped.
+        \def\brl@mecab_next{\brl@mecab_item_alph_finish}%
+      \fi%
+    \fi%
+  \fi%
+  \brl@mecab_next%
+}
+
+
+\def\brl@mecab_item_alph_loop{%
+  %
+  \ifnum\brl@mecab@id<\brl@mecab@context_en\relax% symbol 900〜999
+    \ifbrl@mecab@word%
+      \brl@mecab@wordfalse%
+      %
+      %
+      %
+      %
+      \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+      \ifcsname brl@mecab_item_alph@\brl@mecab@nextid\endcsname% eng | 8 個 etc.
+      \else% eng 8 | を
+        \edef\brl@mecab@canendnum{\the\brl@mecab@linenum}%
+      \fi%
+    \fi%
+  \else% english
+    \edef\brl@mecab@canendnum{\the\brl@mecab@linenum}%
+    \brl@mecab@wordtrue%
+    \ifx\brl@mecab@id\brl@mecab@idalph_word%
+      \brl@mecab@allnonwordsfalse%
+    \fi%
+  \fi%
+  \brl@mecab_item_alph%
+}
+
+
+\def\brl@mecab_item_alph_finish{% determine whether words or letters
+  %
+  %
+  %
+  \let\brl@mecab@endnum\brl@mecab@canendnum%
+  %
+  \brl@mecab@linenum\brl@mecab@startnum\relax% reset
+  % 
+  \ifbrl@mecab@allnonwords%
+    % no changes are required. -> all are 1000
+    \advance\brl@mecab@linenum\@ne% this is alphlett
+    %
+  \else%
+    %
+    %
+    \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@tmp}%
+    \brl@mecab@wordtoks\expandafter{\brl@mecab@yomi}%
+    %
+    \expandafter\brl@mecab_item_alph_phrase%
+  \fi%
+}
+
+\def\brl@mecab_item_alph_phrase{%
+  \ifnum\brl@mecab@endnum>\brl@mecab@linenum%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idskip}%
+    \advance\brl@mecab@linenum\@ne%
+    \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@tmp}%
+    % ints : \cmd_glue intb : \cmd_direct
+    \edef\brl@tmp{{\csname brl@mecab@ints_\the\brl@mecab@linenum\endcsname\csname brl@mecab@intb_\the\brl@mecab@linenum\endcsname\brl@mecab@yomi}}%
+    \expandafter\brl@mecab_appendwordtoks\brl@tmp%
+    %
+    \expandafter\brl@mecab_item_alph_phrase%
+  \else%
+    \edef\brl@tmp{\brl@text_cmd_phrase{\the\brl@mecab@wordtoks}}%
+    % \show\brl@tmp
+    \brl@mecab_set@dat{\the\brl@mecab@linenum}{\brl@tmp}{\the\brl@mecab@wordtoks}%
+    \brl@mecab_set@add{\the\brl@mecab@linenum}{1}{}%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idalph_word}%
+    \advance\brl@mecab@linenum\@ne%
+  \fi%
+}
+
+\@namedef{brl@mecab_item_alph@\brl@mecab@idmw}{}% 助数詞
+\@namedef{brl@mecab_item_alph@\brl@mecab@idnum_sbase}{}% 十百千 etc.
+\@namedef{brl@mecab_item_alph@\brl@mecab@idnum_lbase}{}% 万億兆 etc.
+
+
+
+\def\brl@mecab_item_idnoun{%
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  \ifcsname brl@mecab_item_noun@\brl@mecab@nextid\endcsname% noun + noun
+    \brl@mecab_get@add{\the\brl@mecab@linenum}{\brl@mecab_num@type}{\brl@mecab_num@count}%
+    \expandafter\brl@mecab_item_idnoun_left\brl@mecab_num@count%
+  \fi%
+  \advance\brl@mecab@linenum\@ne%
+}
+
+
+\expandafter\let\csname brl@mecab_item_\brl@mecab@idnoun_gen\endcsname\brl@mecab_item_idnoun
+
+
+\@namedef{brl@mecab_item_noun@\brl@mecab@idnoun_gen}{}%
+
+
+
+\def\brl@mecab_item_idnoun_left#1{%
+  \csname brl@mecab_item_idnoun_l#1\endcsname%
+}
+
+\def\brl@mecab_item_idnoun_l和{% 2
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+}
+\def\brl@mecab_item_idnoun_l漢{% 2 1文字
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+}
+\def\brl@mecab_item_idnoun_l熟{% 2 2文字
+  \def\brl@mecab_item_idnoun_prev{熟}%
+  \brl@mecab_get@add{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab_num@nexttype}{\brl@mecab_num@nextcount}%
+  \expandafter\brl@mecab_item_idnoun_right\brl@mecab_num@nextcount%
+}
+\def\brl@mecab_item_idnoun_l外#1{% 2
+  \ifnum#1=\@ne%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+  \else%
+    \def\brl@mecab_item_idnoun_prev{#1}%
+    \brl@mecab_get@add{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab_num@nexttype}{\brl@mecab_num@nextcount}%
+    \expandafter\brl@mecab_item_idnoun_right\brl@mecab_num@nextcount%
+  \fi%
+}
+\def\brl@mecab_item_idnoun_l混{% 2
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+}
+\def\brl@mecab_item_idnoun_l拍#1{% 1 or >=3
+  \ifnum#1<\thr@@%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+  \else%
+    \def\brl@mecab_item_idnoun_prev{拍}%
+    \brl@mecab_get@add{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab_num@nexttype}{\brl@mecab_num@nextcount}%
+    \expandafter\brl@mecab_item_idnoun_right\brl@mecab_num@nextcount%
+  \fi%
+}
+
+
+
+\def\brl@mecab_item_idnoun_right#1{%
+  \csname brl@mecab_item_idnoun_r#1\endcsname%
+}
+
+\def\brl@mecab_item_idnoun_r和{% 2
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+}
+\def\brl@mecab_item_idnoun_r漢{% 2 1文字
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+}
+\def\brl@mecab_item_idnoun_r熟{% 2 2文字
+}
+\def\brl@mecab_item_idnoun_r外#1{% 2
+  \ifcsname brl@mecab_item_idnoun_\brl@mecab_item_idnoun_prev #1\endcsname%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+  \fi%
+}
+\def\brl@mecab_item_idnoun_r混{% 2
+  \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+}
+\def\brl@mecab_item_idnoun_r拍#1{% 1 or >=3
+  \ifnum#1=\@ne%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+  \else%
+    \ifcsname brl@mecab_item_idnoun_\brl@mecab_item_idnoun_prev 拍\endcsname%
+      \brl@mecab_set@id{\the\brl@mecab@linenum}{\brl@mecab@idnoun_left}%
+    \fi%
+  \fi%
+}
+
+% left : 熟, 2, 3, 4, 拍 (>=3)
+% right: 熟, 2, 3, 4, 拍 (>=3)
+
+
+\@namedef{brl@mecab_item_idnoun_21}{}
+\@namedef{brl@mecab_item_idnoun_22}{}
+\@namedef{brl@mecab_item_idnoun_23}{}
+\@namedef{brl@mecab_item_idnoun_31}{}
+\@namedef{brl@mecab_item_idnoun_32}{}
+\@namedef{brl@mecab_item_idnoun_41}{}
+\@namedef{brl@mecab_item_idnoun_拍1}{}
+
+
+
+%    ２２２１２３４２１３
+%    和漢熟外外外外混拍拍
+%２和○○○○○○○○○○
+%２漢・○○○○○○○○○
+%２熟・・×○×××○○×
+%１外・・・○○○○○○○
+%２外・・・・○○×○○×
+%３外・・・・・××○○×
+%４外・・・・・・×○○×
+%２混・・・・・・・○○○
+%１拍・・・・・・・・○○
+%３拍・・・・・・・・・×
+%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+
+
+\def\brl@mecab_concat{%
+  \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@id}%
+  %
+  \edef\brl@mecab@intfa{\csname brl@mecab@intfa_\the\brl@mecab@linenum\endcsname}%
+  \edef\brl@mecab@intfb{\csname brl@mecab@intfb_\the\brl@mecab@linenum\endcsname}%
+  % 
+  \ifx\brl@mecab@id\brl@mecab@idskip%
+    %
+    \edef\brl@mecab@int{{\brl@mecab@intfa\brl@mecab@intfb}}%
+    %
+    \expandafter\brl@mecab_concat_skip%
+  \else%
+    \expandafter\brl@mecab_concat_loop%
+  \fi%
+}
+
+\def\brl@mecab_concat_skip{%
+  \expandafter\brl@mecab_appendtoks\brl@mecab@int%
+  \brl@mecab_log_item{after [\the\brl@mecab@linenum]}{\brl@mecab@int}%
+  % 
+  \advance\brl@mecab@linenum\@ne%
+  \ifnum\brl@mecab@linemax>\brl@mecab@linenum%
+    \expandafter\brl@mecab_concat%
+  \fi%
+}
+
+%%
+%% after + space + before + reading + remark + content
+%%
+
+\def\brl@mecab_concat_loop{%
+  %
+  %
+  %
+  \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
+  \brl@mecab_get@add{\the\brl@mecab@linenum}{\brl@mecab@type}{\brl@mecab@count}%
+  %
+  %
+  % \showthe\brl@mecab@linenum
+  % \show\brl@mecab@yomi
+  % \show\brl@mecab@orig
+  % \show\brl@mecab@type
+  % \show\brl@mecab@count
+  %
+  % output : \brl@mecab@yomi, \brl@mecab@dcstoks, \brl@mecab@id
+  \csname brl@mecab_concat_\brl@mecab@type\endcsname%
+}
+
+
+
+\def\brl@mecab_concat_cont{%
+  %
+  \edef\brl@tmp{\csname brl@mecab@wakachi_\brl@mecab@id\endcsname}%
+  %
+  % \showthe\brl@mecab@linenum
+  \expandafter\brl@mecab_skip\brl@tmp% {prec space}{succ space}
+  %
+  %
+  % \show\brl@tmp
+  %
+  \brl@mecab_space% determine space \mayinsertsp
+  %
+  \edef\brl@mecab@int{{\brl@mecab@intfa\brl@mecab_mayinsertsp\brl@mecab@intfb}}%
+  %
+  \expandafter\brl@mecab_appendtoks\brl@mecab@int%
+  % 
+  \brl@mecab_dictionary{\brl@mecab@type}%
+  %
+  % dcstoks -> yomi remark etc.
+  %
+  \edef\brl@tmp{\csname brl@mecab@intb_\the\brl@mecab@linenum\endcsname\the\brl@mecab@dcstoks}% direct{label + print + remark} no brailles in it.
+  %
+  \ifx\brl@tmp\empty%
+    \edef\brl@tmp{{\brl@mecab@yomi}}%
+  \else%
+    \edef\brl@tmp{{\expandafter\brl@char@cmd_direct\expandafter{\brl@tmp}\brl@mecab@yomi}}%
+  \fi%
+  %
+  \expandafter\brl@mecab_appendtoks\brl@tmp%
+  %
+  \brl@mecab_log_item{after [\the\brl@mecab@linenum]}{\brl@mecab@int}%
+  \brl@mecab_log_item{after (\the\brl@mecab@linenum)}{{\brl@mecab@id}{\brl@mecab@prec}{\brl@mecab@succ}{\brl@mecab@yomi}}%
+  %
+  \brl@mecab@spnum\brl@mecab@succ\relax%
+  \advance\brl@mecab@linenum\@ne%
+  \brl@mecab_concat_finish%
+}
+
+\def\brl@mecab_concat_finish{%
+  \let\brl@mecab@previd\brl@mecab@id%
+  \ifnum\brl@mecab@linemax>\brl@mecab@linenum%
+    \expandafter\brl@mecab_concat%
+  \else%
+    \edef\brl@tmp{\csname brl@mecab@intb_\the\brl@mecab@linenum\endcsname}% direct{label} no brailles in it.
+    %
+    \ifx\brl@tmp\empty%
+    \else%
+      \edef\brl@tmp{\expandafter\brl@char@cmd_direct\expandafter{\brl@tmp}}%
+    \fi%
+    %
+    \edef\brl@mecab@int{{\brl@tmp\csname brl@mecab@intfa_\the\brl@mecab@linenum\endcsname\csname brl@mecab@intfb_\the\brl@mecab@linenum\endcsname}}%
+    \expandafter\brl@mecab_appendtoks\brl@mecab@int%
+    \brl@mecab_log_item{after [\the\brl@mecab@linenum]}{\brl@mecab@int}%
+    %
+  \fi%
+}
+
+
+%
+% type
+% 1:
+% 2:
+% 3:
+% 4: cs
+%
+% unk
+% 0: undefined
+% 5: number
+% 6: kanji
+% 7: hira, kata
+
+
+%
+% output : \brl@mecab@yomi, \brl@mecab@dcstoks
+%
+%
+\@namedef{brl@mecab_concat_0}{%
+  % treat the known word which is not indicated explicitly by \BrailleReading.
+  % thus, try to find it in predefined readings.
+  \PackageWarning{jmbraille}{The reading of \brl@mecab@orig\brl@@space is unknown. Give the definition}{}%
+  \def\brl@mecab@yomi{\brl@text_cmd_transopen\brl@text_cmd_unkb やくふめい\brl@text_cmd_unke\brl@text_cmd_transclose}%
+  \def\brl@mecab@yomiothersed{未定義}%
+  %
+  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig {\brl@char@cmd_yomiothers{\brl@mecab@yomiothersed}}}%
+    }}%
+  %
+  %
+  \brl@mecab@dcstoks\brl@tmp% dcstoks
+  \brl@mecab_concat_cont%
+}
+
+
+\@namedef{brl@mecab_concat_1}{%
+  % case1: a unique reading with hiragana or katakana, etc.
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_concat_cont%
+}
+
+\@namedef{brl@mecab_concat_2}{%
+  % case2: a unique reading with kanji
+  %
+  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig}}}%
+  %
+  \brl@mecab@dcstoks\brl@tmp%
+  \brl@mecab_concat_cont%
+}
+
+% \brl@mecab@yomi \brl@mecab@orig \brl@mecab@count \brl@mecab@pos
+
+%
+\@namedef{brl@mecab_concat_3}{%
+  % case3: several readings
+  %
+  \brl@mecab_get@diff{\the\brl@mecab@linenum}{\brl@mecab@yomiothers}%
+  %
+  {%
+    %
+    \brl@mecab_delete_hat%
+    \let\brl@text_cmd_glue\brl@@space% in mecab_exec, ' ' is active and is defined as '\brl@text_cmd_glue'. This should be replaced with ' '.
+    \xdef\brl@mecab@yomiothersed{\brl@mecab@yomiothers}%
+  }%
+  %
+  %
+  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig {\brl@char@cmd_yomiothers{\brl@mecab@yomiothersed}}}\brl@char@cmd_remark{\brl@mecab@yomi/\brl@mecab@yomiothers}%
+    }}%
+  % \show\brl@tmp
+  %
+  \brl@mecab@dcstoks\brl@tmp%
+  \edef\brl@mecab@yomi{\brl@text_cmd_ambb\brl@mecab@yomi\brl@text_cmd_ambe}% ambiguous.
+  \brl@mecab_concat_cont%
+}
+
+
+
+
+\@namedef{brl@mecab_concat_6}{%
+  % treat the known word which is not indicated explicitly by \BrailleReading.
+  % thus, try to find it in predefined readings.
+  \ifx\brl@mecab@yomi\empty% unkown and user did not give the reading explicitly
+    %
+    %
+    \edef\brl@tmp{brl@mecab_reading@\detokenize\expandafter{\brl@mecab@orig}}%
+    \ifcsname\brl@tmp\endcsname% found
+      \edef\brl@tmp{\csname\brl@tmp\endcsname}%
+      \edef\brl@tmp{{\expandafter\@secondoftwo\brl@tmp}{unk_\brl@mecab@orig}}% first: 品詞
+      \expandafter\brl@mecab_rcheck\brl@tmp% give \brl@mecab@nounothers if needed.
+      %
+      %
+      \brl@mecab_concat_unk\brl@mecab@yomi/\brl@mecab@yomiothers\brl@end%
+      \ifx\brl@mecab@yomiothersed\empty%
+        \def\brl@mecab@yomiothersed{ユーザー定義}%
+      \else%
+        \edef\brl@mecab@yomiothersed{ユーザー定義/\brl@mecab@yomiothersed}%
+      \fi%
+      %
+    \else%
+      \PackageWarning{jmbraille}{The reading of \brl@mecab@orig\brl@@space is unknown. Give the reading by \string\BrailleReading}{}%
+      \def\brl@mecab@yomi{\brl@text_cmd_transopen\brl@text_cmd_unkb よみふめい\brl@text_cmd_unke\brl@text_cmd_transclose}%
+      \def\brl@mecab@yomiothersed{未定義}%
+      \let\brl@mecab@remark\empty%
+      % for corpus
+      \def\brl@mecab_corpus@yomi{よみふめい}% corpus
+      \let\brl@mecab_corpus@yomiothers\empty% corpus
+      %
+    \fi%
+    %
+  \else% the reading is given explicitly (yomi/yomiothers(auto correct))
+    \expandafter\brl@mecab_concat_unk\brl@mecab@yomi\brl@end%
+    %
+    \ifx\brl@mecab@yomiothersed\empty%
+      \def\brl@mecab@yomiothersed{ユーザー定義}%
+    \else%
+      \edef\brl@mecab@yomiothersed{ユーザー定義/\brl@mecab@yomiothersed}%
+    \fi%
+    %
+  \fi%
+  %
+  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig {\brl@char@cmd_yomiothers{\brl@mecab@yomiothersed}}}\brl@mecab@remark%
+    }}%
+  %
+  %\show\brl@tmp
+  %
+  \brl@mecab@dcstoks\brl@tmp%
+  \brl@mecab_concat_cont%
+}
+
+
+\@namedef{brl@mecab_concat_7}{%
+  % treat the unknown kata or hira word
+  \edef\brl@tmp{{\brl@mecab@orig}{unk_\brl@mecab@orig}}%
+  \expandafter\brl@mecab_rcheck\brl@tmp% give \brl@mecab@yomiothers if needed.
+  % \show\brl@mecab@yomi
+  % \show\brl@mecab@yomiothers
+  \expandafter\brl@mecab_concat_unk\brl@mecab@yomi/\brl@mecab@yomiothers\brl@end%
+  \ifx\brl@mecab@yomiothersed\empty%
+    \def\brl@mecab@yomiothersed{未定義}%
+  \else%
+    \edef\brl@mecab@yomiothersed{未定義/\brl@mecab@yomiothersed}%
+  \fi%
+  %
+  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig {\brl@char@cmd_yomiothers{\brl@mecab@yomiothersed}}}\brl@mecab@remark%
+    }}%
+  %
+  %
+  %\show\brl@tmp
+  %
+  \brl@mecab@dcstoks\brl@tmp%
+  \brl@mecab_concat_cont%
+}
+
+\@namedef{brl@mecab_concat_11}{%
+  % case10: alphabet
+  %
+  \edef\brl@mecab@yomi{\brl@text_cmd_alphabet{\brl@mecab@yomi}}%
+  %
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_concat_cont%
+}
+
+\@namedef{brl@mecab_concat_13}{%
+  \def\brl@mecab@id{602}% ％
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_concat_cont%
+}
+
+%
+%
+%
+
+\@namedef{brl@mecab_concat@indfb_660}{}
+\@namedef{brl@mecab_concat@indfa_661}{}
+
+\def\brl@mecab_indspace{%
+  \edef\brl@mecab@yomi{\brl@mecab@yomi\brl@text_cmd_space}%
+}
+
+%
+% no space between （ abd （ due to the value of wakachi.
+%
+\@namedef{brl@mecab_concat@consec_630_680}{\brl@mecab_indspace}%（（
+\@namedef{brl@mecab_concat@consec_680_630}{\brl@mecab_indspace}%（（
+
+% notice
+% yomi space space yomi never happens
+%
+\@namedef{brl@mecab_concat_14}{% fa fb （ fa fb 「 etc.
+  \ifx\brl@mecab@intfb\empty%
+  \else%
+    \ifcsname brl@mecab_concat@indfb_\brl@mecab@id\endcsname%
+      \edef\brl@mecab@yomi{\brl@text_cmd_space\brl@mecab@yomi}% fb（
+    \fi%
+  \fi%
+  \edef\brl@mecab@nextfab{\csname brl@mecab@intfa_\the\numexpr\brl@mecab@linenum+\@ne\relax\endcsname\csname brl@mecab@intfb_\the\numexpr\brl@mecab@linenum+\@ne\relax\endcsname}%
+  \ifx\brl@mecab@nextfab\empty% consective (「
+    \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+    \ifcsname brl@mecab_concat@consec_\brl@mecab@id _\brl@mecab@nextid\endcsname%
+      \csname brl@mecab_concat@consec_\brl@mecab@id _\brl@mecab@nextid\endcsname%
+    \fi%
+  \fi%
+  \brl@mecab@dcstoks{}%
+  \brl@mecab_concat_cont%
+}
+
+%
+% ）（ etc. are treated in the following.
+%
+\def\brl@mecab_indglue{%
+  \let\brl@mecab@id\brl@mecab@idseparate%
+  \edef\brl@tmp{\csname brl@mecab@wakachi_\brl@mecab@id\endcsname}%
+  \expandafter\brl@mecab_skip\brl@tmp% {prec space}{succ space}
+  \brl@mecab@spnum\brl@mecab@succ\relax%
+}
+
+
+\@namedef{brl@mecab_concat@consec_631_681}{%
+  \let\brl@mecab@id\brl@mecab@idconcat% not glue but space. no break allowed.
+  \brl@mecab_indspace}%））
+\@namedef{brl@mecab_concat@consec_681_631}{%
+  \let\brl@mecab@id\brl@mecab@idconcat% not glue but space. no break allowed.
+  \brl@mecab_indspace}%））
+
+
+\@namedef{brl@mecab_concat@consec_631_680}{\brl@mecab_indglue}%）（
+\@namedef{brl@mecab_concat@consec_681_630}{\brl@mecab_indglue}%）（
+
+\@namedef{brl@mecab_concat@consec_631_630}{\brl@mecab_indglue}%）（
+\@namedef{brl@mecab_concat@consec_681_680}{\brl@mecab_indglue}%）（
+
+
+\@namedef{brl@mecab_concat_15}{% 。fa1 fb1 ） fa2 fb2 「 etc.
+  \ifx\brl@mecab@intfb\empty% concat
+    \advance\brl@mecab@linenum\@ne%
+    \edef\brl@mecab@nextfa{\csname brl@mecab@intfa_\the\brl@mecab@linenum\endcsname}%
+    \ifx\brl@mecab@nextfa\empty% space or nospace
+      \edef\brl@mecab@nextfb{\csname brl@mecab@intfb_\the\brl@mecab@linenum\endcsname}%
+      \ifx\brl@mecab@nextfb\empty% ））, ）（may happen
+        \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
+        % \show\brl@mecab@id
+        % \show\brl@mecab@nextid
+        \ifcsname brl@mecab_concat@consec_\brl@mecab@id _\brl@mecab@nextid\endcsname%
+          \csname brl@mecab_concat@consec_\brl@mecab@id _\brl@mecab@nextid\endcsname%
+        \fi%
+      \fi%
+      %\let\brl@tmp\empty%
+    \else%
+      \ifcsname brl@mecab_concat@indfa_\brl@mecab@id\endcsname%
+%        \def\brl@tmp{\brl@text_cmd_space}%
+        \brl@mecab_indspace%
+        % \else%
+        %\let\brl@tmp\empty%
+      \fi%
+    \fi% fa2 = fa1 + ) + fa2
+    \expandafter\edef\csname brl@mecab@intfa_\the\brl@mecab@linenum\endcsname{%
+      \brl@mecab@intfa\brl@mecab@yomi\brl@mecab@nextfa%
+%      \brl@mecab@intfa\brl@mecab@yomi\brl@tmp\brl@mecab@nextfa%
+    }%
+    %
+    %
+    % keep \brl@mecab@spnum and id is `)' etc. when consec does not work.
+    %
+    \expandafter\brl@mecab_concat_finish%
+  \else%
+    \brl@mecab@dcstoks{}%
+    \expandafter\brl@mecab_concat_cont% 。indopen ）... no ordinary input
+  \fi%
+}
+  
+
+
+
+% yomi others remark
+%
+% output:
+% \brl@mecab@yomi (1)
+% \brl@mecab@yomiothersed (2)
+% \brl@mecab_corpus@yomi (3)
+% \brl@mecab_corpus@yomiothers (4)
+%
+% \brl@mecab@remark (5)
+
+\def\brl@mecab_concat_unk#1/#2\brl@end{%
+  {%
+    \brl@mecab_delete_angle%
+    \xdef\brl@mecab_corpus@yomi{#1}% (3) corpus
+    \def\brl@tmp{#2}%
+    \ifx\brl@tmp\empty%
+      \global\let\brl@mecab_corpus@yomiothers\empty% (4) corpus
+      \global\let\brl@mecab@remark\empty% (5)
+    \else%
+      \xdef\brl@mecab_corpus@yomiothers{#2}% (4) corpus
+      \xdef\brl@mecab@remark{\brl@char@cmd_remark{#1/#2}}% (5) correct reading exists
+    \fi%
+    \brl@mecab_amb_angle%
+    \xdef\brl@mecab@yomi{#1}% (1)
+    % \def\brl@text_cmd_glue{ }% in mecab_exec, ' ' is active and is defined as '\brl@text_cmd_glue'. This should be replaced with ' '.
+    \brl@mecab_delete_hat%
+    \let\brl@text_cmd_glue\brl@@space%
+    \xdef\brl@mecab@yomiothersed{#2}% (2)
+  }%
+  % \show\brl@mecab@yomi
+  % \show\brl@mecab@yomiothers
+  % \show\brl@mecab@remark
+}
+
+
+{%
+  \catcode`\^\active%
+  \gdef\brl@mecab_delete_hat{%
+    \catcode`\^\active\let^\empty%
+  }
+}
+{%
+  \catcode`\<\active%
+  \catcode`\>\active%
+  \gdef\brl@mecab_amb_angle{%
+    \catcode`\<\active\def<{\brl@text_cmd_ambb}%
+    \catcode`\>\active\def>{\brl@text_cmd_ambe}%
+  }
+  \gdef\brl@mecab_angle_amb{%
+    \catcode`\<\active\def\brl@text_cmd_ambb{<}%
+    \catcode`\>\active\def\brl@text_cmd_ambe{>}%
+  }
+  \gdef\brl@mecab_angle_num{%
+    \catcode`\<\active%
+    \catcode`\>\active\def<##1>{\brl@text_cmd_number{##1}}%
+  }
+  \protected\gdef<{}%
+  \protected\gdef>{}%
+  \gdef\brl@mecab_delete_angle{%
+    \catcode`\<\active\let<\empty%
+    \catcode`\<\active\let>\empty%
+  }
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+
+
+
+% 数 jp
+% 数十［スージュー スー １０］
+% 数百人［スーヒャクニン］ 
+% 何百回［ナンビャッカイ］
+
+% jp 数 if 数 > 10 
+% 千百数十［セン ヒャク スージュー セン ヒャク スー １０］
+
+% ar 数 if 数 < 10 
+% 千二百数枚［ １２００スーマイ］ 五万数人［ ５マン スーニン］
+% 十何台［ １０ナンダイ］
+
+
+
+% ar ar
+% 五、六百［ ５ ６００］ 七、八万［ ７ ８マン］ 
+% 千九百四、五［ １９０４ ５］
+
+% jp ar if ar > 10
+% 四千五、六百［ ４セン ５ ６００］
+% 千百二、三十［セン ヒャク ２ ３０］
+
+
+% abcdefghi|j876543210
+% 123456789|0123456789
+% zyxwvutsr
+
+
+
+\@namedef{brl@mecab_num@yomi_2_0}{}
+\@namedef{brl@mecab_num@yomi_2_1}{^ひゃく}
+\@namedef{brl@mecab_num@yomi_2_2}{\brl@text_cmd_number{2}^ひゃく}
+\@namedef{brl@mecab_num@yomi_2_3}{\brl@text_cmd_number{3}^びゃく}
+\@namedef{brl@mecab_num@yomi_2_4}{\brl@text_cmd_number{4}^ひゃく}
+\@namedef{brl@mecab_num@yomi_2_5}{\brl@text_cmd_number{5}^ひゃく}
+\@namedef{brl@mecab_num@yomi_2_6}{\brl@text_cmd_number{6}^ぴゃく}
+\@namedef{brl@mecab_num@yomi_2_7}{\brl@text_cmd_number{7}^ひゃく}
+\@namedef{brl@mecab_num@yomi_2_8}{\brl@text_cmd_number{8}^ぴゃく}
+\@namedef{brl@mecab_num@yomi_2_9}{\brl@text_cmd_number{9}^ひゃく}
+
+\@namedef{brl@mecab_num@yomi_3_1}{せん}
+\@namedef{brl@mecab_num@yomi_3_2}{\brl@text_cmd_number{2}せん}
+\@namedef{brl@mecab_num@yomi_3_3}{\brl@text_cmd_number{3}ぜん}
+\@namedef{brl@mecab_num@yomi_3_4}{\brl@text_cmd_number{4}せん}
+\@namedef{brl@mecab_num@yomi_3_5}{\brl@text_cmd_number{5}せん}
+\@namedef{brl@mecab_num@yomi_3_6}{\brl@text_cmd_number{6}せん}
+\@namedef{brl@mecab_num@yomi_3_7}{\brl@text_cmd_number{7}せん}
+\@namedef{brl@mecab_num@yomi_3_8}{\brl@text_cmd_number{8}せん}
+\@namedef{brl@mecab_num@yomi_3_9}{\brl@text_cmd_number{9}せん}
+
+\@namedef{brl@mecab_num@digit_何}{-1}
+\@namedef{brl@mecab_num@digit_幾}{-2}
+\@namedef{brl@mecab_num@digit_数}{-2}
+\@namedef{brl@mecab_num@digit_偶数}{-2}
+\@namedef{brl@mecab_num@digit_奇数}{-2}
+\@namedef{brl@mecab_num@digit_有限}{-2}
+\@namedef{brl@mecab_num@digit_無限}{-2}
+\@namedef{brl@mecab_num@digit_可算}{-2}
+%\@namedef{brl@mecab_num@digit_非可算}{-2}
+\@namedef{brl@mecab_num@digit_半}{-1}
+\@namedef{brl@mecab_num@digit_零}{-2}
+\@namedef{brl@mecab_num@digit_数千}{-1}
+\@namedef{brl@mecab_num@digit_何千}{-1}
+\@namedef{brl@mecab_num@digit_幾千}{-1}
+\@namedef{brl@mecab_num@digit_一、二千}{-1}
+\@namedef{brl@mecab_num@digit_二、三千}{-1}
+\@namedef{brl@mecab_num@digit_三、四千}{-1}
+\@namedef{brl@mecab_num@digit_四、五千}{-1}
+\@namedef{brl@mecab_num@digit_五、六千}{-1}
+\@namedef{brl@mecab_num@digit_六、七千}{-1}
+\@namedef{brl@mecab_num@digit_七、八千}{-1}
+\@namedef{brl@mecab_num@digit_八、九千}{-1}
+
+\@namedef{brl@mecab_num@exp_数十}{1}
+\@namedef{brl@mecab_num@exp_何十}{1}
+\@namedef{brl@mecab_num@exp_幾十}{1}
+\@namedef{brl@mecab_num@exp_一、二十}{1}
+\@namedef{brl@mecab_num@exp_二、三十}{1}
+\@namedef{brl@mecab_num@exp_三、四十}{1}
+\@namedef{brl@mecab_num@exp_四、五十}{1}
+\@namedef{brl@mecab_num@exp_五、六十}{1}
+\@namedef{brl@mecab_num@exp_六、七十}{1}
+\@namedef{brl@mecab_num@exp_七、八十}{1}
+\@namedef{brl@mecab_num@exp_八、九十}{1}
+
+\@namedef{brl@mecab_num@exp_数百}{2}
+\@namedef{brl@mecab_num@exp_何百}{2}
+\@namedef{brl@mecab_num@exp_幾百}{2}
+\@namedef{brl@mecab_num@exp_一、二百}{2}
+\@namedef{brl@mecab_num@exp_二、三百}{2}
+\@namedef{brl@mecab_num@exp_三、四百}{2}
+\@namedef{brl@mecab_num@exp_四、五百}{2}
+\@namedef{brl@mecab_num@exp_五、六百}{2}
+\@namedef{brl@mecab_num@exp_六、七百}{2}
+\@namedef{brl@mecab_num@exp_七、八百}{2}
+\@namedef{brl@mecab_num@exp_八、九百}{2}
+
+\@namedef{brl@mecab_num@exp_万}{4}
+\@namedef{brl@mecab_num@exp_億}{8}
+\@namedef{brl@mecab_num@exp_兆}{12}
+\@namedef{brl@mecab_num@exp_京}{16}
+\@namedef{brl@mecab_num@exp_垓}{20}
+\@namedef{brl@mecab_num@exp_𥝱}{24}
+\@namedef{brl@mecab_num@exp_穣}{28}
+\@namedef{brl@mecab_num@exp_溝}{32}
+\@namedef{brl@mecab_num@exp_澗}{36}
+\@namedef{brl@mecab_num@exp_正}{40}
+\@namedef{brl@mecab_num@exp_載}{44}
+\@namedef{brl@mecab_num@exp_極}{48}
+\@namedef{brl@mecab_num@exp_恒河沙}{52}
+\@namedef{brl@mecab_num@exp_阿僧祇}{56}
+\@namedef{brl@mecab_num@exp_那由他}{60}
+\@namedef{brl@mecab_num@exp_不可思議}{64}
+\@namedef{brl@mecab_num@exp_無量大数}{68}
+
+\@namedef{brl@mecab_num@yomi_0}{}
+\@namedef{brl@mecab_num@yomi_4}{まん}
+\@namedef{brl@mecab_num@yomi_8}{おく}
+\@namedef{brl@mecab_num@yomi_12}{^ちょー}
+\@namedef{brl@mecab_num@yomi_16}{けい}
+\@namedef{brl@mecab_num@yomi_20}{がい}
+\@namedef{brl@mecab_num@yomi_24}{^じょ}
+\@namedef{brl@mecab_num@yomi_28}{^じょー}
+\@namedef{brl@mecab_num@yomi_32}{こー}
+\@namedef{brl@mecab_num@yomi_36}{かん}
+\@namedef{brl@mecab_num@yomi_40}{せい}
+\@namedef{brl@mecab_num@yomi_44}{さい}
+\@namedef{brl@mecab_num@yomi_48}{ごく}
+\@namedef{brl@mecab_num@yomi_52}{ごーが^しゃ}
+\@namedef{brl@mecab_num@yomi_56}{あそーぎ}
+\@namedef{brl@mecab_num@yomi_60}{なゆた}
+\@namedef{brl@mecab_num@yomi_64}{ふかしぎ}
+\@namedef{brl@mecab_num@yomi_68}{む^りょーたいすー}
+
+% 億
+% 兆
+% 京
+% 垓
+% 𥝱
+% 穣
+% 溝
+% 澗
+% 正
+% 載
+% 極
+% 恒河沙
+% 阿僧祇
+% 那由他
+% 不可思議
+% 無量大数
+
+
+
+% determine \brl@mecab@prevdigit,\brl@mecab@prevbase
+\def\brl@mecab_num_detprev#1{%
+  \let\brl@mecab@prevdigit\empty%
+  \let\brl@mecab@prevbase\empty%
+  \ifnum#1=\z@% all zero -> 0
+  \else%
+    \count@\z@%
+    \expandafter\brl@mecab_num_detprev_loop#1\brl@end%
+    %
+  \fi%
+}
+
+
+\def\brl@mecab_num_detprev_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \if 0#1\relax%
+      \advance\count@\@ne%
+      \edef\brl@mecab@prevbase{\the\count@}%
+      \let\brl@mecab@prevdigit\empty%
+    \else%
+      \count@\z@%
+      \let\brl@mecab@prevdigit\brl@tmp%
+    \fi%
+    \expandafter\brl@mecab_num_detprev_loop%
+  \fi%
+}
+
+
+\def\brl@mecab_skip#1#2{%
+  \def\brl@mecab@prec{#1}%
+  \def\brl@mecab@succ{#2}%
+}
+
+\def\brl@mecab_space{%
+  % special case
+  \edef\brl@tmp{\brl@mecab@previd _\brl@mecab@id}%
+  \ifcsname brl@mecab_space@dospecial_\brl@tmp\endcsname%
+    \csname brl@mecab_space@dospecial_\brl@tmp\expandafter\endcsname%
+  \else%
+    %
+    \advance\brl@mecab@spnum\brl@mecab@prec\relax%
+    \ifnum\brl@mecab@spnum>\z@%
+      \def\brl@mecab_mayinsertsp{\brl@text_cmd_glue}%
+    \else% no space but breakable
+      \ifcsname brl@mecab_space@dospecial_\brl@mecab@id\endcsname%
+        \csname brl@mecab_space@dospecial_\brl@mecab@id\endcsname%
+      \else%
+        \let\brl@mecab_mayinsertsp\empty% no space
+      \fi%
+    \fi%
+  \fi%
+}
+
+
+
+%% forcibly determine the space between the following pairs.
+%%
+
+\def\brl@mecab_space_appendglue{\def\brl@mecab_mayinsertsp{\brl@text_cmd_glue}}
+\def\brl@mecab_space_appendspace{\def\brl@mecab_mayinsertsp{\brl@text_cmd_space}}
+\def\brl@mecab_space_appendbreakable{\def\brl@mecab_mayinsertsp{\brl@text_cmd_breakable}}
+\def\brl@mecab_space_appendno{\let\brl@mecab_mayinsertsp\empty}
+
+
+
+\def\brl@mecab_appendgluedef#1#2{%
+  \@namedef{brl@mecab_space@dospecial_#1_#2}{\brl@mecab_space_appendglue}%
+}
+
+\def\brl@mecab_appendspacedef#1#2{%
+  \@namedef{brl@mecab_space@dospecial_#1_#2}{\brl@mecab_space_appendspace}%
+}
+
+\def\brl@mecab_appendnodef#1#2{%
+  \@namedef{brl@mecab_space@dospecial_#1_#2}{\brl@mecab_space_appendno}%
+}
+
+\def\brl@mecab_appendbreakabledef#1{%
+  \@namedef{brl@mecab_space@dospecial_#1}{%
+    \ifx\brl@mecab@previd\brl@mecab@idend%
+      \brl@mecab_space_appendno%
+    \else%
+      \brl@mecab_space_appendbreakable%
+    \fi%
+  }%
+}
+
+
+\brl@mecab_appendspacedef{630}{603}%（ ⇒
+\brl@mecab_appendgluedef{908}{603}% . ⇒
+\brl@mecab_appendgluedef{908}{630}% . (
+\brl@mecab_appendnodef{1000}{630}% lett（
+\brl@mecab_appendnodef{602}{810}% ％♯＊,  num
+\brl@mecab_appendnodef{810}{602}% num, ％♯＊
+
+\brl@mecab_appendnodef{847}{630}% env （ nobreakable since env ends with breakable.
+\brl@mecab_appendnodef{847}{632}% env （
+\brl@mecab_appendnodef{847}{634}% env （
+
+\brl@mecab_appendgluedef{602}{13}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{14}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{15}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{16}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{17}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{18}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{19}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{20}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{21}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{22}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{23}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{24}% ％ 助詞, 助動詞
+\brl@mecab_appendgluedef{602}{25}% ％ 助詞, 助動詞
+
+% （ breakable
+
+\brl@mecab_appendbreakabledef{630}
+\brl@mecab_appendbreakabledef{632}
+\brl@mecab_appendbreakabledef{634}
+
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:
+
+
+A 948
+B 800
+C 801
+F 802
+H1 803
+H2 804
+I 805
+D 806
+E 807
+K 808
+J 53
+
+% A (0|1|2|3|4|5|6|7|8|9)
+
+A
+A + C % + D〜J 3千
+
+A + D 23万
+A + E 20余
+A + J 23個
+
+
+% B (一|二|三|四|五|六|七|八|九) 
+
+B
+B + C 二千
+
+B + D 二万
+B + J 二個
+
+% C (千|百|十)
+
+C
+C + A 千5
+C + B 千五
+C + C if X>Y 千百
+
+%CX + CY if X>Y 千百
+% CX + HY if X>Y 千数百
+
+C + D 十万
+C + E 十余
+C + F 十数
+C + I 千三、四
+C + J 百個
+
+% 2C3 2C2 2C1(二千|二百|二十) 一千
+
+% 2C
+% C + A 二千5
+% 2C + B 二千五
+% 2CX + nCY if X>Y 二千百
+% 2CX + HY if X>Y 二千数百
+
+% 2C + D 二十万
+% 2C + E 二十余
+% 2C + F 二十数
+% 2C + I 二千三、四
+% 2C + J 二百個
+
+
+% F (数|何|幾)
+% arabic +
+
+F + D
+F + J
+
+% H2 H1 (数百|何百|幾百|連百|数十|何十|幾十|連十)
+% jp +
+
+H
+H + D
+H + J
+
+% I (連)
+% arabic([:-1]) +
+
+I
+I + D
+I + J
+
+% D (万|億|兆)
+% arabic +
+
+D
+D + E
+D + J
+
+% E (有余|余)
+% arabic +
+
+E
+E + J
+
+% K (偶数|奇数|有限|無限|可算|非可算|半|零|数千|何千|幾千|連千)
+% なし +
+
+K
+K + J
+
+% J (数助詞)
+
+J
+
+
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:

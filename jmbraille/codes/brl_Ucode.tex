@@ -1,0 +1,59 @@
+% Time-stamp: <2024-08-19 09:28:25 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Ucode
+%%
+%% \Uchar was introduced in TexLive 2020
+%% for the backward compatibility, the unicode chars are defined directly.
+%%
+
+
+\ifdefined\Uchar% if \Uchar can be used, we use it.
+\else%
+% used in bc and plot_pindisplay
+\count@\z@%
+\def\brl@bc_Ucode_def#1{%
+  \@namedef{brl@bc@Ucode_\the\count@}{#1}%
+  \advance\count@\@ne%
+  \ifnum256>\count@%
+    \expandafter\brl@bc_Ucode_def%
+  \fi%
+}
+
+\brl@bc_Ucode_def%
+⠀⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏%
+⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟%
+⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯%
+⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿%
+⡀⡁⡂⡃⡄⡅⡆⡇⡈⡉⡊⡋⡌⡍⡎⡏%
+⡐⡑⡒⡓⡔⡕⡖⡗⡘⡙⡚⡛⡜⡝⡞⡟%
+⡠⡡⡢⡣⡤⡥⡦⡧⡨⡩⡪⡫⡬⡭⡮⡯%
+⡰⡱⡲⡳⡴⡵⡶⡷⡸⡹⡺⡻⡼⡽⡾⡿%
+⢀⢁⢂⢃⢄⢅⢆⢇⢈⢉⢊⢋⢌⢍⢎⢏%
+⢐⢑⢒⢓⢔⢕⢖⢗⢘⢙⢚⢛⢜⢝⢞⢟%
+⢠⢡⢢⢣⢤⢥⢦⢧⢨⢩⢪⢫⢬⢭⢮⢯%
+⢰⢱⢲⢳⢴⢵⢶⢷⢸⢹⢺⢻⢼⢽⢾⢿%
+⣀⣁⣂⣃⣄⣅⣆⣇⣈⣉⣊⣋⣌⣍⣎⣏%
+⣐⣑⣒⣓⣔⣕⣖⣗⣘⣙⣚⣛⣜⣝⣞⣟%
+⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭⣮⣯%
+⣰⣱⣲⣳⣴⣵⣶⣷⣸⣹⣺⣻⣼⣽⣾⣿%
+\fi%
+
+\newtoks\brl@Ucode@toks% toks in all pages
+\newtoks\brl@Ucode@pagetoks% toks in each page
+
+\def\brl@Ucode_appendtoks#1{\global\brl@Ucode@toks\expandafter{\the\brl@Ucode@toks#1}}
+\def\brl@Ucode_appendpagetoks#1{\global\brl@Ucode@pagetoks\expandafter{\the\brl@Ucode@pagetoks#1}}
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

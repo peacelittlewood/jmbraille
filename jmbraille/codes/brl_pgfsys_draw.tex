@@ -1,0 +1,502 @@
+% Time-stamp: <2026-09-06 19:11:38 komori>
+% Copyright (c) 2021 Yasushi Komor
+% All rights reserved.
+
+%%
+%% for draw
+%%
+
+\def\pgfsys@setlinewidth#1{%
+  \pgf@sys@bp{\brl@figure@linewidthscale\dimexpr#1\relax}% this line is patched.
+  \pgfsysprotocol@literal{w}%
+}
+
+\newtoks\brl@pgf_filldef@toks% used only in draw
+
+
+%% make boxs for ordinary texts and braille texts.
+%% output : hbox \brl@pgf@nodeboxa, \brl@pgf@nodeboxb
+%%
+
+
+\expandafter\newbox\csname brl@pgf@nodetext_\string\pgfnodeparttextbox a\endcsname
+\expandafter\newbox\csname brl@pgf@nodetext_\string\pgfnodeparttextbox b\endcsname
+
+\def\pgfsys@hboxsynced#1{%
+  \ifbrl@document@emptybox%
+  \else%
+    \pgfsys@begin@idscope%
+    \pgfsys@beginscope%
+    \pgf@sys@bp@correct\pgf@pt@x%
+    \pgf@sys@bp@correct\pgf@pt@y%
+    % 
+    % 
+    %
+    \edef\brl@tmp{\pgf@pt@aa\brl@@space \pgf@pt@ab\brl@@space \pgf@pt@ba\brl@@space \pgf@pt@bb\brl@@space \pgf@sys@tonumber{\pgf@pt@x} \pgf@sys@tonumber{\pgf@pt@y} cm}%
+    % 
+    %
+    \setbox\z@\hbox{%
+      \box\csname brl@pgf@nodetext_\string#1a\endcsname%
+    }%
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    % 
+    \setbox\z@\vbox{%
+      \brl@@pdf_bcontent%
+      \brl@@pdf_invoke{\brl@tmp}%
+      \box\z@%
+      \brl@@pdf_econtent%
+    }%
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    % 
+    \setbox\@ne\hbox{%
+      \box\csname brl@pgf@nodetext_\string#1b\endcsname%
+    }%
+    \wd\@ne\z@%
+    \ht\@ne\z@%
+    \dp\@ne\z@%
+    % 
+    \setbox\@ne\vbox{%
+      \brl@@pdf_bcontent%
+      \brl@@pdf_invoke{\brl@tmp}%
+      \box\@ne%
+      \brl@@pdf_econtent%
+    }%
+    \wd\@ne\z@%
+    \ht\@ne\z@%
+    \dp\@ne\z@%
+    % 
+    % 
+    \brl@pgfsys@hboxsynced_sub%
+    % 
+    \pgfsys@endscope%
+    \pgfsys@end@idscope%
+  \fi%
+}
+
+\def\brl@pgfsys@hboxsynced_sub{%
+  \global\setbox\brl@pgf@nodeboxa\hbox{\unhbox\brl@pgf@nodeboxa\box\z@}%
+  \global\setbox\brl@pgf@nodeboxb\hbox{\unhbox\brl@pgf@nodeboxb\box\@ne}%
+}
+
+
+% \def\pgfsys@color@rgb@stroke#1#2#3{\pgfsysprotocol@literal{#1 #2 #3 RG}}
+\def\pgfsys@color@rgb@fill#1#2#3{%
+  \brl@pgf_color_setrgb{#1}{#2}{#3}%
+  \edef\brl@tmp{{%
+      /Pattern cs
+      /PT\brl@pgf_filldef@pattern_name\brl@@space scn}}%
+  \expandafter\pgfsysprotocol@literal\brl@tmp%
+}
+% \def\pgfsys@color@cmyk@stroke#1#2#3#4{\pgfsysprotocol@literal{#1 #2 #3 #4 K}}
+\def\pgfsys@color@cmyk@fill#1#2#3#4{%
+  \brl@pgf_color_setcmyk{#1}{#2}{#3}{#4}%
+  \edef\brl@tmp{{%
+      /Pattern cs
+      /PT\brl@pgf_filldef@pattern_name\brl@@space scn}}%
+  \expandafter\pgfsysprotocol@literal\brl@tmp%
+}
+% \def\pgfsys@color@cmy@stroke#1#2#3{\pgfsysprotocol@literal{#1 #2 #3 0 K}}
+\def\pgfsys@color@cmy@fill#1#2#3{%
+  \brl@pgf_color_setcmy{#1}{#2}{#3}%
+  \edef\brl@tmp{{%
+      /Pattern cs
+      /PT\brl@pgf_filldef@pattern_name\brl@@space scn}}%
+  \expandafter\pgfsysprotocol@literal\brl@tmp%
+}
+  % \def\pgfsys@color@gray@stroke#1{\pgfsysprotocol@literal{#1 G}}
+\def\pgfsys@color@gray@fill#1{%
+  \brl@pgf_color_setgray{#1}%
+  \edef\brl@tmp{{%
+      /Pattern cs
+      /PT\brl@pgf_filldef@pattern_name\brl@@space scn}}%
+  \expandafter\pgfsysprotocol@literal\brl@tmp%
+}
+
+
+\def\brl@pgf_color_setrgb#1#2#3{%
+  \ifcsname brl@pgf_fill@pattern_def_rgb_#1,#2,#3\endcsname%
+    \def\brl@pgf_filldef@pattern_name{rgb,#1,#2,#3}%
+  \else%
+    \ifcsname brl@pgf_filldef_save@rgb_#1,#2,#3\endcsname%
+      \csname brl@pgf_filldef_save@rgb_#1,#2,#3\endcsname% exec user definition
+    \else%
+      \brl@pgf_model_rgb_#1,#2,#3\brl@end%
+      %
+      \ifcsname brl@pgf_fill@pattern_def_\the\count@\endcsname%
+        \edef\brl@pgf_filldef@pattern_name{\the\count@}%
+      \else%
+        \csname brl@pgf_filldef_save@\the\count@\endcsname% exec predefinition
+      \fi%
+    \fi%
+  \fi%
+}%
+
+\def\brl@pgf_color_setcmyk#1#2#3#4{%
+  \ifcsname brl@pgf_fill@pattern_def_cmyk_#1,#2,#3,#4\endcsname%
+    \def\brl@pgf_filldef@pattern_name{cmyk_#1,#2,#3,#4}%
+  \else%
+    \ifcsname brl@pgf_filldef_save@cmyk_#1,#2,#3,#4\endcsname%
+      \csname brl@pgf_filldef_save@cmyk_#1,#2,#3,#4\endcsname% exec user definition
+    \else%
+      \brl@pgf_model_cmyk_#1,#2,#3,#4\brl@end%
+      %
+      \ifcsname brl@pgf_fill@pattern_def_\the\count@\endcsname%
+        \edef\brl@pgf_filldef@pattern_name{\the\count@}%
+      \else%
+        \csname brl@pgf_filldef_save@\the\count@\endcsname% exec predefinition
+      \fi%
+    \fi%
+  \fi%
+}%
+
+\def\brl@pgf_color_setcmy#1#2#3{%
+  \ifcsname brl@pgf_fill@pattern_def_cmy_#1,#2,#3\endcsname%
+    \def\brl@pgf_filldef@pattern_name{cmy_#1,#2,#3}%
+  \else%
+    \ifcsname brl@pgf_filldef_save@cmy_#1,#2,#3\endcsname%
+      \csname brl@pgf_filldef_save@cmy_#1,#2,#3\endcsname% exec user definition
+    \else%
+      \brl@pgf_model_cmy_#1,#2,#3\brl@end%
+      %
+      \ifcsname brl@pgf_fill@pattern_def_\the\count@\endcsname%
+        \edef\brl@pgf_filldef@pattern_name{\the\count@}%
+      \else%
+        \csname brl@pgf_filldef_save@\the\count@\endcsname% exec predefinition
+      \fi%
+    \fi%
+  \fi%
+}
+
+\def\brl@pgf_color_setgray#1{%
+  \ifcsname brl@pgf_fill@pattern_def_gray_#1\endcsname%
+    \def\brl@pgf_filldef@pattern_name{gray_#1}%
+  \else%
+    \ifcsname brl@pgf_filldef_save@gray_#1\endcsname%
+      \csname brl@pgf_filldef_save@gray_#1\endcsname% exec user definition
+    \else%
+      \brl@pgf_model_gray_#1\brl@end%
+      %
+      \ifcsname brl@pgf_fill@pattern_def_\the\count@\endcsname%
+        \edef\brl@pgf_filldef@pattern_name{\the\count@}%
+      \else%
+        \csname brl@pgf_filldef_save@\the\count@\endcsname% exec predefinition
+      \fi%
+    \fi%
+  \fi%
+}
+
+\ifbrl@lualatex
+  % #1 #2 #3 #4 : r g b rg or x g X G (raw pdf code)
+\def\brl@pgf_color_to_fill@g{g}%
+\def\brl@pgf_color_to_fill@rg{rg}%
+\def\brl@pgf_color_to_fill#1 #2 #3 #4\brl@end{%
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\brl@pgf_color_to_fill@g% grayscale
+    \brl@pgf_color_setgray{#1}%
+  \else% rgb or cmyk
+    \brl@pgf_color_to_fill_rgb#4\brl@end%
+    \ifx\brl@tmp\brl@pgf_color_to_fill@rg% rgb
+      \brl@pgf_color_setrgb{#1}{#2}{#3}%
+    \else%
+      \brl@pgf_color_setcmyk{#1}{#2}{#3}{\brl@tmp}%
+    \fi%
+  \fi%
+}
+\def\brl@pgf_color_to_fill_rgb#1 #2\brl@end{%
+  \def\brl@tmp{#1}%
+}
+
+\else%
+  
+\def\brl@pgf_color_to_fill#1 {%
+  \csname brl@pgf_color_to_fill_#1\endcsname%
+}
+\def\brl@pgf_color_to_fill_rgb#1 #2 #3\brl@end{%
+  \brl@pgf_color_setrgb{#1}{#2}{#3}%
+}
+
+\def\brl@pgf_color_to_fill_cmyk#1 #2 #3 #4\brl@end{%
+  \brl@pgf_color_setcmyk{#1}{#2}{#3}{#4}%
+}
+
+\def\brl@pgf_color_to_fill_cmy#1 #2 #3\brl@end{%
+  \brl@pgf_color_setcmy{#1}{#2}{#3}%
+}
+
+\def\brl@pgf_color_to_fill_gray#1\brl@end{%
+  \brl@pgf_color_setgray{#1}%
+}
+
+\fi%
+
+
+\def\brl@pgfsys@set@color{%
+  \expandafter\brl@pgf_color_to_fill\current@color\brl@end%
+  \edef\brl@tmp{{%
+      q
+      /Pattern cs
+      /PT\brl@pgf_filldef@pattern_name\brl@@space scn}}%
+  \expandafter\brl@@pdf_invoke\brl@tmp%
+  \aftergroup\brl@pgfsys@reset@color%
+}
+\def\brl@pgfsys@reset@color{\brl@@pdf_invoke{Q}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@pgf_draw_filldef#1#2#3#4{%
+  \edef\brl@pgf_filldef@pattern_name{#1}%
+  \global\expandafter\let\csname brl@pgf_fill@pattern_def_\brl@pgf_filldef@pattern_name\endcsname\empty% switch, \@undefined or \empty
+  \brl@pgf_filldef@curry\z@%
+  \def\brl@pgf_filldef@maxx{-1}%
+  \edef\brl@pgf_filldef@minstepx{\the\dimexpr\brl@pgf_filldef@drawunit pt*#2\relax}%
+  \edef\brl@pgf_filldef@minstepy{\the\dimexpr\brl@pgf_filldef@drawunit pt*#2\relax}%
+  % 
+  \brl@pgf_draw_filldef_count#4\brl@end% to reverse the order, count the number of patterns
+  \edef\brl@pgf_filldef@maxy{\the\brl@pgf_filldef@curry}%
+  %
+  \ifnum#2=10000\relax%
+    \def\brl@pgf_filldef@drawmaxx{100}%
+    \def\brl@pgf_filldef@drawmaxy{100}%
+    %
+  \else
+    %
+    \edef\brl@pgf_filldef@drawmaxx{\expandafter\brl@@strip@pt\the\dimexpr\brl@pgf_filldef@minstepx*\brl@pgf_filldef@maxx\relax}%
+    \edef\brl@pgf_filldef@drawmaxy{\expandafter\brl@@strip@pt\the\dimexpr\brl@pgf_filldef@minstepy*\brl@pgf_filldef@maxy\relax}%
+  \fi%
+  %
+  \let\brl@pgf_filldef@pattern\empty%
+  \brl@pgf_draw_filldef_pattern#4%
+}
+
+\def\brl@pgf_draw_filldef_count#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@pgf_filldef@currx\z@%
+    \brl@pgf_draw_filldef_count_x#1\brl@end%
+    \advance\brl@pgf_filldef@curry\@ne%
+    \expandafter\brl@pgf_draw_filldef_count%
+  \fi%
+}
+
+\def\brl@pgf_draw_filldef_count_x#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \ifnum\brl@pgf_filldef@maxx<\brl@pgf_filldef@currx%
+      \edef\brl@pgf_filldef@maxx{\the\brl@pgf_filldef@currx}%
+    \fi%
+  \else%
+    \advance\brl@pgf_filldef@currx\@ne%
+    \expandafter\brl@pgf_draw_filldef_count_x%
+  \fi%
+}
+
+
+
+\def\brl@pgf_draw_filldef_pattern#1{%
+  %
+  \advance\brl@pgf_filldef@curry\m@ne%
+  \brl@pgf_filldef@currx\z@%
+  % 
+  \brl@pgf_draw_filldef_pattern_loop#1\brl@end%
+  \ifnum\brl@pgf_filldef@curry>\z@%
+    \expandafter\brl@pgf_draw_filldef_pattern%
+  \else%
+    \expandafter\brl@pgf_draw_filldef_pattern_end%
+  \fi%
+}
+
+\def\brl@pgf_draw_filldef_pattern_loop#1{%
+  \def\brl@pgf_filldef@currsize{#1}%
+  \ifx\brl@pgf_filldef@currsize\brl@@end%
+    %
+    % end
+    %
+  \else%
+    %
+    % loop
+    %
+    \ifnum\brl@pgf_filldef@currsize>\z@%
+      %
+      % \brl@pgf_filldef@currx
+      % \brl@pgf_filldef@curry
+      % \brl@pgf_filldef@currsize
+      %
+      \edef\brl@pgf_filldef@drawx{\expandafter\brl@@strip@pt\the\dimexpr\brl@pgf_filldef@minstepx*\brl@pgf_filldef@currx\relax}%
+      \edef\brl@pgf_filldef@drawy{\expandafter\brl@@strip@pt\the\dimexpr\brl@pgf_filldef@minstepy*\brl@pgf_filldef@curry\relax}%
+      % 
+      \brl@pgf_draw_filldef_pattern_set%
+    \fi%
+    %
+    % 
+    \advance\brl@pgf_filldef@currx\@ne%
+    %
+    \expandafter\brl@pgf_draw_filldef_pattern_loop%
+  \fi%
+}
+
+\def\brl@pgf_draw_filldef_pattern_set{%
+  \edef\brl@pgf_filldef@pattern{\brl@pgf_filldef@pattern%
+    q \brl@pgf_filldef@currsize\brl@@space 0 0 \brl@pgf_filldef@currsize\brl@@space%
+    \brl@pgf_filldef@drawx\brl@@space%
+    \brl@pgf_filldef@drawy\brl@@space cm\brl@@space%
+    \brl@pgf_filldef@drawpattern\brl@@space%
+    Q }%
+  \ifdim\brl@pgf_filldef@drawx\p@=\z@%
+    \edef\brl@pgf_filldef@pattern{\brl@pgf_filldef@pattern%
+      q \brl@pgf_filldef@currsize\brl@@space 0 0 \brl@pgf_filldef@currsize\brl@@space%
+      \brl@pgf_filldef@drawmaxx\brl@@space%
+      \brl@pgf_filldef@drawy\brl@@space cm\brl@@space%
+      \brl@pgf_filldef@drawpattern\brl@@space%
+      Q }%
+    \ifdim\brl@pgf_filldef@drawy\p@=\z@%
+      \edef\brl@pgf_filldef@pattern{\brl@pgf_filldef@pattern%
+        q \brl@pgf_filldef@currsize\brl@@space 0 0 \brl@pgf_filldef@currsize\brl@@space%
+        \brl@pgf_filldef@drawmaxx\brl@@space%
+        \brl@pgf_filldef@drawmaxy\brl@@space cm\brl@@space%
+        \brl@pgf_filldef@drawpattern\brl@@space%
+        Q q \brl@pgf_filldef@currsize\brl@@space 0 0 \brl@pgf_filldef@currsize\brl@@space%
+        \brl@pgf_filldef@drawx\brl@@space%
+        \brl@pgf_filldef@drawmaxy\brl@@space cm\brl@@space%
+        \brl@pgf_filldef@drawpattern\brl@@space%
+        Q }%
+    \fi%
+  \else%
+    \ifdim\brl@pgf_filldef@drawy\p@=\z@%
+      \edef\brl@pgf_filldef@pattern{\brl@pgf_filldef@pattern%
+        q \brl@pgf_filldef@currsize\brl@@space 0 0 \brl@pgf_filldef@currsize\brl@@space%
+        \brl@pgf_filldef@drawx\brl@@space%
+        \brl@pgf_filldef@drawmaxy\brl@@space cm\brl@@space%
+        \brl@pgf_filldef@drawpattern\brl@@space%
+        Q }%
+    \fi%
+  \fi%
+}%
+
+
+
+
+\ifbrl@lualatex
+
+\def\brl@pgf_draw_filldef_pattern_end{%
+  \edef\brl@tmp{{%
+      \the\brl@pgf_filldef@toks%
+      \immediate\pdfextension obj stream attr{
+        /Type /Pattern
+        /PatternType 1
+        /PaintType 1
+        /TilingType 3
+        /BBox [0 0 \brl@pgf_filldef@drawmaxx\brl@@space\brl@pgf_filldef@drawmaxy]
+        /XStep \brl@pgf_filldef@drawmaxx\brl@@space
+        /YStep \brl@pgf_filldef@drawmaxy\brl@@space
+        /Resources << >>
+        /Matrix [1 0 0 1 0 0]
+      }{\brl@pgf_filldef@pattern}%
+      \xdef\noexpand\brl@@patterns_list{\noexpand\brl@@patterns_list\brl@@space%
+        /PT\brl@pgf_filldef@pattern_name\brl@@space\noexpand\pdffeedback lastobj 0 R}%
+    }}%
+  \global\brl@pgf_filldef@toks\brl@tmp%
+}
+
+\else%
+
+\def\brl@pgf_draw_filldef_pattern_end{%
+  \edef\brl@tmp{{%
+      \the\brl@pgf_filldef@toks%
+      \special{pdf:stream @fillpattern\brl@pgf_filldef@pattern_name\brl@@space
+        (\brl@pgf_filldef@pattern)
+        <<
+        /Type /Pattern
+        /PatternType 1
+        /PaintType 1
+        /TilingType 3
+        /BBox [0 0 \brl@pgf_filldef@drawmaxx\brl@@space\brl@pgf_filldef@drawmaxy]
+        /XStep \brl@pgf_filldef@drawmaxx\brl@@space
+        /YStep \brl@pgf_filldef@drawmaxy\brl@@space
+        /Resources << >>
+        /Matrix [1 0 0 1 0 0]
+        >>
+      }%
+    }}%
+  \global\brl@pgf_filldef@toks\brl@tmp%
+  \xdef\brl@@patterns_list{\brl@@patterns_list\brl@@space%
+    /PT\brl@pgf_filldef@pattern_name\brl@@space @fillpattern\brl@pgf_filldef@pattern_name}% register here.
+}
+
+\fi%
+
+
+%%%
+%
+% \matrix
+
+\def\brl@pgf_draw_matrix_init{%
+  \let\brl@pgfsys@hboxsynced_sub\brl@pgfsys@hboxsynced_matrix%
+}
+
+\def\brl@pgfsys@hboxsynced_matrix{%
+  \edef\brl@tmp{brl@pgf@matrix_elem_\the\pgfmatrixcurrentrow _\the\pgfmatrixcurrentcolumn}%
+  % create node for each element in a matrix.
+  \global\setbox\csname\brl@tmp a\endcsname\hbox{\unhbox\csname\brl@tmp a\endcsname\box\z@}%
+  \global\setbox\csname\brl@tmp b\endcsname\hbox{\unhbox\csname\brl@tmp b\endcsname\box\@ne}%
+}
+
+\def\brl@pgf@matrix@step@column_sub{%
+  % prepare box
+  %
+  \edef\brl@tmp{brl@pgf@matrix_elem_\the\pgfmatrixcurrentrow _\the\pgfmatrixcurrentcolumn}%
+  \ifcsname\brl@tmp p\endcsname%
+  \else%
+    \expandafter\newbox\csname\brl@tmp p\endcsname% picture
+    \expandafter\newbox\csname\brl@tmp a\endcsname% nodeboxa
+    \expandafter\newbox\csname\brl@tmp b\endcsname% nodeboxb
+  \fi%
+}
+
+%
+\def\brl@pgf@matrix@endcell_sub{%
+  \setbox\z@\lastbox%
+  \global\setbox\csname brl@pgf@matrix_elem_\the\pgfmatrixcurrentrow _\the\pgfmatrixcurrentcolumn p\endcsname\hbox{\copy\z@}%
+  \box\z@%
+}
+
+
+\def\brl@pgf_matrix_sub{%
+  \setbox\@ne\hbox{%
+      \unhbox\csname brl@pgf@matrix_elem_\the\@tempcnta _\the\@tempcntb p\endcsname%
+    }%
+  \wd\@ne\z@%
+  \ht\@ne\z@%
+  \dp\@ne\z@%
+  %
+  \setbox\z@\hbox{\hskip\@tempdimb%
+    \raise\@tempdima\hbox{%
+      \unhcopy\@ne%
+      \unhbox\csname brl@pgf@matrix_elem_\the\@tempcnta _\the\@tempcntb a\endcsname%
+    }}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \global\setbox\brl@pgf@nodeboxa\hbox{\unhbox\brl@pgf@nodeboxa\box\z@}%
+  %
+  \setbox\z@\hbox{\hskip\@tempdimb%
+    \raise\@tempdima\hbox{%
+      \unhbox\@ne%
+      \unhbox\csname brl@pgf@matrix_elem_\the\@tempcnta _\the\@tempcntb b\endcsname%
+    }}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \global\setbox\brl@pgf@nodeboxb\hbox{\unhbox\brl@pgf@nodeboxb\box\z@}%
+}%  
+
+
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:

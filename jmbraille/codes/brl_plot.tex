@@ -1,0 +1,69 @@
+% Time-stamp: <2024-08-18 19:59:51 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@plot
+%%
+%% common codes
+%%
+%%
+
+\newcount\brl@plot@linex
+\newcount\brl@plot@liney
+
+\newtoks\brl@plot@toks% for file
+\def\brl@plot_appendtoks#1{\brl@plot@toks\expandafter{\the\brl@plot@toks#1}}
+
+\newbox\brl@plot@headerbox% all header boxes
+\newbox\brl@plot@nodebox% all node boxes
+
+% \def\brl@plot@draw_ratio{0.865}% B5 : A4  
+% \def\brl@plot@draw_ratioinv{1.155}% A4 : B5 
+
+\def\brl@plot@draw_ratio{1.04}% B5 : EasyTactix
+\def\brl@plot@draw_ratioinv{0.961}% EasyTactix : B5 
+
+% 182/167 = 1.08982
+% 257/247 = 1.04049
+
+\def\brl@plot_init{%
+  \@tempdima\brl@plot@draw_ratio\dimexpr\brl@figure@scale\p@%
+  \edef\brl@tmp{\expandafter\brl@@strip@pt\the\@tempdima}%
+  % 
+  % initialize tranformcm
+  %
+  \brl@pgf@pt_x\z@%
+  \brl@pgf@pt_y\z@%
+  \let\brl@pgf@pt_aa\brl@tmp%
+  \def\brl@pgf@pt_ab{0.0}%
+  \def\brl@pgf@pt_ba{0.0}%
+  \let\brl@pgf@pt_bb\brl@tmp%
+  %
+  % \gdef\brl@pgf@minx{65536}%
+  % \gdef\brl@pgf@miny{65536}%
+  % \gdef\brl@pgf@maxx{-65536}%
+  % \gdef\brl@pgf@maxy{-65536}%
+  \gdef\brl@pgf@minx{\@M}%
+  \gdef\brl@pgf@miny{\@M}%
+  \gdef\brl@pgf@maxx{-\@M}%
+  \gdef\brl@pgf@maxy{-\@M}%
+  \global\brl@pgf@nodetoks{}% for nodes
+}
+
+
+\ifbrl@option@pindisplay%
+  \input{jmbraille/codes/brl_plot_pindisplay.tex}  
+\else%
+  \input{jmbraille/codes/brl_plot_plotter.tex}  
+\fi%
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

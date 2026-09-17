@@ -1,0 +1,828 @@
+% Time-stamp: <2026-09-12 15:36:46 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% output 
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\brl@print_appendremtoks#1{\brl@print@remtoks\expandafter{\the\brl@print@remtoks#1}}
+\newtoks\brl@print@remtoks
+
+\def\brl@print_appenddrawtoks#1{\global\brl@print@drawtoks\expandafter{\the\brl@print@drawtoks#1}}
+\newtoks\brl@print@drawtoks
+
+\def\brl@print_appendexdrawtoks#1{\global\brl@print@exdrawtoks\expandafter{\the\brl@print@exdrawtoks#1}}
+\newtoks\brl@print@exdrawtoks
+
+
+%%
+%% input : leftmargin, indent, token list
+%%
+\newif\ifbrl@print@amb
+
+\newif\ifbrl@print@firstvskip% global
+\brl@print@firstvskiptrue% if true, then vskip is skipped.
+
+\newif\ifbrl@print@avskip% global
+% \brl@print@avskipfalse%
+
+\protected\def\brl@print#1#2#3#4{%
+  \edef\brl@tmp{\the#3}%
+  \ifx\brl@tmp\empty%
+  \else%
+    {%
+      \brl@orig@everypar{}%
+      \brl@format@allowspreadtrue%
+      \brl@format{#1}{#2}{#3}{#4}%
+      \expandafter\brl@print_allsclines_start\the\brl@format@alltoks\brl@end%
+    }%
+  \fi%
+  \brl@print_par% enter vertical mode.
+}
+
+\def\brl@print_par{%
+  \par%
+}
+
+
+%%
+%% input : leftmargin, indent, token list, leadersp, leastleadernum, line width
+%%
+
+%% for nab, utf8
+
+%% current :
+%% \brl@format@firstvskip
+%% \brl@format@avskip
+%% \brl@format@bvskip
+%% previsous :
+%% \brl@print@firstvskip
+%% \brl@print@avskip
+%% \brl@print@bvskip
+
+\newcount\brl@print@scline
+
+\def\brl@print_allsclines_start{%
+  \ifbrl@print@firstvskip% previous firstvskip : if true, then vskip is skipped.
+  \else%
+    \brl@format@bvskip% current bvskip
+    \ifbrl@char@bvskip%
+      \brl@print_allsclines_insertvskip% vskip
+    \else
+      \ifbrl@print@avskip% previous avskip
+        \brl@print_allsclines_insertvskip% vskip
+      \fi%
+    \fi%
+  \fi%
+  \brl@print_allsclines%
+}
+
+%%
+%% the same as \brl@document_par
+%%
+\def\brl@print_allsclines_insertvskip{%
+  \ifnum\brl@bse@height=\brl@bse@linenum% in the last line, no vskip.
+  \else%
+    \ifnum\@ne=\brl@bse@linenum% in the first line, no vskip.
+    \else%
+      \brl@print_onescline{0}{}%
+    \fi%
+  \fi%
+}
+
+
+\def\brl@print_allsclines_end{%
+  \brl@format@avskip% current avskip
+  \ifbrl@char@avskip%
+    \global\brl@print@avskiptrue%
+  \else%
+    \global\brl@print@avskipfalse%
+  \fi%
+  % 
+  \ifbrl@format@firstvskip% current firstvskip
+    \global\brl@print@firstvskiptrue%
+  \else%
+    \global\brl@print@firstvskipfalse%
+  \fi%
+}
+
+\def\brl@print_allsclines#1{% the total number of the sclines
+  % 
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \brl@print_allsclines_end%
+  \else%
+    %
+    \ifnum\brl@bse@height>#1\relax% if otherwise, the line exceeds the limit of a page. In this case, the newpage is in vain.
+      \ifnum\brl@bse@height<\numexpr\brl@bse@linenum+#1\relax%
+        \brl@document_newpage%
+      \fi%
+    \fi%
+    % 
+    %
+    \brl@print@scline#1\relax%
+    \expandafter\brl@print_allsclines_%
+  \fi%
+}
+
+
+\def\brl@print_allsclines_#1#2{% #1 : width, #2 : contents
+  \def\brl@tmp{#2}%
+  % 
+  \ifx\brl@tmp\empty% vglue
+    \brl@print_allsclines_insertvskip%
+  \else%
+    \brl@print_onescline{#1}{#2}%
+  \fi%
+  \ifnum\brl@print@scline>\@ne%
+    \advance\brl@print@scline\m@ne%
+    \expandafter\brl@print_allsclines_%
+  \else%
+    \expandafter\brl@print_allsclines%
+  \fi%
+}
+
+
+\def\brl@print_onescline#1#2{%
+  \ifnum\brl@bse@height=\brl@bse@linenum%
+    \brl@print_shipout%
+    %
+    %
+    \xdef\brl@document@inputlinenob{\brl@document@inputlineno}%
+    %
+    \global\brl@bse@linenum\@ne%
+    \global\advance\brl@bse@pagenum\@ne%
+    \global\advance\brl@bse@expagenum\@ne% right page
+    %
+    \global\brl@print@drawtoks{}%
+    \global\brl@print@exdrawtoks{}%
+    \global\brl@bse@pagetoks{}%
+    \global\brl@bse@expagetoks{}% right page
+    \global\brl@ebse@pagetoks{}%
+    \global\brl@ebse@expagetoks{}% right page
+    \global\brl@Ucode@pagetoks{}%
+    %
+    \global\brl@bse@spreadfalse%
+    %
+    %
+  \else%
+    \xdef\brl@document@inputlinenoe{\the\inputlineno}%
+    %
+  \fi%
+  %
+  % 
+  % 
+  %%
+  %% braille ascii
+  %%
+  {% \global\advance\brl@bse@linenum\@ne%
+    % is done in the following because for draw, this should be after the exec
+    % while for gnb, before the exec.
+    % 
+    \brl@print_onescline_bse{#1}{#2}%
+  }%
+  %
+  %%
+  %% Unicode
+  %%
+  % 
+  {%
+    %
+    \let\brl@bc\brl@bc_Ucode% Ucode
+    \let\brl@ebc\brl@ebc_Ucode% Ucode
+    \let\brl@do\brl@do_code%
+    \let\brl@char@cmd_direct\brl@@asis% validated
+    \let\brl@char@cmd_label\@gobbletwo% invalidated
+    \let\brl@char@cmd_print\@gobble% invalidated
+    % only \brl@char@cmd_remark is valid.
+    %
+    % \brl@print@remtoks{}%
+    %
+    \aftergroup\brl@Ucode_appendpagetoks%
+    \aftergroup{%
+      #2%
+      \brl@print_remark{#1}% append remark
+      \aftergroup^^J%
+    \aftergroup}%
+    %
+    %
+    % 
+  }%
+  %
+  % 
+  %% 
+  %% pdf
+  %%
+  %
+  %
+  %
+  \brl@print@letternum\z@%
+  % 
+  \ifbrl@print@amb% restore ambiguity
+    \global\brl@text@ambtrue%
+  \else%
+    \global\brl@text@ambfalse%
+  \fi%
+  %
+  {%
+    \let\brl@char@cmd_direct\brl@@asis%
+    \let\brl@char@cmd_remark\@gobble% invalidated
+    \global\setbox\brl@print@onepage\vtop{\unvbox\brl@print@onepage\hbox to \textwidth{\brl@orig@vrule\@width\z@\@height\brl@braille@charheight%
+        \@depth\brl@braille@depth#2\hss}}%
+  }%
+  %
+  \ifbrl@text@amb% save ambiguity
+    \global\brl@print@ambtrue%
+    \global\brl@text@ambfalse%
+  \else%
+    \global\brl@print@ambfalse%
+  \fi%
+  %
+}
+
+
+\ifbrl@option@hires%
+
+\def\brl@print_onescline_bse#1#2{%
+  % the followings are assumed.
+  % \let\brl@dbc_appendtmptoks\brl@dbc_appendtoks%
+  % \brl@bc@toks{}%
+  % \brl@bc@extoks{}%
+  % \brl@ebc@toks{}% for gnb
+  % \brl@ebc@extoks{}% for gnb
+  %
+  \let\brl@bc\brl@bc_bascii% bascii
+  \let\brl@dbc\brl@dbc_output%
+  % \brl@bc_ebascii is never used. Instead \brl@dbc is used.
+  \let\brl@do\brl@do_draw% use bc and draw
+  \let\brl@char@cmd_direct\@gobble%
+  \let\brl@bc@bascii_singleq\brl@bse@singleq% ' is escaped
+  \let\brl@bc@bascii_bs\brl@bse@bs% \ is escaped
+  %
+  \brl@print@letternum\z@%
+  \edef\brl@dbc@x{\the\numexpr\brl@bse@linenum*\brl@dbc@height\relax}%
+  %
+  % 
+  #2%
+  %
+  %
+  % 
+  % output graphics
+  \edef\brl@tmp{{\the\brl@dbc@toks}}%
+  \expandafter\brl@print_appenddrawtoks\brl@tmp%
+  %
+  \edef\brl@tmp{{\brl@bse_output@linebegin\the\brl@bc@toks\brl@bse@crlf\brl@bse_output@lineend}}%
+  \expandafter\brl@bse_appendpagetoks\brl@tmp%
+  % 
+  \ifnum#1>\brl@bse@width\relax% if this line is spread,
+    \global\brl@bse@spreadtrue% this page for nab is spread
+    %
+    \edef\brl@tmp{{\the\brl@dbc@extoks}}%
+    \expandafter\brl@print_appendexdrawtoks\brl@tmp%    
+    % 
+    \edef\brl@tmp{{\brl@bse_output@linebegin\the\brl@bc@extoks\brl@bse@crlf\brl@bse_output@lineend}}%
+  \else%
+    \edef\brl@tmp{{\brl@bse_output@linebegin\brl@bse@crlf\brl@bse_output@lineend}}% add an empty line
+    %
+  \fi%
+  \expandafter\brl@bse_appendexpagetoks\brl@tmp%
+  %
+  \global\advance\brl@bse@linenum\@ne%
+}
+
+\else%
+
+
+\def\brl@print_onescline_bse#1#2{%
+  \global\advance\brl@bse@linenum\@ne%
+  %
+  % assume the followings
+  % \brl@bc@toks{}%
+  % \brl@bc@extoks{}%
+  % \brl@ebc@toks{}% for gnb
+  % \brl@ebc@extoks{}% for gnb
+  % 
+  %
+  \let\brl@bc\brl@bc_bascii%
+  \let\brl@ebc\brl@ebc_ebascii% extended bascii
+  \let\brl@do\brl@do_code%
+  \let\brl@char@cmd_direct\@gobble%
+  \def\brl@bc@bascii_singleq{'}% '
+  \let\brl@bc@bascii_bs\brl@@bs% \
+  %
+  \brl@print@letternum\z@%
+  %
+  #2%
+  %
+  \expandafter\brl@bse_appendpagetoks\expandafter{\the\brl@bc@toks^^J}%
+  \edef\brl@tmp{\the\brl@ebc@toks}%
+  \ifx\brl@tmp\empty%
+  \else% since it is unclear whether this page is spread or not, tmppage is set.
+    \edef\brl@tmp{{{\noexpand\brl@ebse@tmppage}{\the\brl@bse@linenum}{\brl@tmp}}}% for gnb
+    \expandafter\brl@ebse_appendpagetoks\brl@tmp% for gnb
+  \fi%
+  % 
+  \ifnum#1>\brl@bse@width\relax% if this line is spread,
+    \global\brl@bse@spreadtrue% this page for nab is spread
+    %
+    \edef\brl@tmp{\the\brl@ebc@extoks}%
+    \ifx\brl@tmp\empty%
+    \else%
+      \edef\brl@tmp{{{\the\brl@bse@pagenum}{\the\brl@bse@linenum}{\brl@tmp}}}% for gnb
+      \expandafter\brl@ebse_appendexpagetoks\brl@tmp% for gnb
+    \fi%
+    % 
+    \expandafter\brl@bse_appendexpagetoks\expandafter{\the\brl@bc@extoks^^J}%
+  \else%
+    \brl@bse_appendexpagetoks{^^J}% add an empty line
+  \fi%
+}
+
+
+\fi%
+
+
+\def\brl@print_remark#1{% #1 : width
+  \edef\brl@tmp{{\the\brl@print@remtoks}}%
+  \ifx\brl@tmp\brl@@empty%
+  \else%
+    \expandafter\brl@text_direct\brl@tmp%
+    \count@#1\relax%
+    \advance\count@\m@ne%
+    \divide\count@\brl@bse@width\relax%
+    \brl@format_maketspace{\the\numexpr\count@*\brl@bse@width+\brl@bse@width-#1\relax}% number to fill.
+    % 
+    \brl@format@fillspace% bc
+    \the\brl@text@toks% bc
+  \fi%
+}
+
+
+
+
+%% \brl@print_allsclines_draw_start :
+%%
+%% in figures, use this instead of \brl@print_allsclines_start
+%% make texts for ordinary letters and braille.
+%% 
+%% output : vbox \box\brl@print@boxa, \box\brl@print@boxb
+%%
+
+\newbox\brl@print@boxa% vbox
+\newbox\brl@print@boxb% vbox
+
+\def\brl@print_allsclines_draw_start{%
+  \setbox\@ne\vbox{}%
+  \setbox\tw@\vbox{}%
+  \global\brl@document@emptyboxfalse% not empty, which was already checked in \brl@print
+  \let\set@color\brl@orig@set@color% color should be restored
+  \brl@print_allsclines_draw%
+}
+
+\def\brl@print_allsclines_draw#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    %
+    \global\setbox\brl@print@boxa\box\@ne%
+    \global\setbox\brl@print@boxb\box\tw@%
+    %
+  \else%
+    % 
+    \brl@print@scline#1\relax%
+    \expandafter\brl@print_allsclines_draw_%
+  \fi%
+}
+
+
+\def\brl@print_allsclines_draw_#1#2{% #1 : width, #2 : contents
+  %
+  \setbox\z@\hbox{\let\brl@char@cmd_direct\brl@@asis#2}%
+  \ht\z@\brl@braille@lineheight\relax%
+  \dp\z@\brl@braille@chardepth\relax%
+  \setbox\@ne\vtop{\unvbox\@ne\box\z@}%
+  % 
+  \setbox\z@\hbox{%
+    \let\brl@do\brl@do_show_white% pure braille
+    \let\brl@char@cmd_direct\@gobble% ignore cmd_direct
+    \def\brl@braille@font{\brl@braille@fontP}% only dots
+    #2}%
+  \ht\z@\brl@braille@lineheight\relax%%
+  \dp\z@\brl@braille@chardepth\relax%
+  \setbox\tw@\vtop{\unvbox\tw@\box\z@}%  
+  % 
+  % 
+  \ifnum\brl@print@scline>\@ne%
+    \advance\brl@print@scline\m@ne%
+    \expandafter\brl@print_allsclines_draw_%
+  \else%
+    \expandafter\brl@print_allsclines_draw%
+  \fi%
+}
+
+
+
+%% \brl@print_allsclines_plot_start :
+%%
+%% in edel figures, use this instead of \brl@print_allsclines_start
+%%
+% Algorithm
+% in \brl@print,
+% copy box in order to make the corresponding space
+% and \global\brl@pgf@nodetext = {{brls...}...{...}}
+%
+% in \pgfsys@hbox
+%   save the positions and codes in \nodetoks
+%      as \pgf_hbox{posx}{posy}{codes}
+%
+%      after tikzpicture, in \brl@plot
+% do codes, where
+%   \bc_plot and \ebc_plot
+%
+% to make a dummy box, use \brl@orig@vrule.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%%
+%% common codes 
+%%
+
+\def\brl@print_allsclines_plot_start{%
+  \brl@plot@linex\z@%
+  \brl@plot@liney\z@%
+  \brl@plot@toks{}%
+  \brl@print_allsclines_plot%
+}
+
+% box with \wd,\ht,\dp appropriately set, which is only used for determining the position by \pgf.
+% 
+% \brl@pgf@nodetext {{...}...{...}}
+%
+\def\brl@print_allsclines_plot#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    %
+    % \showthe\brl@plot@linex
+    % \showthe\brl@plot@liney
+    % \show\brl@plot@brailleheight
+    % \show\brl@plot@braillewidth
+    % 
+    \multiply\brl@plot@linex\brl@plot@braillewidth\relax% width of braille
+    \multiply\brl@plot@liney\brl@plot@brailleheight\relax% height of braille
+    %
+    %
+    % 
+    % \@namedef{brl@bc_plot@x0}{0}
+    % \@namedef{brl@bc_plot@y0}{14}
+    % 
+    % baseline = 14 + 8 ( = (31 - (14 + 1) / 2) ) = 22.
+    % Note: We do not need to take the depth into account,
+    % because in the last line of the text, 7 and/or 8 does not appear.
+    % 
+    %
+    %
+    %
+    \@tempdimb\brl@figure@scaleinv\dimexpr\brl@plot@draw_ratioinv\p@\relax%
+    \@tempdimc\brl@plot@braillebaseline\@tempdimb%
+    \@tempdima\brl@plot@linex\@tempdimb%
+    \@tempdimb\dimexpr\brl@plot@liney\@tempdimb-\@tempdimc\relax%
+    % %
+    %
+    \xdef\brl@print@minipageht{\the\@tempdimc}% for minipage
+    \xdef\brl@print@minipagedp{\the\@tempdimb}% for minipage
+    % 
+    \brl@orig@vrule\@width\@tempdima\@height\@tempdimc\@depth\@tempdimb%
+    %
+    \expandafter\xdef\csname brl@pgf@nodetext_\string\pgfnodepart\brl@pgf@boxname box\endcsname{\the\brl@plot@toks}%
+    %
+    %
+  \else%
+    %
+    \advance\brl@plot@liney#1\relax%
+    \brl@print@scline#1\relax%
+    \expandafter\brl@print_allsclines_plot_%
+  \fi%
+}
+
+\def\brl@print_allsclines_plot_#1#2{% #1 : width, #2 : contents
+  %
+  % 
+  \brl@plot_appendtoks{{#2}}%
+  %\showthe\brl@plot@toks
+  \ifnum#1>\brl@plot@linex%
+    \brl@plot@linex#1\relax%%
+  \fi%
+  % 
+  \ifnum\brl@print@scline>\@ne%
+    \advance\brl@print@scline\m@ne%
+    \expandafter\brl@print_allsclines_plot_%
+  \else%
+    \expandafter\brl@print_allsclines_plot%
+  \fi%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newbox\brl@print@onepage% vbox
+\newcount\brl@print@letternum
+
+
+\def\brl@print_shipout{%
+  %
+  % nonbraille page number 11 chars.
+  %
+  \edef\brl@print@page{（\brl@text_cmd_number{\brl@document@inputlinenob}\brl@text_cmd_space\brl@text_cmd_number{\brl@document@inputlinenoe}）}%
+  %
+  \brl@document_nonbraille_parsepage% prepend nonbraille_page if needed.
+  %
+  \expandafter\brl@text_direct\expandafter{\brl@print@page}%
+  \brl@char_count{\the\brl@text@toks}%
+  \edef\brl@tmp{{\the\numexpr26-\brl@char@charnum\relax}}%
+  \expandafter\brl@format_maketspace\brl@tmp% 0,...,26
+  \expandafter\brl@text_appendtoks\expandafter{\brl@format@fillspace}%
+  \edef\brl@print_shipout@nonbraillepage{\the\brl@text@toks}%
+  %
+  %
+  \brl@mecab_corpus_off%
+  \edef\brl@tmp{{\brl@document@rhead}}%
+  \expandafter\brl@text\brl@tmp%
+  \brl@mecab_corpus_on%
+  %
+  %%
+  %% braille ascii
+  %%
+  {%
+    \brl@print_shipout_bse%
+  }%
+  %
+  %%
+  %% Unicode
+  %%
+  %
+  {%
+    %
+    \let\brl@bc\brl@bc_Ucode%
+    \let\brl@ebc\brl@ebc_Ucode%
+    \let\brl@do\brl@do_code%
+    \let\brl@char@cmd_direct\@gobble%
+    %
+    %
+    \aftergroup\toks@%
+    \aftergroup{%
+      \brl@print_shipout@nonbraillepage%
+      \the\brl@text@toks%
+    \aftergroup}%
+    %
+  }%
+  \edef\brl@tmp{{\the\toks@^^J\the\brl@Ucode@pagetoks}}%
+  \expandafter\brl@Ucode_appendtoks\brl@tmp%
+  % 
+  %% 
+  %% pdf
+  %%
+  %
+  %
+  %
+  {%
+    % bc and ebc are default
+    %
+    \let\brl@bc_braille_spread\empty% ignores brl@bse@width for bc and ebc
+    \let\brl@char@cmd_direct\brl@@asis%
+    \setbox\brl@print@onepage\vbox{%
+      \hbox{%
+        \brl@orig@vrule\@width\z@%
+        \@height\brl@braille@charheight%
+        \@depth\brl@braille@depth%
+        %
+        \brl@print_shipout@nonbraillepage\the\brl@text@toks%
+      }\unvbox\brl@print@onepage}%
+    \brl@print_newpage% shipout
+  }%
+  %
+}
+
+
+\ifbrl@option@hires%
+
+\def\brl@print_shipout_bse{%
+  % assume
+  % \brl@bc@toks{}%
+  \let\brl@bc\brl@bc_bascii_% assume no ebc or dbc
+  % \let\brl@ebc\brl@ebc_bascii%
+  % \let\brl@dbc\brl@dbc_output%
+  \let\brl@do\brl@do_code%
+  \let\brl@char@cmd_direct\@gobble%
+  \let\brl@bc@bascii_singleq\brl@bse@singleq% ' is escaped
+  \let\brl@bc@bascii_bs\brl@bse@bs% \ is escaped
+  %
+  \brl@print_shipout@nonbraillepage% \brl@do
+  \edef\brl@bse@nonbraillepage{\the\brl@bc@toks}%
+  %
+  \brl@bc@toks{}%
+  \the\brl@text@toks% \brl@do
+  \edef\brl@bse@page{\the\brl@bc@toks}%
+  % 
+  \ifbrl@bse@spread% is this page spread ?
+    % 
+    \edef\brl@tmp{{%
+        \brl@bse_output@linebegin\brl@bse@gon\the\brl@print@exdrawtoks%
+        \brl@bse@goff\brl@bse_output@lineend%
+        \brl@bse_output@linebegin\brl@bse@runningspread\brl@bse@page\brl@bse@crlf\brl@bse_output@lineend\the\brl@bse@expagetoks\brl@bse_output@linebegin\brl@bse@newpage\brl@bse_output@lineend}}%$ extra page goes to an ordinary page.
+    \expandafter\brl@bse_appendtoks\brl@tmp%
+    % 
+    \edef\brl@tmp{{%
+        \brl@bse_output@linebegin\brl@bse@gon\the\brl@print@drawtoks%
+        \brl@bse@goff\brl@bse_output@lineend%
+        \brl@bse_output@linebegin\brl@bse@nonbraillepage\brl@bse@page-\brl@bse@crlf\brl@bse_output@lineend\the\brl@bse@pagetoks\brl@bse_output@linebegin\brl@bse@newpage\brl@bse_output@lineend}}% ordinary page goes to an extra page.
+    \expandafter\brl@bse_appendextoks\brl@tmp%
+  \else% ordinary page
+    % 
+    \edef\brl@tmp{{%
+        \brl@bse_output@linebegin\brl@bse@gon\the\brl@print@drawtoks%
+        \brl@bse@goff\brl@bse_output@lineend%
+        \brl@bse_output@linebegin\brl@bse@nonbraillepage\brl@bse@page\brl@bse@crlf\brl@bse_output@lineend\the\brl@bse@pagetoks\brl@bse_output@linebegin\brl@bse@newpage\brl@bse_output@lineend}}% shipout
+    \expandafter\brl@bse_appendtoks\brl@tmp% shipout
+    \global\advance\brl@bse@expagenum\m@ne% right page. counted too much.
+  \fi%
+}
+  
+\else%
+
+\def\brl@print_shipout_bse{%
+  % assume
+  % \brl@bc@toks{}%
+  \let\brl@bc\brl@bc_bascii_%  assume no ebc or dbc
+  % \let\brl@ebc\brl@ebc_bascii%
+  \let\brl@do\brl@do_code%
+  \let\brl@char@cmd_direct\@gobble%
+  \def\brl@bc@bascii_singleq{'}% '
+  % \let\brl@bc@bascii_bs\brl@bc@bascii_bs_char% \
+  \let\brl@bc@bascii_bs\brl@@bs% \
+  % 
+  \brl@print_shipout@nonbraillepage% \brl@do
+  \edef\brl@bse@nonbraillepage{\the\brl@bc@toks}%
+  % 
+  \brl@bc@toks{}%
+  \the\brl@text@toks% \brl@do
+  \edef\brl@bse@page{\the\brl@bc@toks}%
+  %
+  \ifbrl@bse@spread% is this page spread ?
+    %
+    \edef\brl@tmp{{\brl@bse@runningspread\brl@bse@page^^J\the\brl@bse@expagetoks}}% extra page goes to an ordinary page.
+    \expandafter\brl@bse_appendtoks\brl@tmp%
+    %
+    \edef\brl@tmp{{\brl@bse@nonbraillepage\brl@bse@page-^^J\the\brl@bse@pagetoks}}% ordinary page goes to an extra page.
+    \expandafter\brl@bse_appendextoks\brl@tmp%
+    % ebse
+    \edef\brl@ebse@tmppage{\the\brl@bse@expagenum}%
+    \edef\brl@tmp{\the\brl@ebse@pagetoks}% ordinary page goes to an extra page.
+    \edef\brl@tmp{{\brl@tmp}}% expand page number (tmppage)
+    \expandafter\brl@ebse_appendextoks\brl@tmp%
+    \edef\brl@tmp{{\the\brl@ebse@expagetoks}}% extra page goes to an ordinary page.
+    \expandafter\brl@ebse_appendtoks\brl@tmp%
+    % 
+  \else% ordinary page
+    %
+    \edef\brl@tmp{{\brl@bse@nonbraillepage\brl@bse@page^^J\the\brl@bse@pagetoks}}% shipout
+    \expandafter\brl@bse_appendtoks\brl@tmp% shipout
+    % ebse
+    \edef\brl@ebse@tmppage{\the\brl@bse@pagenum}%
+    \edef\brl@tmp{\the\brl@ebse@pagetoks}%
+    \edef\brl@tmp{{\brl@tmp}}% expand page number
+    \expandafter\brl@ebse_appendtoks\brl@tmp%
+    \global\advance\brl@bse@expagenum\m@ne% right page. counted too much.
+  \fi%
+}
+  
+\fi%
+
+
+\def\brl@print_shipoutcmd{%
+  % 
+  \shipout\vbox{%
+    \ifbrl@bse@spread% is this page spread ?
+      \brl@print@pdouble% \special{pdf: double}
+    \else%
+      \brl@print@psingle% \special{pdf: single}
+    \fi%
+    \brl@orig@vskip\brl@@topmargin%
+    \hbox{\brl@orig@hskip\brl@@oddsidemargin\box\brl@print@onepage}%
+    % 
+    \let\protect\noexpand% from the original \@outputpage
+    \unvbox\brl@print@outbox% exec label etc.
+    % 
+  }%
+  \stepcounter{page}%
+  % 
+  \count@\z@%
+  \brl@print_float% treat floats in this page
+}
+
+%% 
+%% \brl@print_newpage is redefined in \mainmatter
+%%
+\let\brl@print_newpage\brl@print_shipoutcmd%
+
+
+
+\ifbrl@option@pindisplay% do not use filldef
+  
+\def\brl@print_float{%
+  \ifnum\count@=\brl@figure@floatpnum%
+    \global\brl@figure@floatpnum\z@%
+  \else%
+    \advance\count@\@ne%
+    \shipout\vbox{%
+      \csname brl@figure@floatp_page\the\count@\endcsname%
+      \box\csname brl@figure@floatp_\the\count@\endcsname}%
+    \stepcounter{page}%
+    \expandafter\brl@print_float%
+  \fi%
+}
+
+
+\let\brl@print_float_end\empty
+
+\else
+
+\ifbrl@lualatex%
+
+\def\brl@print_float{%
+  \ifnum\count@=\brl@figure@floatpnum%
+    \global\brl@figure@floatpnum\z@%
+  \else%
+    \advance\count@\@ne%
+    \the\brl@pgf_filldef@toks%
+    \edef\brl@tmp{\pdfvariable pageresources{\brl@@transparent\brl@@space\brl@@patterns}}\brl@tmp%
+    \shipout\vbox{%
+      \csname brl@figure@floatp_page\the\count@\endcsname%
+      \box\csname brl@figure@floatp_\the\count@\endcsname}%
+    \stepcounter{page}%
+    \expandafter\brl@print_float%
+  \fi%
+}
+
+\def\brl@print_float_end{%
+  \ifnum\count@=\brl@figure@floattnum%
+  \else%
+    % \show\aa
+    \advance\count@\@ne%
+    % \expandafter
+    \the\brl@pgf_filldef@toks%
+    \edef\brl@tmp{\pdfvariable pageresources{\brl@@transparent\brl@@space\brl@@patterns}}\brl@tmp%
+    \shipout%\expandafter
+    \box\csname brl@figure@floatt_\the\count@\endcsname%
+    \expandafter\brl@print_float_end%
+  \fi%
+}
+
+\else%
+
+\def\brl@print_float{%
+  \ifnum\count@=\brl@figure@floatpnum%
+    \global\brl@figure@floatpnum\z@%
+  \else%
+    \advance\count@\@ne%
+    \shipout\vbox{%
+      \the\brl@pgf_filldef@toks%
+      \special{pdf:pageresources <<\brl@@transparent\brl@@space\brl@@patterns>>}%
+      \global\brl@pgf_filldef@toks{}%
+      \csname brl@figure@floatp_page\the\count@\endcsname%
+      \box\csname brl@figure@floatp_\the\count@\endcsname}%
+    \stepcounter{page}%
+    \expandafter\brl@print_float%
+  \fi%
+}
+
+\def\brl@print_float_end{%
+  \ifnum\count@=\brl@figure@floattnum%
+  \else%
+    % \show\aa
+    \advance\count@\@ne%
+    % \expandafter
+    \shipout%\expandafter
+    \box\csname brl@figure@floatt_\the\count@\endcsname%
+    \expandafter\brl@print_float_end%
+  \fi%
+}
+
+\fi
+\fi
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

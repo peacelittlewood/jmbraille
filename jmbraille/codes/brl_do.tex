@@ -1,0 +1,140 @@
+% Time-stamp: <2026-09-06 21:14:35 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@do
+%
+
+\def\brl@do_count#1{\csname brl@char@count_#1\endcsname}
+\def\brl@do_space#1{\csname brl@char@space_#1\endcsname}
+\def\brl@do_code#1{\csname brl@char@code_#1\endcsname}
+\def\brl@do_mean#1{\csname brl@char@mean_#1\endcsname}
+\ifbrl@option@hires%
+  \def\brl@do_draw#1{\csname brl@char@draw_#1\endcsname}
+\else
+  \def\brl@do_draw#1{\csname brl@char@code_#1\endcsname}
+\fi%
+
+%
+
+\def\brl@do_key#1{%
+  \gdef\brl@char@key{#1}%
+}
+
+
+\def\brl@do_show_bg_transparent{%
+  \setbox\@ne\hbox{%
+    {%
+      \brl@orig@color{\brl@char@transparentcolor}%
+      \brl@orig@vrule%
+      \@width\wd\z@%
+      \@height\ht\z@%
+      \@depth\dp\z@%
+    }%
+  }%
+  \wd\@ne\z@%
+  \setbox\z@\hbox{%
+    % red box
+    \brl@@pdf_invoke{q /brl_transparent gs}%
+    \box\@ne%
+    \brl@@pdf_invoke{Q}%
+    % red box
+    \box\z@%
+  }%
+}
+
+\let\brl@do_show_bg\empty% default
+
+\def\brl@do_show_white#1{%
+  %
+  \expandafter\let\expandafter\brl@tmp\csname brl@char@mean_#1\endcsname%
+  \setbox\z@\hbox{\brl@do_draw{#1}}%
+  % white box
+  {%
+    \brl@orig@color{white}%
+    \brl@orig@vrule%
+    \@width\wd\z@%
+    \@height\ht\z@%
+    \@depth\dp\z@%
+  }%
+  % white box
+  \kern-\wd\z@%
+  \box\z@%
+}
+
+
+
+% 
+\def\brl@do_show#1{%
+  %
+  \expandafter\let\expandafter\brl@tmp\csname brl@char@mean_#1\endcsname%
+  \ifx\brl@tmp\brl@char@@nomean%
+    \brl@do_draw{#1}% also executes amb
+    %
+    %
+  \else%
+    \setbox\z@\hbox{%
+      {%
+        \ifbrl@text@amb\brl@orig@color{\brl@char@ambcolor}\fi%
+        \brl@do_draw{#1}%
+      }%
+    }%
+    \ht\z@\brl@braille@height%
+    %
+    \ifbrl@text@unk%
+      \setbox\z@\hbox{%
+        {%
+          \brl@orig@color{\brl@char@warncolor}%
+          \brl@orig@vrule%
+          \@width\wd\z@%
+          \@height\ht\z@%
+          \@depth\dp\z@%
+        }%
+        \kern-\wd\z@%
+        \box\z@%
+      }%
+    \else%
+      \brl@do_show_bg%
+    \fi%
+    % 
+    % \box\z@ = braille char
+    % 
+    \setbox\@ne\hbox to \wd\z@{\hss%
+      {%
+        %
+        \ifx\brl@tmp\empty%
+        \else%
+          %
+          {%
+            \fontsize{\brl@char@meanfontsize}{\z@}\selectfont%
+            \brl@orig@color{\ifbrl@text@amb\brl@char@ambcolor\else\brl@char@meancolor\fi}%
+            \brl@font@dft%
+            \brl@tmp%
+          }%
+        \fi%
+      }%
+      \hss%
+    }% brl@tmp may include noline
+    %
+    \dp\@ne\z@%
+    \setbox\tw@\hbox to \wd\z@{\brl@char_bcstack{\box\@ne}{\box\z@}%
+      \hss}%
+    \ht\tw@\brl@braille@charheight%
+    \box\tw@%
+  \fi%
+}
+%%
+%% default
+%%
+\let\brl@do\brl@do_show% default
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,1193 @@
+% Time-stamp: <2026-09-15 16:48:11 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% NABCC
+
+% ^ 457 : unused
+% ~ 45
+%
+% [ 2467 : unused
+% { 246
+%
+% ] 124567 : unused
+% } 12456
+%
+% \ 12567 : unused
+% | 1245
+%
+% @ 47 : unused
+% ` 4
+
+%% input
+%% cs -> @
+%%
+%% output
+%% @ -> cs
+%% \x007f -> endmark
+%% [...] : -> indicator
+%% [...^X] : -> Xth indicator
+
+% define unused char in liblouis and use it as a cs.
+{\catcode`\^^7f=12\relax%
+  \xdef\brl@ueb@@end{\string^^7f}%
+}
+
+\def\brl@ueb_appendtoks#1{\brl@ueb@toks\expandafter{\the\brl@ueb@toks#1}}
+\newtoks\brl@ueb@toks
+
+\def\brl@ueb_appendwordtoks#1{\brl@ueb@wordtoks\expandafter{\the\brl@ueb@wordtoks#1}}
+\newtoks\brl@ueb@wordtoks
+
+\def\brl@ueb_appendalphtoks#1{\brl@ueb@alphtoks\expandafter{\the\brl@ueb@alphtoks#1}}
+\newtoks\brl@ueb@alphtoks
+
+\def\brl@ueb_appendcstoks#1{\brl@ueb@cstoks\expandafter{\the\brl@ueb@cstoks#1}}
+\newtoks\brl@ueb@cstoks
+
+\def\brl@ueb_appendjptoks#1{\brl@ueb@jptoks\expandafter{\the\brl@ueb@jptoks#1}}
+\newtoks\brl@ueb@jptoks
+
+
+
+
+\newcount\brl@ueb@totalsqnum
+\newcount\brl@ueb@totaldqnum
+
+% \0 italic
+% \1 underline
+% \2 bold
+% \3 user define
+% \4 user define
+
+
+
+\ifbrl@option@cache%
+
+\protected\def\brl@ueb#1{% instead of \mecab, the following does the corresponding process.
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \let\brl@tmpmat\empty%
+    {%
+      {%
+        \let\brl@text_cmd_empty\brl@@empty%
+        \def\brl@text_cmd_glue{\ }%
+        %
+        % use ..._save to shorten virtualchars in detokenized strings.
+        %
+        \let\brl@do\brl@do_save%
+        \let\brl@char@block\brl@char@block_save%
+        \let\brl@text_cmd_virtualchar\brl@text_cmd_virtualchar_save%
+        \let\brl@char@space@true\brl@char@space@true_save%
+        %
+        \xdef\brl@tmp{#1}%
+      }%
+      \let\brl@text@csname\brl@tmp%
+      \edef\brl@text@origcs{brl@text@orig_\detokenize\expandafter{\brl@text@csname}}%
+      \ifcsname\brl@text@origcs\endcsname%
+        \expandafter\let\expandafter\brl@tmp\csname\brl@text@origcs\endcsname%
+        \immediate\write\brl@text@file{%
+          \noexpand\expandafter%
+          \gdef%
+          \noexpand\csname%
+          brl@text@orig_\noexpand\detokenize%
+          {\unexpanded\expandafter{\brl@text@csname}}%
+          \noexpand\endcsname%
+          {\unexpanded\expandafter{\brl@tmp}}%
+        }%
+        \brl@tmp%
+      \else%
+        %
+        %
+        \brl@text@toks{}%
+        %
+        \brl@ueb_preproc#1\brl@end%
+        %
+        \xdef\brl@tmp{\the\brl@text@toks}%
+        % 
+        \xdef\brl@tmpmat{\the\brl@text@mattoks}%
+        \global\brl@text@mattoks{}%
+        %
+        \let\brl@do\brl@do_save%
+        \let\brl@char@cmd_direct\brl@char@cmd_direct_save%
+        \let\brl@char@block\brl@char@block_save%
+        \let\brl@char@breakable\brl@char@breakable_save%
+        \let\brl@char@space@true\brl@char@space@true_save%
+        %
+        \immediate\write\brl@text@file{%
+          \noexpand\expandafter%
+          \gdef%
+          \noexpand\csname%
+          brl@text@orig_\noexpand\detokenize%
+          {\unexpanded\expandafter{\brl@text@csname}}%
+          \noexpand\endcsname%
+          {%
+            \xdef\noexpand\brl@tmp%
+            {%
+              \noexpand\brl@text_load%
+              \expandafter\brl@text_save\brl@tmp\empty%
+              Z%
+            }%
+            \ifx\brl@tmpmat\empty%
+            \else%
+              \xdef\noexpand\brl@tmpmat%
+              {%
+                \expandafter\brl@text_save_matrix\brl@tmpmat\brl@end%
+              }%
+            \fi%
+            \ifbrl@text_appendmath@topeq%
+              \noexpand\brl@text_appendmath@topeqtrue%
+            \fi%
+            % glue
+            % \def\noexpand\brl@text@glue{\brl@text@glue}%
+          }%
+        }%
+      \fi%
+      \expandafter\brl@document_appendmattoks\expandafter{\brl@tmpmat}%
+      \ifbrl@text_appendmath@topeq%
+        \global\brl@document@indentfalse% to begin with an equation, force noindent.
+      \fi%
+    }%
+  \fi%
+  \brl@text@toks\expandafter{\brl@tmp}%
+}
+
+\else% \ifbrl@option@cache%
+
+\protected\def\brl@ueb#1{% instead of \mecab, the following does the corresponding process.
+  \def\brl@tmp{#1}%\show\brl@tmp
+  \ifx\brl@tmp\empty%
+  \else%
+    {%
+      \brl@text@toks{}%
+      %
+      \brl@ueb_preproc#1\brl@end%
+      %
+      \xdef\brl@tmp{\the\brl@text@toks}%
+      % 
+      %
+      \expandafter\brl@document_appendmattoks\expandafter{\the\brl@text@mattoks}%
+      \global\brl@text@mattoks{}%
+      %
+      \ifbrl@text_appendmath@topeq%
+        \global\brl@document@indentfalse% to begin with an equation, force noindent.
+      \fi%
+    }%
+  \fi%
+  %
+  % \show\brl@tmp
+  \brl@text@toks\expandafter{\brl@tmp}%
+}
+
+\fi% \ifbrl@option@cache%
+
+
+\def\brl@ueb_preproc{%
+  % 
+  \brl@ueb@wordtoks{}%
+  \brl@ueb@alphtoks{}%
+  \brl@ueb@toks{}%
+  \brl@ueb@cstoks{}%
+  \def\brl@ueb_next{\brl@ueb_loop}%
+  %
+  \def\brl@ueb@glue{1}% default glue. This is needed because the sentence may begin with $
+  \def\brl@ueb@currquote{N}% quotation condition
+  \let\brl@ueb@quotes\empty%
+  %
+  \brl@ueb_loop_ignorespaces%
+}
+
+\def\brl@ueb_loop_ignorespaces#1{%
+  %
+  \ifcsname brl@ueb@ignorespaces_\string#1\endcsname%
+    \csname brl@ueb@ignorespaces_\string#1\expandafter\endcsname%
+  \else%
+    \def\brl@tmp{\brl@ueb_loop#1}%
+    \expandafter\brl@tmp%
+  \fi%
+}
+
+
+%
+% `X\ \ \label\ \ \ ' -> `X@'
+%
+%
+\@namedef{brl@ueb@ignorespaces_\string\brl@text_cmd_comma}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\brl@text_cmd_glue}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\brl@text_cmd_space}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\!}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\,}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\>}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\:}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\;}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\ }{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string~}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\quad}{\brl@ueb_loop_ignorespaces}
+\@namedef{brl@ueb@ignorespaces_\string\qquad}{\brl@ueb_loop_ignorespaces}
+
+\@namedef{brl@ueb@ignorespaces_\string\brl@text_cmd_label}#1#2{%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_appendcstoks{{\brl@char@cmd_direct{\brl@char@cmd_label{#1}{#2}}}}%
+  \brl@ueb_loop_ignorespaces%
+}%
+
+
+
+\def\brl@ueb_loop#1{%
+  %
+  %
+  \ifcsname brl@ueb_setglue_\string#1\endcsname%
+  \else%
+    \def\brl@ueb@glue{1}% default glue
+  \fi%
+  % 
+  \ifcsname brl@ueb_dospecial_\string#1\endcsname%
+    \csname brl@ueb_dospecial_\string#1\expandafter\endcsname%
+  \else%
+    \count@\numexpr`#1\relax%
+    \ifnum11903<\count@% 0x2E7F
+      \ifnum40960>\count@% 0A000
+        % japanese
+        \brl@ueb@jptoks{#1}%
+        \def\brl@ueb_next{\brl@ueb_jp}%
+        %
+      \else%
+        \brl@ueb_appendtoks{#1}%
+        \brl@ueb_appendalphtoks{#1}%
+      \fi%
+    \else%
+      \brl@ueb_appendtoks{#1}%
+      \brl@ueb_appendalphtoks{#1}%
+    \fi%
+    \expandafter\brl@ueb_next%
+  \fi%
+}
+
+\def\brl@ueb_jp#1{%
+  \def\brl@ueb_next{\brl@ueb_jp_finish#1}%
+  \ifcat\relax\noexpand#1% cs?
+  \else%
+    \count@\numexpr`#1\relax%
+    \ifnum11903<\count@% 0x2E7F
+      \ifnum40960>\count@% 0A000
+        % japanese
+        \brl@ueb_appendjptoks{#1}%
+        \def\brl@ueb_next{\brl@ueb_jp}%
+      \fi%
+    \fi%
+  \fi%
+  \brl@ueb_next%
+}
+
+\def\brl@ueb_jp_finish{%
+  %
+  {%
+    \expandafter\brl@text_jp\expandafter{\the\brl@ueb@jptoks}%
+    \brl@char_spcount{\the\brl@text@toks}%
+    % \showthe\brl@text@toks
+    \ifnum\brl@char@spnum>\@ne% phrase (more than two words)
+      \xdef\brl@tmpjp{{{\brl@code_ueb_nonuebstart\the\brl@text@toks\brl@code_ueb_nonuebend}}}%
+    \else% word
+      \edef\brl@tmp{\the\brl@text@toks}%
+      \def\brl@char@breakable{\brl@char@breakable_ueb}%
+      \xdef\brl@tmpjp{{{\brl@code_ueb_nonuebword\brl@tmp}}}%
+    \fi%
+    \xdef\brl@tmpglue{\brl@text@glue}% 1 or 2
+  }%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \expandafter\brl@ueb_appendcstoks\brl@tmpjp%
+  \def\brl@ueb_next{\brl@ueb_loop}%
+  \let\brl@ueb@glue\brl@tmpglue%
+  \brl@ueb_loop\brl@text_cmd_glue%
+}
+
+
+\def\brl@ueb_setgluedef#1{%
+  \@namedef{brl@ueb_setglue_\string#1}{}%
+}
+
+\brl@ueb_setgluedef{;}% does not change glue
+\brl@ueb_setgluedef{:}
+\brl@ueb_setgluedef{,}
+\brl@ueb_setgluedef{.}
+\brl@ueb_setgluedef{)}
+\brl@ueb_setgluedef{]}
+\brl@ueb_setgluedef{'}
+\brl@ueb_setgluedef{\}}
+\brl@ueb_setgluedef{\brl@text_cmd_itclose}
+\brl@ueb_setgluedef{\brl@text_cmd_ulclose}
+\brl@ueb_setgluedef{\brl@text_cmd_bfclose}
+\brl@ueb_setgluedef{\brl@text_cmd_emclose}
+\brl@ueb_setgluedef{\brl@text_cmd_sfclose}
+\brl@ueb_setgluedef{\brl@text_cmd_transclose}
+\brl@ueb_setgluedef{\brl@end}
+
+\brl@ueb_setgluedef{\brl@text_cmd_comma}
+
+\brl@ueb_setgluedef{\brl@text_cmd_glue}% use and set glue=1.
+\brl@ueb_setgluedef{\brl@text_cmd_space}% use and set glue=1.
+\brl@ueb_setgluedef{\!}% use and set glue=1.
+\brl@ueb_setgluedef{\,}% use and set glue=1.
+\brl@ueb_setgluedef{\>}% use and set glue=1.
+\brl@ueb_setgluedef{\:}% use and set glue=1.
+\brl@ueb_setgluedef{\;}% use and set glue=1.
+\brl@ueb_setgluedef{\ }% use and set glue=1.
+\brl@ueb_setgluedef{~}% use and set glue=1.
+\brl@ueb_setgluedef{\quad}% use and set glue=1.
+\brl@ueb_setgluedef{\qquad}% use and set glue=1.
+\brl@ueb_setgluedef{\brl@text_cmd_label}% use and set glue=1.
+
+\brl@ueb_setgluedef{\brl@text_cmd_dollar}% set glue=1 or 2
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_eqquote}#1{%
+  % \brl@ueb_appendtoks{(#1)}%
+  \brl@ueb_loop(#1)%
+}
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_noun}#1{%
+  % \brl@ueb_appendtoks{#1}%
+  \brl@ueb_loop#1%
+}
+
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_number}#1{%
+  % \brl@ueb_appendtoks{#1}%
+  \brl@ueb_loop#1%
+}
+
+\@namedef{brl@ueb_dospecial_\string\brl@math_cmd}#1#2{% only digit
+  % \def\brl@tmp{#1#2}\show\brl@tmp
+  % \brl@ueb_appendtoks{#1}%
+  \expandafter\brl@ueb_loop\@firstoftwo#2%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ignore
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_desci}{%
+  \brl@ueb_loop%
+}
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_descii}{%
+  \brl@ueb_loop%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Latin
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_letter}#1#2#3{%
+  \brl@ueb_appendtoks{#1}%
+  \edef\brl@tmp{\csname brl@ueb_alph@tex_\string#2_\string#3\endcsname}%
+  %
+  \expandafter\brl@ueb_appendalphtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% font
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_itopen}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 0}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_itclose}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 0}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_ulopen}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 1}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_ulclose}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 1}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_bfopen}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 2}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_bfclose}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 2}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_emopen}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 2}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_emclose}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 2}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_sfopen}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 5}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_sfclose}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 5}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_transopen}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 4}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_transclose}{%
+  \edef\brl@tmp{{\brl@ueb@backslash 4}}%
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_loop%
+}
+
+
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_scopen}{%
+  \brl@ueb_replacedef{a}{A}%
+  \brl@ueb_replacedef{b}{B}%
+  \brl@ueb_replacedef{c}{C}%
+  \brl@ueb_replacedef{d}{D}%
+  \brl@ueb_replacedef{e}{E}%
+  \brl@ueb_replacedef{f}{F}%
+  \brl@ueb_replacedef{g}{G}%
+  \brl@ueb_replacedef{h}{H}%
+  \brl@ueb_replacedef{i}{I}%
+  \brl@ueb_replacedef{j}{J}%
+  \brl@ueb_replacedef{k}{K}%
+  \brl@ueb_replacedef{l}{L}%
+  \brl@ueb_replacedef{m}{M}%
+  \brl@ueb_replacedef{n}{N}%
+  \brl@ueb_replacedef{o}{O}%
+  \brl@ueb_replacedef{p}{P}%
+  \brl@ueb_replacedef{q}{Q}%
+  \brl@ueb_replacedef{r}{R}%
+  \brl@ueb_replacedef{s}{S}%
+  \brl@ueb_replacedef{t}{T}%
+  \brl@ueb_replacedef{u}{U}%
+  \brl@ueb_replacedef{v}{V}%
+  \brl@ueb_replacedef{w}{W}%
+  \brl@ueb_replacedef{x}{X}%
+  \brl@ueb_replacedef{y}{Y}%
+  \brl@ueb_replacedef{z}{Z}%
+  \brl@ueb_loop_ignorespaces%
+}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_scclose}{%
+  \brl@ueb_replacereset{a}%
+  \brl@ueb_replacereset{b}%
+  \brl@ueb_replacereset{c}%
+  \brl@ueb_replacereset{d}%
+  \brl@ueb_replacereset{e}%
+  \brl@ueb_replacereset{f}%
+  \brl@ueb_replacereset{g}%
+  \brl@ueb_replacereset{h}%
+  \brl@ueb_replacereset{i}%
+  \brl@ueb_replacereset{j}%
+  \brl@ueb_replacereset{k}%
+  \brl@ueb_replacereset{l}%
+  \brl@ueb_replacereset{m}%
+  \brl@ueb_replacereset{n}%
+  \brl@ueb_replacereset{o}%
+  \brl@ueb_replacereset{p}%
+  \brl@ueb_replacereset{q}%
+  \brl@ueb_replacereset{r}%
+  \brl@ueb_replacereset{s}%
+  \brl@ueb_replacereset{t}%
+  \brl@ueb_replacereset{u}%
+  \brl@ueb_replacereset{v}%
+  \brl@ueb_replacereset{w}%
+  \brl@ueb_replacereset{x}%
+  \brl@ueb_replacereset{y}%
+  \brl@ueb_replacereset{z}%
+  \brl@ueb_loop%
+}
+
+%
+% ttfamily is regarded as info
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\@namedef{brl@ueb_dospecial_\string\$}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_dollar%
+  \brl@ueb_appendalphtoks{\char36\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\%}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_percent%
+  \brl@ueb_appendalphtoks{\char37\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\&}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_ampersand%
+  \brl@ueb_appendalphtoks{\char38\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\#}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_sharp%
+  \brl@ueb_appendalphtoks{\char35\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\_}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_ul%
+  \brl@ueb_appendalphtoks{\char95\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\textasciitilde}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_tilde%
+  \brl@ueb_appendalphtoks{\char126\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\textasciicircum}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_circum%
+  \brl@ueb_appendalphtoks{\char94\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\textbackslash}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_bsbs%
+  \brl@ueb_appendalphtoks{\char92\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\{}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_lbrace%
+  \brl@ueb_appendalphtoks{\char123\relax}%
+  \brl@ueb_loop%
+}
+\@namedef{brl@ueb_dospecial_\string\}}{%
+  \expandafter\brl@ueb_appendtoks\brl@ueb_char_rbrace%
+  \brl@ueb_appendalphtoks{\char125\relax}%
+  \brl@ueb_loop%
+}
+
+
+%
+%
+% `X\ \ \label\ \ \ ' -> `X@ '
+%
+
+
+\edef\brl@ueb@doublespace{{\brl@@space\brl@@space}}
+
+\def\brl@ueb_dospecial_glue{%
+  %
+  \edef\brl@tmp{{{\the\brl@ueb@alphtoks}}}%
+  \expandafter\brl@ueb_appendwordtoks\brl@tmp%
+  \brl@ueb@alphtoks{}%
+  %
+  \brl@ueb_dospecial_glue_loop%
+}
+
+\def\brl@ueb_dospecial_glue_loop#1{%
+  \ifcsname brl@ueb@glue_\string#1\endcsname%
+    \csname brl@ueb@glue_\string#1\expandafter\endcsname%
+  \else%
+    \ifnum\brl@ueb@glue=\@ne%
+      \brl@ueb_appendtoks{ }%
+    \else%
+      \expandafter\brl@ueb_appendtoks\brl@ueb@doublespace%
+    \fi%
+    %
+    \def\brl@ueb@glue{1}% default glue
+    \def\brl@tmp{\brl@ueb_loop#1}%
+    \expandafter\brl@tmp%
+  \fi%
+}
+
+%\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_comma}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_comma}{}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_glue}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_space}{\brl@ueb_dospecial_glue}
+%\@namedef{brl@ueb_dospecial_\string\!}{\brl@ueb_dospecial_glue}% replace
+\@namedef{brl@ueb_dospecial_\string\,}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\>}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\:}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\;}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\ }{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string~}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\quad}{\brl@ueb_dospecial_glue}
+\@namedef{brl@ueb_dospecial_\string\qquad}{\brl@ueb_dospecial_glue}
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_label}#1#2{%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_appendcstoks{{\brl@char@cmd_direct{\brl@char@cmd_label{#1}{#2}}}}%
+  \brl@ueb_dospecial_glue%
+}%
+
+\@namedef{brl@ueb@glue_\string\brl@text_cmd_comma}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\brl@text_cmd_glue}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\brl@text_cmd_space}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\!}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\,}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\>}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\:}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\;}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\ }{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string~}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\quad}{\brl@ueb_dospecial_glue_loop}
+\@namedef{brl@ueb@glue_\string\qquad}{\brl@ueb_dospecial_glue_loop}
+
+\@namedef{brl@ueb@glue_\string\brl@text_cmd_label}#1#2{%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_appendcstoks{{\brl@char@cmd_direct{\brl@char@cmd_label{#1}{#2}}}}%
+  \brl@ueb_dospecial_glue_loop%
+}%
+
+
+
+\def\brl@ueb@@backq{`}
+\def\brl@ueb@@singq{'}
+
+\@namedef{brl@ueb_dospecial_`}#1{%
+  \def\brl@ueb@char{#1}%
+  \edef\brl@ueb@quotes{\brl@ueb@currquote\brl@ueb@quotes}%
+  \ifx\brl@ueb@char\brl@ueb@@backq%
+    %
+    \let\brl@ueb@char\empty%
+    \def\brl@ueb@currquote{D}%
+    \expandafter\brl@ueb_appendtoks\brl@ueb@dqleft%
+    \brl@ueb_appendalphtoks{“}%
+    \global\advance\brl@ueb@totaldqnum\@ne%
+  \else%
+    %
+    \def\brl@ueb@currquote{S}%
+    \expandafter\brl@ueb_appendtoks\brl@ueb@sqopen%
+    \brl@ueb_appendalphtoks{‘}%
+    \global\advance\brl@ueb@totalsqnum\@ne%
+  \fi%
+  \expandafter\brl@ueb_loop\brl@ueb@char%
+}
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_empty}{%
+  \brl@ueb_loop%
+}
+
+\@namedef{brl@ueb_dospecial_'}#1{%
+  \def\brl@ueb@char{#1}%
+  \ifx\brl@ueb@char\brl@ueb@@singq%
+    %
+    \let\brl@ueb@char\empty%
+    \brl@ueb_dospecial_prime_popq%
+    \expandafter\brl@ueb_appendtoks\brl@ueb@dqright%
+    \brl@ueb_appendalphtoks{”}%
+  \else%
+    %
+    \edef\brl@tmp{brl@ueb@case_\string#1}%
+    \brl@ueb_dospecial_prime%
+  \fi%
+  \expandafter\brl@ueb_loop\brl@ueb@char%
+}
+
+\ifbrl@option@oswin%
+  \edef\brl@ueb_dospecial_appendprime{\noexpand\brl@ueb_appendtoks{\brl@@bs x0027}}
+  \let\brl@ueb@quote\empty
+\else%
+  \edef\brl@ueb_dospecial_appendprime{\noexpand\brl@ueb_appendtoks{\brl@@bs x27}}
+  \def\brl@ueb@quote{'}
+\fi%
+
+
+
+\def\brl@ueb_dospecial_prime{% X.....'Y
+  %
+  \if S\brl@ueb@currquote% `.....'Y
+    \ifcsname\brl@tmp\endcsname%
+      \brl@ueb_dospecial_appendprime%
+      \brl@ueb_appendalphtoks{'}%
+    \else%
+      \brl@ueb_dospecial_prime_popq%
+      \expandafter\brl@ueb_appendtoks\brl@ueb@sqclose%
+      \brl@ueb_appendalphtoks{’}%
+    \fi%
+  \else% X = D or N
+    \brl@ueb_dospecial_appendprime%
+    \brl@ueb_appendalphtoks{'}%
+  \fi%
+  %
+}
+
+
+\def\brl@ueb_dospecial_prime_popq{%
+  \expandafter\brl@ueb_dospecial_prime_popq_\brl@ueb@quotes\brl@end%
+}
+\def\brl@ueb_dospecial_prime_popq_#1#2\brl@end{%
+  \def\brl@ueb@currquote{#1}%
+  \def\brl@ueb@quotes{#2}%
+}
+
+
+\newcount\brl@ueb@currbreak
+\newcount\brl@ueb@currspace
+
+\def\brl@ueb_dospecial_close{%
+  \edef\brl@tmp{{{\the\brl@ueb@alphtoks}{}}}%
+  \expandafter\brl@ueb_appendwordtoks\brl@tmp%
+  \brl@ueb_appendcstoks{{}}%
+  %
+  \brl@ueb_exec%
+  % 
+  % 
+  \brl@ueb@currbreak\brl@char@break_never\relax%
+  \brl@ueb@currspace\z@%
+  %
+  \brl@ueb_postproc_insertorig%
+  %
+  \expandafter\brl@ueb_postproc\brl@ueb@result\brl@end%
+}
+
+
+
+
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_dollar}#1#2{% #2 is the last char.
+  %
+  \edef\brl@tmp{{\brl@ueb@backslash xe06d}}% liblouis recognize this as math, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  %
+  \brl@math{#1}%
+  \brl@char_space{\the\brl@math@toks}%
+  %
+  \ifbrl@char@space%
+    \def\brl@ueb@glue{2}%
+  \fi%
+  %
+  % \edef\brl@tmp{{{\brl@code_math_equationsign\the\brl@math@toks\brl@code_text_textmode}}}%
+  \edef\brl@tmp{{{\brl@code_math_equationsign\the\brl@math@toks}}}%
+  %
+  \expandafter\brl@ueb_appendcstoks\brl@tmp%
+  \brl@ueb_loop%
+}
+
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_footnotemark}#1{% #1 is footnotemark.
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \edef\brl@tmp{{\brl@ueb@backslash xe05e#1}}% liblouis recognize this as superscript
+    \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \fi%
+  \brl@ueb_loop%
+}
+
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_ttopen}#1\brl@text_cmd_ttclose{% 
+  % 
+  {%
+    \brl@info_infomode%
+    \brl@info{#1}%
+    %
+    \xdef\brl@tmpinfo{{{\brl@code_text_infoquoteopen\the\brl@info@toks\brl@code_text_infoquoteclose}}}%
+  }%
+%
+  \expandafter\brl@ueb_appendcstoks\brl@tmpinfo%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  % 
+  \brl@ueb_loop\brl@text_cmd_glue%
+  % 
+}
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_verb}#1{% 
+  % 
+  {%
+    \brl@info_verbmode%    
+    \brl@info{#1}%
+    %
+    \xdef\brl@tmpinfo{{{\brl@code_text_verbquoteopen\the\brl@info@toks\brl@code_text_verbquoteclose}}}%
+  }%
+%
+  \expandafter\brl@ueb_appendcstoks\brl@tmpinfo%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  % 
+  \brl@ueb_loop\brl@text_cmd_glue%
+  % 
+}
+
+
+
+
+\@namedef{brl@ueb_dospecial_\string\BrailleRemark}#1{%
+  {%
+    %
+    \brl@text_jp{#1}%
+    %
+    \xdef\brl@tmpjp{{{\brl@text_cmd_transopen\the\brl@text@toks\brl@text_cmd_transclose}}}%
+    \xdef\brl@tmpglue{\brl@text@glue}%
+  }%
+  \expandafter\brl@ueb_appendcstoks\brl@tmpjp%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \let\brl@ueb@glue\brl@tmpglue%
+  \brl@ueb_loop\brl@text_cmd_glue%
+}
+
+
+
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_env}#1#2#3{% #3 : lastchar
+  %
+  \brl@ueb_dospecial_close% finish sentence
+  \edef\brl@tmp{\the\brl@text@toks}%
+  %
+  \ifx\brl@tmp\empty%
+    \brl@text_appendmath@topeqtrue%
+  \else%
+    \brl@text_appendtoks{\brl@char@breakable{}{\brl@char@break_lineend}{}}%
+  \fi%
+  %
+  \csname brl@text_dospecial_#1\endcsname{#2}%
+  \expandafter\brl@text_appendtoks\brl@text@math%
+  %
+  \brl@ueb_preproc%
+}
+
+
+\@namedef{brl@ueb_dospecial_\string\qedsymbol}{%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_appendcstoks{{\brl@code_ueb_qed}}%
+  \brl@ueb_loop%
+}
+
+
+%
+% virtualchar
+%
+\@namedef{brl@ueb_dospecial_\string\brl@text_cmd_virtualchar}#1{%
+  \edef\brl@tmp{{\brl@ueb@backslash xe063}}% liblouis recognize this as cs, and insert @
+  \expandafter\brl@ueb_appendtoks\brl@tmp%
+  \brl@ueb_appendcstoks{{#1}}%
+  \brl@ueb_loop%
+}
+
+
+
+%%
+%% \brl@ueb_replacedef: #1 -> #2
+%%
+\def\brl@ueb_replacedef#1#2{%
+  \@namedef{brl@ueb_dospecial_\string#1}{%
+    \brl@ueb_loop#2%
+  }%
+}
+\def\brl@ueb_replacereset#1{%
+  \expandafter\let\csname brl@ueb_dospecial_\string#1\endcsname\@undefined%
+}
+
+\brl@ueb_replacedef{\!}{}%
+\brl@ueb_replacedef{\dots}{…}%
+
+\brl@ueb_replacedef{\brl@text_cmd_rmopen}{}
+\brl@ueb_replacedef{\brl@text_cmd_rmclose}{}
+
+\brl@ueb_replacedef{［}{[}
+\brl@ueb_replacedef{］}{]}
+\brl@ueb_replacedef{（}{(}
+\brl@ueb_replacedef{）}{)}
+\brl@ueb_replacedef{＋}{+}
+%\brl@ueb_replacedef{−}{-}% replaced in document
+\brl@ueb_replacedef{；}{;}
+\brl@ueb_replacedef{：}{:}
+\brl@ueb_replacedef{＊}{*}
+\brl@ueb_replacedef{！}{!}
+\brl@ueb_replacedef{＝}{=}
+\brl@ueb_replacedef{／}{/}
+\brl@ueb_replacedef{＜}{<}
+\brl@ueb_replacedef{＞}{>}
+
+\@namedef{brl@ueb_dospecial_\string\brl@end}{%
+  \brl@ueb_dospecial_close%
+  %
+}
+
+\ifbrl@lualatex% if lualatex, the number of letters is limited in \@@input. Thus we use io.popen. Note that "[==[" or "]==]" is not used in the source.
+
+\def\brl@ueb_exec{%
+  {%
+    \catcode`\#=12\relax%
+    \catcode`\$=12\relax%
+    \catcode`\%=12\relax%
+    \catcode`\&=12\relax%
+    \catcode`\_=12\relax%
+%    \catcode`\\=12\relax% unused
+    \catcode`\{=12\relax%
+    \catcode`\}=12\relax%
+    \catcode`\~=12\relax%
+    \catcode`\^^7f=12\relax%
+    \catcode`\ =12\relax%
+    % \catcode`\@=11\relax%
+    % \catcode`\^\active%
+    % \catcode`\ \active%
+    % 
+    %
+    \edef\brl@tmp{\the\brl@ueb@toks}%
+    \message{ueb:\brl@tmp}%
+    \ifx\brl@tmp\empty% this is especially for windows, since "echo" without argument yields the message "ECHO ON" etc.
+      \global\let\brl@ueb@result\empty%
+    \else%
+    \expandafter\brl@ueb_exec_\directlua{%
+      local handle = io.popen([==[% quotation
+      echo \brl@ueb@quote\brl@tmp%
+      \brl@ueb@quote | \brl@ueb@translator]==]) % quotation
+      local result = handle:read("*a")
+      tex.print(result)
+      handle:close()}%
+    \fi%
+  }%
+}%
+
+\else%
+
+\def\brl@ueb_exec{%
+  {%
+    \catcode`\#=12\relax%
+    \catcode`\$=12\relax%
+    \catcode`\%=12\relax%
+    \catcode`\&=12\relax%
+    \catcode`\_=12\relax%
+%    \catcode`\\=12\relax% unused
+    \catcode`\{=12\relax%
+    \catcode`\}=12\relax%
+    \catcode`\~=12\relax%
+    \catcode`\^^7f=12\relax%
+    \catcode`\ =12\relax%
+    % \catcode`\@=11\relax%
+    % 
+    %
+    \edef\brl@tmp{\the\brl@ueb@toks}%
+    \ifx\brl@tmp\empty% this is especially for windows, since "echo" without argument yields the message "ECHO ON" etc.
+      \global\let\brl@ueb@result\empty%
+    \else%
+      \expandafter\brl@ueb_exec_\@@input{|echo \brl@ueb@quote%
+        \brl@tmp\brl@ueb@quote| \brl@ueb@translator}%
+    \fi%
+  }%
+}%
+
+\fi
+
+
+\edef\brl@tmp{%
+\unexpanded{\def\brl@ueb_exec_#1}\brl@ueb@@end\unexpanded{{%
+  \gdef\brl@ueb@result{#1}%
+}}}
+\brl@tmp
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% after liblouis
+
+\@namedef{brl@ueb_postproc@breakablechar__/^a}{}% / [_/^a]
+\@namedef{brl@ueb_postproc@breakablechar_-}{}% -
+
+
+
+\def\brl@ueb_appendchar#1{%
+  \ifnum\brl@ueb@currbreak<\z@%
+  % \showthe\brl@ueb@currbreak
+  % \showthe\brl@ueb@currspace
+    \edef\brl@tmp{{%
+        \the\brl@text@toks%
+        \brl@char@breakable%
+        {t}%
+        {\the\brl@ueb@currbreak}%
+        {\the\brl@ueb@currspace}%
+        %
+        \the\brl@ueb@alphtoks%
+        #1}}%
+    \brl@ueb@alphtoks{}%
+  \else%
+    \edef\brl@tmp{{%
+        \the\brl@text@toks%
+        \the\brl@ueb@alphtoks%
+        #1}}% default: no break
+  \fi%
+  \brl@text@toks\brl@tmp%
+  \brl@ueb@alphtoks{}%
+  % \showthe\brl@text@toks
+  \brl@ueb@currbreak\z@% no break \brl@char@break_never\relax%
+  \brl@ueb@currspace\z@%
+}
+
+\def\brl@ueb_appendcharbreaks#1#2#3{%
+  \brl@ueb_appendchar{#1}%
+  \brl@ueb@currbreak#2\relax%
+  \brl@ueb@currspace#3\relax%  
+}
+
+\def\brl@ueb_appendbreaks#1#2{%
+  \ifnum#1<\brl@ueb@currbreak%
+    \brl@ueb@currbreak#1\relax%
+  \fi%
+  \advance\brl@ueb@currspace#2\relax%
+}
+
+
+
+\def\brl@ueb_postproc#1{%
+  \edef\brl@tmp{brl@code_ueb_\string#1}%
+  \ifcsname\brl@tmp\endcsname%
+    \edef\brl@tmp{{\csname\brl@tmp\endcsname}}%
+    \ifcsname brl@ueb_postproc@breakablechar_\string#1\endcsname%
+      \expandafter\brl@ueb_appendcharbreaks\brl@tmp{\brl@char@break_middle}{0}%
+    \else%
+      \expandafter\brl@ueb_appendchar\brl@tmp%
+    \fi%
+    \expandafter\brl@ueb_postproc%
+  \else%
+    \csname brl@ueb_postproc_\string#1\expandafter\endcsname%
+  \fi%
+}
+
+\@namedef{brl@ueb_postproc_ }#1{% #1 : the number of spaces
+  \ifnum#1=\@ne%
+    \brl@ueb_appendbreaks{\brl@char@break_big}{1}%
+  \else%
+    \brl@ueb_appendbreaks{\brl@char@break_big}{2}%
+  \fi%
+  \brl@ueb_postproc_insertorig%
+  % \showthe\brl@ueb@currspace
+  % \showthe\brl@ueb@currbreak
+  \brl@ueb_postproc%
+}%
+
+
+
+\@namedef{brl@ueb_postproc_\string\brl@end}{% exit
+%  \showthe\brl@text@toks
+}%
+
+\@namedef{brl@ueb_postproc_[}#1]{%
+  \edef\brl@tmp{{\csname brl@code_ueb_#1\endcsname}}%
+  %
+  \ifcsname brl@ueb_postproc@breakablechar_#1\endcsname%
+    \expandafter\brl@ueb_appendcharbreaks\brl@tmp{\brl@char@break_middle}{0}%
+  \else%
+    \expandafter\brl@ueb_appendchar\brl@tmp%
+  \fi%
+  \brl@ueb_postproc%
+}
+
+
+\def\brl@ueb_postproc_@{% cs or math
+  \expandafter\brl@ueb_postproc_popcs_\the\brl@ueb@cstoks\brl@end%
+}
+
+
+\def\brl@ueb_postproc_popcs_#1#2\brl@end{%
+  % \showthe\brl@ueb@currbreak
+  % \showthe\brl@ueb@currspace
+  \brl@ueb_appendchar{#1}%
+  \brl@ueb@cstoks{#2}%
+  \brl@ueb_postproc%
+}
+
+
+\def\brl@ueb_postproc_insertorig{%
+  \expandafter\brl@ueb_postproc_insertorig_\the\brl@ueb@wordtoks\brl@end%
+}
+
+\def\brl@ueb_postproc_insertorig_#1#2\brl@end{%
+  %
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty%
+    \brl@ueb@alphtoks{}%
+  \else%
+    \brl@ueb@alphtoks{\brl@char@cmd_direct{\brl@char@cmd_print{\brl@char@cmd_ueb{#1}}}}%
+    % \brl@text_appendtoks{\brl@char@cmd_direct{\brl@char@cmd_print{\brl@char@cmd_ueb{#1}}}}%
+  \fi%
+  % \showthe\brl@ueb@alphtoks
+  \brl@ueb@wordtoks{#2}%
+}
+
+\def\brl@ueb_alphdef#1{%
+  \@namedef{brl@ueb@case_\string#1}{}%
+}
+
+
+\brl@ueb_alphdef{\brl@text_cmd_empty}%
+
+\brl@ueb_alphdef{A}
+\brl@ueb_alphdef{B}
+\brl@ueb_alphdef{C}
+\brl@ueb_alphdef{D}
+\brl@ueb_alphdef{E}
+\brl@ueb_alphdef{F}
+\brl@ueb_alphdef{G}
+\brl@ueb_alphdef{H}
+\brl@ueb_alphdef{I}
+\brl@ueb_alphdef{J}
+\brl@ueb_alphdef{K}
+\brl@ueb_alphdef{L}
+\brl@ueb_alphdef{M}
+\brl@ueb_alphdef{N}
+\brl@ueb_alphdef{O}
+\brl@ueb_alphdef{P}
+\brl@ueb_alphdef{Q}
+\brl@ueb_alphdef{R}
+\brl@ueb_alphdef{S}
+\brl@ueb_alphdef{T}
+\brl@ueb_alphdef{U}
+\brl@ueb_alphdef{V}
+\brl@ueb_alphdef{W}
+\brl@ueb_alphdef{X}
+\brl@ueb_alphdef{Y}
+\brl@ueb_alphdef{Z}
+
+\brl@ueb_alphdef{a}
+\brl@ueb_alphdef{b}
+\brl@ueb_alphdef{c}
+\brl@ueb_alphdef{d}
+\brl@ueb_alphdef{e}
+\brl@ueb_alphdef{f}
+\brl@ueb_alphdef{g}
+\brl@ueb_alphdef{h}
+\brl@ueb_alphdef{i}
+\brl@ueb_alphdef{j}
+\brl@ueb_alphdef{k}
+\brl@ueb_alphdef{l}
+\brl@ueb_alphdef{m}
+\brl@ueb_alphdef{n}
+\brl@ueb_alphdef{o}
+\brl@ueb_alphdef{p}
+\brl@ueb_alphdef{q}
+\brl@ueb_alphdef{r}
+\brl@ueb_alphdef{s}
+\brl@ueb_alphdef{t}
+\brl@ueb_alphdef{u}
+\brl@ueb_alphdef{v}
+\brl@ueb_alphdef{w}
+\brl@ueb_alphdef{x}
+\brl@ueb_alphdef{y}
+\brl@ueb_alphdef{z}
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:
+

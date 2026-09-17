@@ -1,0 +1,2456 @@
+% Time-stamp: <2026-09-13 15:51:31 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% array
+%%
+%%
+%% input:
+%% array elements
+%%
+%%
+%% output:
+%% \brl@char@block{height}{depth}{width}{space flag}{hline rows}{{...}...{...}}
+%%
+
+
+\newcount\brl@array@rownum
+\newcount\brl@array@colnum
+\newcount\brl@array@maxcolnum
+\newcount\brl@array@maxrownum
+\newcount\brl@array@maxcharnum
+
+\newcount\brl@array@rulenum
+\newcount\brl@array@matnum% replacement char
+\newcount\brl@array@iternum
+\newcount\brl@array@depth
+\newcount\brl@array@height
+
+
+\newcount\brl@array@scline
+\newcount\brl@array@currscline
+
+
+\newif\ifbrl@array@bvskip% before vskip
+\newif\ifbrl@array@avskip% after vskip
+\newif\ifbrl@array@space
+
+\def\brl@array_appendruletoks#1{\brl@array@ruletoks\expandafter{\the\brl@array@ruletoks#1}}
+\newtoks\brl@array@ruletoks
+
+\def\brl@array_appendrulealltoks#1{\brl@array@rulealltoks\expandafter{\the\brl@array@rulealltoks#1}}
+\newtoks\brl@array@rulealltoks
+
+
+\def\brl@array_appendtoks#1{\brl@array@toks\expandafter{\the\brl@array@toks#1}}
+\newtoks\brl@array@toks
+
+
+\def\brl@array_appendhlltoks#1{\brl@array@hlltoks\expandafter{\the\brl@array@hlltoks#1}}
+\newtoks\brl@array@hlltoks
+
+\def\brl@array_appendhlrtoks#1{\brl@array@hlrtoks\expandafter{\the\brl@array@hlrtoks#1}}
+\newtoks\brl@array@hlrtoks
+
+
+\def\brl@array_init_width{%
+  \ifnum\brl@bse@width>\count@%
+    \@namedef{brl@array@maxcharnum_\the\count@}{0}%
+    \@namedef{brl@array@vdat_\the\count@}{.}% default no line
+    \@namedef{brl@array@vline_\the\count@}{0}% default no line
+    \@namedef{brl@array@vrule_0_\the\count@}{0}%
+    \advance\count@\@ne%
+    \expandafter\brl@array_init_width%
+  \fi%
+}
+
+\def\brl@array_init_heightdepth{%
+  \ifnum\brl@bse@height_virtual>\count@%
+    \@namedef{brl@array@totalheight_\the\count@}{0}%
+    \@namedef{brl@array@totaldepth_\the\count@}{1}%
+    \@namedef{brl@array@mul_\the\count@ _0}{0}%
+    \@namedef{brl@array@hline_\the\count@}{0}% default no line
+    \@namedef{brl@array@hrule_\the\count@ _0}{0}%
+    \advance\count@\@ne%
+    \expandafter\brl@array_init_heightdepth%
+  \fi%
+}
+
+\def\brl@array_init_screen{%
+  \ifnum\count@<\brl@bse@height_virtual\relax%
+    \@namedef{brl@array@content_\the\count@}{}%
+    \advance\count@\@ne%
+    \expandafter\brl@array_init_screen%
+  \fi%
+}
+
+%
+\count@\z@%
+\brl@array_init_width%
+\count@\z@%
+\brl@array_init_heightdepth%
+
+\count@=-\brl@bse@height_virtual\relax%
+\brl@array_init_screen%
+%
+
+
+\def\brl@array_appendchar#1{% append #1 to \csname brl@array@content_#1\endcsname
+  \expandafter\brl@array_appendchar_\csname brl@array@content_#1\endcsname%
+}
+
+\def\brl@array_appendchar_#1#2{% append #1 to \csname brl@array@content_#1\endcsname
+  \edef#1{#1#2}%
+}
+
+
+
+\def\brl@array@@hline{\brl@array_cmd_hline}
+\def\brl@array@@cline{\brl@array_cmd_cline}
+\def\brl@array@@nline{\brl@array_cmd_nline}
+\def\brl@array@@multicolumn{\brl@array_cmd_multicolumn}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@array_format_prep_rowcol#1\brl@end
+% {|c||c|cc..|}{... & ... & ...}...
+%
+% \brl@array_format@format: {|c||c|cc..|}
+%
+% and the following
+%
+% \brl@array_prep_rowcol#1\brl@end
+% {... & ... & ...}...
+%
+% preserve all the followings so that nestings of arrays are allowed.
+% 
+%
+% determine \brl@array@maxrownum, \brl@array@maxcolnum
+%
+%
+% \brl@array@pele_(rownum)_(colnum) : parsed element or undefined
+% for multicolumn the element is stored in the last column.
+%
+% \brl@array@mul_(rownum)_(colnum)    = colnum' : colomns colnum -- colnum' or undefined
+%     ...
+% \brl@array@mul_(rownum)_(colnum'-1) = colnum' : colomns colnum -- colnum'
+% \brl@array@mul_(rownum)_(colnum')   = colnum  : colomns colnum -- colnum'
+%
+% \brl@array@hdat_(rownum) : {A-B}...{X-Y} if defined
+% \brl@array@hline_(rownum) : default number of lines, default 0
+% \brl@array@vdat_(colnum) : default type of lines | or . 
+% \brl@array@vline_(colnum) : default number of lines, default 0
+% \brl@array@vdat_(rownum)_(column) : number of |, which appears only in multicolumn
+%
+%
+%
+% rownum, colnum 0 ...
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@array_format: parse the format
+%
+% if the format is needed, do the following
+%
+% \count@\z@
+% \brl@array@maxcharnum\z@
+% \expandafter\brl@array_format\brl@array_format@format\brl@end
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_cons_elements
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@pele_(rownum)_(colnum) : parsed element or undefined
+% \brl@array@mul_(rownum)_(colnum) : colnum' : colomns colnum -- colnum'
+%
+% output:
+% \brl@array@ele_(rownum)_(colnum) : formatted in one line
+% \brl@array@charnum_(rownum)_(colnum) : charnum
+% \brl@array@totalheight_(rownum)_(colnum) : height
+% \brl@array@totaldepth_(rownum)_(colnum) : depth
+% \brl@array@bvskip_(rownum)_(colnum) : bvskip
+% \brl@array@avskip_(rownum)_(colnum) : avskip
+% \brl@array@mul_(rownum)_(colnum)    : colnum'
+%
+% skiped (row,col) by multicolumn is defined as empty.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@array_cons_rules
+%
+% input :
+% \brl@array@hdat_(rownum) : cline data.
+% \brl@array@hline_(rownum) : default number of lines
+% \brl@array@vdat_(colnum) : default type of lines | or . 
+% \brl@array@vline_(colnum) : default number of lines
+% \brl@array@vdat_(rownum)_(column) : number of |, which appears only in multicolumn
+% \brl@array@mul_(rownum)_(colnum)
+%
+% output:
+% \brl@array@vrulenum
+% \brl@array@hurulenum : above the standard line
+% \brl@array@hdrulenum : below the standard line
+% \brl@array@hrule_(rownum)_(colnum) : number of lines
+% \brl@array@vrule_(rownum)_(colnum) : number of lines
+% \brl@array@crule_(rownum)_(colnum) : udlr
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_set_maxcharnum
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@charnum_(rownum)_(colnum) : charnum
+% \brl@array@mul_(rownum)_(colnum)    = colnum' : colomns colnum -- colnum'
+% \brl@array@vline_(colnum)
+%
+% output:
+% \brl@array@maxcharnum_(colnum) : max char number of the column
+% \brl@array@sumcharnum_(rownum)_(colnum) : maxchanum_{b-1} + vline_{b-1} ... + maxcharnum_a + vline_a
+% for multicolumn a...b with
+% 
+% ignore charnum_a, charnum_{a+1}, ... charnum_{b-1}
+%
+% charnum_b = true charnum_a - maxchanum_{b-1} - vline_{b-1} ... - maxcharnum_a - vline_a
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_arr_elements
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@pele_(rownum)_(colnum) : parsed element
+% \brl@array@charnum_(rownum)_(colnum) : charnum
+% \brl@array@totalheight_(rownum)_(colnum) : height
+% \brl@array@totaldepth_(rownum)_(colnum) : depth
+% \brl@array@vrulenum : total number of vrules (width)
+% \brl@array@mul_(rownum)_(colnum)    = colnum' : colomns colnum -- colnum'
+% \brl@array@sumcharnum_(rownum)_(colnum) : sumcharnum
+% 
+% output:
+% \brl@array@mele_(rownum)_(colnum) : replaced pele
+% \brl@array@maxcharnum_(colnum) : max char number of the column 
+% \brl@array@width : width
+% 
+% if the width of an element is too long, then the element is replaced by a capital greek. \Alpha, \Beta, etc.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% after removing long elements, the followings are determined.
+%
+% \brl@array_set_heightdepth
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@totalheight_(rownum)_(colnum) : height
+% \brl@array@totaldepth_(rownum)_(colnum) : depth
+% \brl@array@bvskip_(rownum)_(colnum) : bvskip
+% \brl@array@avskip_(rownum)_(colnum) : avskip
+%
+% output:
+% \brl@array@totalheight_(rownum) :
+% \brl@array@totaldepth_(rownum) :
+% \brl@array@totalheight : height of the array
+% \brl@array@totaldepth : depth of the array
+% \brl@array@bvskip : skip used outside the array
+% \brl@array@avskip : skip used outside the array
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_hrules
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@hrule_(rownum)_(colnum) : number of lines
+% \brl@array@vrule_(rownum)_(colnum) : number of lines
+% \brl@array@crule_(rownum)_(colnum) : udlr
+% \brl@array@hline_(rownum) : default number of lines
+% \brl@array@vline_(colnum) : default number of lines
+%
+% output:
+% \brl@array@allhrule_(rownum) : rule all toks : e.g. ┏━━━━┓  ┣━━━━━┳━━━━━━
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_cons_rowcol
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@ele_(rownum)_(colnum) : formatted in one line
+% \brl@array@totalheight_(rownum)_(colnum) : height of the element
+% \brl@array@totaldepth_(rownum)_(colnum) : depth of the element
+% \brl@array@totalheight_(rownum) : height of the row
+% \brl@array@totaldepth_(rownum) : depth of the row
+% \brl@array@totalheight : height of the array
+% \brl@array@totaldepth : depth of the array
+% \brl@array@hrule_(rownum)_(colnum) : number of lines
+% \brl@array@vrule_(rownum)_(colnum) : number of lines
+% \brl@array@crule_(rownum)_(colnum) : udlr
+% \brl@array@hline_(rownum) : default number of lines
+% \brl@array@vline_(colnum) : default number of lines
+% \brl@array@allhrule_(rownum) : rule all toks : e.g. ┏━━━━┓  ┣━━━━━┳━━━━━━
+% 
+% output:
+% \brl@array@toks : all contents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@array_cons_mele
+%
+% input:
+% \brl@array@mele_(rownum)_(colnum) : replaced pele
+%
+% output:
+% \brl@text@mattoks
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@array_cons_hltoks
+%
+% input:
+% \brl@array@maxrownum
+% \brl@array@maxcolnum
+% \brl@array@totalheight_(rownum) : height of the row
+% \brl@array@totaldepth_(rownum) : depth of the row
+% \brl@array@totalheight : height of the array
+% \brl@array@totaldepth : depth of the array
+% \brl@array@crule_(rownum)_(colnum) : udlr
+% \brl@array@hline_(rownum) : default number of lines
+%
+% output:
+% \brl@array@hlltoks, \brl@array@hlrtoks
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@array_prep_rowcol#1\brl@end
+%%
+%% input:
+%% matrix elements
+%% 
+%% output:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@pele_(rownum)_(colnum) : parsed element. undefined implies empty.
+%%
+% \brl@array@mul_(rownum)_(colnum')   = colnum  : colomns colnum -- colnum'
+%
+% \brl@array@hdat_(rownum) : {A-B}...{X-Y} if defined
+% \brl@array@vline_(colnum) : default number of lines
+% \brl@array@hline_(rownum) : default number of lines
+%
+
+\def\brl@array_format_prep_rowcol#1{% format
+  \def\brl@array_format@format{#1}%
+  \brl@array_prep_rowcol%
+}
+
+
+\protected\def\brl@array@cmd_c#1#2{\expandafter\def\csname brl@array@hdat_#1\endcsname{#2}}
+\protected\def\brl@array@cmd_h#1#2{\expandafter\def\csname brl@array@hline_#1\endcsname{#2}}
+\protected\def\brl@array@cmd_p#1#2{\expandafter\def\csname brl@array@pele_#1\endcsname{#2}}
+\protected\def\brl@array@cmd_m#1#2{\expandafter\def\csname brl@array@mul_#1\endcsname{#2}}
+\protected\def\brl@array@cmd_v#1#2#3{%
+  \expandafter\def\csname brl@array@vdat_#1_#2\endcsname{#3}%
+  \ifnum\csname brl@array@vline_#2\endcsname<#3\relax%
+    \expandafter\def\csname brl@array@vline_#2\endcsname{#3}%
+  \fi%
+}
+
+
+\def\brl@array_prep_rowcol{%
+  \bgroup% all elements are grouped. The grouping is needed because the contents of cmd_c...cmd_v above should be kept as default while \math or \text is executed in the following.
+    \brl@array@toks{}% store defs
+    % \brl@array@maxrownum\z@%
+    \brl@array@maxcolnum\z@%
+    \brl@array@rownum\z@%
+    \brl@array_prep_rowcol_%
+}%
+\def\brl@array_prep_rowcol_end{%
+    \xdef\brl@tmp{%
+      \the\brl@array@toks%
+      \brl@array@maxrownum\the\brl@array@rownum\relax%
+      \brl@array@maxcolnum\the\brl@array@maxcolnum\relax%
+    }%
+  \egroup%
+  \brl@tmp%
+}
+
+\def\brl@array_prep_rowcol_#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end% 
+    % \brl@array@maxrownum\brl@array@rownum%
+    %
+    %
+    % \edef\brl@array_next{%
+    %   \egroup% group is closed here.
+    %   \the\brl@array@toks%
+    %   % \brl@array@maxrownum\the\brl@array@maxrownum\relax%
+    %   \brl@array@maxrownum\the\brl@array@rownum\relax%
+    %   \brl@array@maxcolnum\the\brl@array@maxcolnum\relax%
+    % }%
+    \def\brl@array_next{\brl@array_prep_rowcol_end}%
+  \else%
+    % 
+    \ifx\brl@tmp\brl@array@@cline% the next consists of cline data.
+      \def\brl@array_next{\brl@array_prep_rowcol_cline}%
+    \else%
+      \ifx\brl@tmp\brl@array@@hline%
+        \count@\@ne%
+        \def\brl@array_next{\brl@array_prep_rowcol_hline}%
+        % 
+      \else%
+        % 
+        \def\brl@array_next{\brl@array_prep_rowcol_}%
+        % 
+        \advance\brl@array@rownum\@ne%
+        %
+        \brl@array@colnum\z@%
+        \brl@array_prep_rowcol_element#1&\brl@end&%
+        \ifnum\brl@array@maxcolnum<\brl@array@colnum%
+          \brl@array@maxcolnum\brl@array@colnum%
+        \fi%
+      \fi%
+    \fi%
+  \fi%
+  \brl@array_next%
+}%
+
+% \brl@array@hline_(rownum) : default number of lines
+% \brl@array@hdat_(rownum) : {A-B}...{X-Y}
+
+\def\brl@array_prep_rowcol_cline#1{%
+  % 
+  \edef\brl@tmp{{\brl@array@cmd_c{\the\brl@array@rownum}{#1}}}%
+  \expandafter\brl@array_appendtoks\brl@tmp%
+  \brl@array_prep_rowcol_%
+}
+
+\def\brl@array_prep_rowcol_hline#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@array@@hline%
+    \advance\count@\@ne%
+    \expandafter\brl@array_prep_rowcol_hline%
+  \else%
+    \edef\brl@tmp{{\brl@array@cmd_h{\the\brl@array@rownum}{\the\count@}}}%
+    \expandafter\brl@array_appendtoks\brl@tmp%
+    \def\brl@tmp{\brl@array_prep_rowcol_{#1}}%
+    \expandafter\brl@tmp%
+  \fi%
+}
+
+
+% %%
+% %% math mode
+
+\def\brl@array_prep_rowcol_element_math#1&{%
+  \def\brl@tmpcont{#1}%
+  \ifx\brl@tmpcont\brl@@end% end line
+  \else%
+    \advance\brl@array@colnum\@ne%
+    %
+    \ifx\brl@tmpcont\empty%
+    \else%
+      \brl@array_prep_rowcol_element_multicolumn#1\brl@end% \brl@tmpcont may be changed.
+      %
+      %
+      \expandafter\brl@math\expandafter{\brl@tmpcont}% math
+      \edef\brl@tmp{{\brl@array@cmd_p{\the\brl@array@rownum _\the\brl@array@colnum}{\the\brl@math@toks}}}% math
+      %
+      %
+      \expandafter\brl@array_appendtoks\brl@tmp%
+    \fi%
+    \expandafter\brl@array_prep_rowcol_element_math% math
+  \fi%
+}
+
+%%
+%% text mode
+
+\def\brl@array_prep_rowcol_element_text#1&{%
+  \def\brl@tmpcont{#1}%
+  \ifx\brl@tmpcont\brl@@end% end line
+  \else%
+    \advance\brl@array@colnum\@ne%
+    %
+    \ifx\brl@tmpcont\empty% space or empty
+    \else%
+      \brl@array_prep_rowcol_element_multicolumn#1\brl@end% \brl@tmpcont may be changed.
+      %
+      %
+      \expandafter\brl@text\expandafter{\brl@tmpcont}% text
+      \edef\brl@tmp{{\brl@array@cmd_p{\the\brl@array@rownum _\the\brl@array@colnum}{\the\brl@text@toks}}}% text
+      %
+      %
+      \expandafter\brl@array_appendtoks\brl@tmp%
+    \fi%
+    \expandafter\brl@array_prep_rowcol_element_text% text
+  \fi%
+}
+
+
+
+\def\brl@array_prep_rowcol_element_multicolumn#1#2\brl@end{%
+  \def\brl@tmpcmd{#1}%
+  %
+  %
+  \edef\brl@array@mulstart{\the\brl@array@colnum}%
+  \ifx\brl@tmpcmd\brl@array@@multicolumn%
+    % 
+    \brl@array_prep_rowcol_element_multicolumn_#2%
+    % 
+    % 
+  \fi%
+  \edef\brl@tmp{{\brl@array@cmd_m{\the\brl@array@rownum _\the\brl@array@colnum}{\brl@array@mulstart}}}%
+  \expandafter\brl@array_appendtoks\brl@tmp%
+}
+
+%%
+%%
+%%
+%%
+\def\brl@array_prep_rowcol_element_multicolumn_#1#2#3{% #1: col, #2 format, #3: contents
+  %
+  %
+  %
+  \edef\brl@array@mulend{\the\numexpr\brl@array@colnum+#1\relax}%
+  % 
+  % 
+  \brl@array_prep_rowcol_element_format#2\brl@end%
+  \brl@array_prep_rowcol_element_multicolumn_loop% colnum ... colnum+#1-1
+  % colnum+#1
+  %
+  %
+  % #2 is treated here
+  %
+  \def\brl@tmpcont{#3}%
+  %
+}
+
+
+\def\brl@array_prep_rowcol_element_format{%
+  \count@\brl@array@colnum%
+  \advance\count@\m@ne% |||c|| -> colnum-1 = 3, mulend = 2 
+  \brl@array@maxcharnum\z@%
+  \brl@array_prep_rowcol_element_format_loop%
+}
+
+\def\brl@array_prep_rowcol_element_format_loop#1{%
+  \csname brl@array_prep_rowcol_element_format@\string#1\endcsname%
+}
+
+\@namedef{brl@array_prep_rowcol_element_format@\string\brl@end}{%
+  \edef\brl@tmp{{\brl@array@cmd_v{\the\brl@array@rownum}{\the\count@}{\the\brl@array@maxcharnum}}}% overwrite
+  \expandafter\brl@array_appendtoks\brl@tmp%
+}
+
+\@namedef{brl@array_prep_rowcol_element_format@|}{%
+  \advance\brl@array@maxcharnum\@ne% | -> +1 
+  \brl@array_prep_rowcol_element_format_loop%
+}
+
+\def\brl@array_prep_rowcol_element_format@default{% c,l,r
+  \edef\brl@tmp{{\brl@array@cmd_v{\the\brl@array@rownum}{\the\count@}{\the\brl@array@maxcharnum}}}% overwrite
+  \expandafter\brl@array_appendtoks\brl@tmp%
+  %
+  \count@\brl@array@mulend\relax%
+  \brl@array@maxcharnum\z@%
+  \brl@array_prep_rowcol_element_format_loop%
+}
+\@namedef{brl@array_prep_rowcol_element_format@c}{%
+  \brl@array_prep_rowcol_element_format@default%
+}
+\@namedef{brl@array_prep_rowcol_element_format@r}{%
+  \brl@array_prep_rowcol_element_format@default%
+}
+\@namedef{brl@array_prep_rowcol_element_format@l}{%
+  \brl@array_prep_rowcol_element_format@default%
+}
+\@namedef{brl@array_prep_rowcol_element_format@p}#1{%
+  \brl@array_prep_rowcol_element_format@default%
+}
+
+\def\brl@array_prep_rowcol_element_multicolumn_loop{%
+  \ifnum\brl@array@colnum<\brl@array@mulend% colnum ... colnum+#1-1
+%    \edef\brl@tmp{{\brl@array@cmd_p{\the\brl@array@rownum _\the\brl@array@colnum}{\noexpand\empty}%
+    \edef\brl@tmp{{\brl@array@cmd_p{\the\brl@array@rownum _\the\brl@array@colnum}{}%
+        \brl@array@cmd_m{\the\brl@array@rownum _\the\brl@array@colnum}{\brl@array@mulend}}}%
+    \expandafter\brl@array_appendtoks\brl@tmp%
+    %
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_prep_rowcol_element_multicolumn_loop%
+  \fi%
+}
+
+
+
+
+%%
+%% \brl@array@vline_0...\brl@array@maxcolumn : default number of lines
+%% \brl@array@vdat_0...\brl@array@maxcolumn : default type of lines | or .
+%%
+%% e.g. 
+%% ccc -> 0000 & ....
+%% |cc||c| -> 1021 & |.||
+%%
+%% notice: only `. & 0' appears here while \multicolumn may yield `. & 1' etc.
+%%
+\def\brl@array_format{% init
+  \count@\z@%
+  \brl@array@maxcharnum\z@%
+  \brl@array_format_loop%
+}
+
+
+\def\brl@array_format_loop#1{%
+  \csname brl@array_format@\string#1\endcsname%
+}
+
+\@namedef{brl@array_format@\string\brl@end}{%
+  \ifnum\brl@array@maxcharnum>\z@%
+    \expandafter\def\csname brl@array@vdat_\the\count@\endcsname{|}%
+    \expandafter\edef\csname brl@array@vline_\the\count@\endcsname{\the\brl@array@maxcharnum}%
+  \fi%
+}
+
+\@namedef{brl@array_format@|}{%
+  \advance\brl@array@maxcharnum\@ne% | -> +1 
+  \brl@array_format_loop%
+}
+
+\def\brl@array_format@default{% c,l,r
+  \ifnum\brl@array@maxcharnum>\z@%
+    \expandafter\def\csname brl@array@vdat_\the\count@\endcsname{|}%
+    \expandafter\edef\csname brl@array@vline_\the\count@\endcsname{\the\brl@array@maxcharnum}%
+  \fi%
+  \advance\count@\@ne%
+  \brl@array@maxcharnum\z@%
+  \brl@array_format_loop%
+}
+\@namedef{brl@array_format@c}{%
+  \brl@array_format@default%
+}
+\@namedef{brl@array_format@r}{%
+  \brl@array_format@default%
+}
+\@namedef{brl@array_format@l}{%
+  \brl@array_format@default%
+}
+\@namedef{brl@array_format@p}#1{%
+  \brl@array_format@default%
+}
+% \@namedef{brl@array_format@m}#1{%
+%   \brl@array_format@default%
+% }
+% \@namedef{brl@array_format@b}#1{%
+%   \brl@array_format@default%
+% }
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% \brl@array_cons_elements
+
+%% input:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@pele_(rownum)_(colnum) : parsed element or undefined
+%% \brl@array@mul_(rownum)_(colnum) : colnum' : colomns colnum -- colnum'
+%%
+%% output: fill the following for all indices.
+%% \brl@array@ele_(rownum)_(colnum) : formatted in one line
+%% \brl@array@charnum_(rownum)_(colnum) : charnum
+%% \brl@array@totalheight_(rownum)_(colnum) : height
+%% \brl@array@totaldepth_(rownum)_(colnum) : depth
+%% \brl@array@avskip_(rownum)_(colnum) : avskip
+%% \brl@array@bvskip_(rownum)_(colnum) : bvskip
+%% \brl@array@mul_(rownum)_(colnum) : multicolumn
+
+\brl@def{brl@array@hline_0}{brl@array@hline_1}\brl@end{%
+  \def\brl@array_cons_elements{%
+    \let\brl@array@prevhline#1%
+    \let\brl@array@nexthline#2%
+    \brl@array@rownum\@ne%
+    \brl@array_cons_elements_row%
+  }
+}
+
+\def\brl@array_cons_elements_row{%
+  \brl@array@colnum\@ne%
+  \brl@array_cons_elements_col%
+  \ifnum\brl@array@rownum<\brl@array@maxrownum%
+    \advance\brl@array@rownum\@ne%
+    \let\brl@array@prevhline\brl@array@nexthline%
+    \edef\brl@array@nexthline{\csname brl@array@hline_\the\brl@array@rownum\endcsname}%
+    \expandafter\brl@array_cons_elements_row%
+  \fi%
+}
+
+\def\brl@array_cons_elements_col{%
+  \edef\brl@array@rowcol{\the\brl@array@rownum _\the\brl@array@colnum}%
+  \edef\brl@tmp{brl@array@pele_\brl@array@rowcol}%
+  %
+  \ifcsname\brl@tmp\endcsname% nonempty
+    \edef\brl@tmp{\csname\brl@tmp\endcsname}%
+    \ifx\brl@tmp\empty% this appears in the multicolumn cases.
+      \expandafter\def\csname brl@array@ele_\brl@array@rowcol\endcsname{{1}{0}{}}%
+      \expandafter\def\csname brl@array@totalheight_\brl@array@rowcol\endcsname{0}%
+      \expandafter\def\csname brl@array@totaldepth_\brl@array@rowcol\endcsname{1}%
+      \expandafter\def\csname brl@array@charnum_\brl@array@rowcol\endcsname{0}%
+      % 
+      \expandafter\def\csname brl@array@bvskip_\brl@array@rowcol\endcsname{\brl@char@bvskip@false}%
+      \expandafter\def\csname brl@array@avskip_\brl@array@rowcol\endcsname{\brl@char@avskip@false}%
+      % 
+      % 
+    \else%
+      \brl@array_cons_elements_sub% use \brl@array@rowcol and \brl@array@colnum%
+    \fi%
+  \else%
+    \expandafter\def\csname brl@array@ele_\brl@array@rowcol\endcsname{{1}{2}{\brl@code_array_blank}}%
+    \expandafter\def\csname brl@array@totalheight_\brl@array@rowcol\endcsname{0}%
+    \expandafter\def\csname brl@array@totaldepth_\brl@array@rowcol\endcsname{1}%
+    \expandafter\def\csname brl@array@charnum_\brl@array@rowcol\endcsname{2}%
+    % 
+    \expandafter\def\csname brl@array@bvskip_\brl@array@rowcol\endcsname{\brl@char@bvskip@false}%
+    \expandafter\def\csname brl@array@avskip_\brl@array@rowcol\endcsname{\brl@char@avskip@false}%
+    %
+    \expandafter\edef\csname brl@array@mul_\brl@array@rowcol\endcsname{\the\brl@array@colnum}%
+  \fi%
+  %
+  % 
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_cons_elements_col%
+  \fi%
+}
+
+
+\def\brl@array_cons_elements_sub{%
+  % \show\brl@array@rowcol
+  {%
+    %
+    \brl@array_cons_elements_appendsp%
+    %
+    \brl@array@toks\brl@tmp%
+    %
+    % 
+    \brl@format{0}{0}{\brl@array@toks}{10000}% 10000 = one line
+    %
+    %
+    \xdef\brl@tmp{\the\brl@format@alltoks}%
+    \xdef\brl@tmpcharnum{\the\brl@format@allmaxcharnum}%
+    \xdef\brl@tmpheight{\the\brl@format@totalheight}%
+    \xdef\brl@tmpdepth{\the\brl@format@totaldepth}%
+    \xdef\brl@tmpbvskip{\brl@format@bvskip}%
+    \xdef\brl@tmpavskip{\brl@format@avskip}%
+  }%
+  \expandafter\let\csname brl@array@ele_\brl@array@rowcol\endcsname\brl@tmp%
+  \expandafter\let\csname brl@array@totalheight_\brl@array@rowcol\endcsname\brl@tmpheight%
+  \expandafter\let\csname brl@array@totaldepth_\brl@array@rowcol\endcsname\brl@tmpdepth%
+  \expandafter\let\csname brl@array@charnum_\brl@array@rowcol\endcsname\brl@tmpcharnum%
+  %
+  %
+  %
+  \ifcase\brl@array@prevhline\else% if lines exist, need no bvskip
+    \def\brl@tmpbvskip{\brl@char@bvskip@false}%
+  \fi%
+  %
+  \expandafter\let\csname brl@array@bvskip_\brl@array@rowcol\endcsname\brl@tmpbvskip%
+  %
+  \ifcase\brl@array@nexthline\else% if lines exist, need no avskip
+    \def\brl@tmpavskip{\brl@char@avskip@false}%
+  \fi%
+  \expandafter\let\csname brl@array@avskip_\brl@array@rowcol\endcsname\brl@tmpavskip%
+}
+
+
+
+%% input:
+%% \brl@tmp, \brl@array@colnum
+%%
+%% math
+%%
+
+\def\brl@array_cons_elements_appendsp_math{%
+  \brl@char_space{\brl@tmp}%
+  %
+  %
+  \edef\brl@tmp{{\brl@tmp%
+      \ifnum\brl@array@colnum<\brl@array@maxcolnum% in the last column, no addtional spaces are added.
+        \ifbrl@char@space% if the element has some spaces
+          \brl@code_math_space% append one more space if the adherent delimiter is a space.
+        \fi%
+      \fi%
+    }}%
+  % 
+  % 
+}
+
+\def\brl@array_cons_elements_appendsp_text{%
+  \edef\brl@tmp{{\brl@tmp}}%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% \brl@array_cons_rules
+%
+% input :
+% \brl@array@hdat_(rownum) : cline data.
+% \brl@array@hline_(rownum) : default number of lines
+% \brl@array@vline_(colnum) : default number of lines
+% \brl@array@mul_(rownum)_(colnum)
+%
+%% output:
+%% \brl@array@vrulenum
+%% \brl@array@hurulenum : above the standard line
+%% \brl@array@hdrulenum : below the standard line
+%% \brl@array@hrule_(rownum)_(colnum) : number of lines
+%% \brl@array@vrule_(rownum)_(colnum) : number of lines
+%% \brl@array@crule_(rownum)_(colnum) : udlr
+%%
+
+
+
+\def\brl@array_cons_rules{%
+  % 
+  % 
+  \brl@array_cons_vrules% vrulescnt
+  \brl@array_cons_hrules% hrulescnt
+  \brl@array_cons_crules%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+\def\brl@array_cons_vrulescnt{% 1...\the\brl@array@maxcolnum-1
+  \ifnum\count@<\brl@array@maxcolnum%
+    %
+    \edef\brl@tmp{\csname brl@array@vline_\the\count@\endcsname}%
+    \ifnum\brl@tmp=\z@%
+      \expandafter\def\csname brl@array@vline_\the\count@\endcsname{1}%
+      \advance\brl@array@rulenum\@ne%%
+    \else
+      \advance\brl@array@rulenum\brl@tmp\relax%
+    \fi%
+    %
+    \advance\count@\@ne%
+    \expandafter\brl@array_cons_vrulescnt%
+  \fi%
+}
+
+\brl@def{brl@array@vline_0}\brl@end{%
+  \def\brl@array_cons_vrules{%
+    \brl@array@colnum\z@% 0
+    \brl@array_cons_vrules_col%
+    \brl@array@rulenum#1\relax%
+    \advance\brl@array@rulenum\csname brl@array@vline_\the\brl@array@maxcolnum\endcsname\relax% both extremal widths.
+    \count@\@ne%
+    \brl@array_cons_vrulescnt%
+    \edef\brl@array@vrulenum{\the\brl@array@rulenum}%
+  }
+}
+
+\def\brl@array_cons_vrules_col{%
+  \brl@array@rownum\@ne% 1
+  \edef\brl@tmp{\csname brl@array@vline_\the\brl@array@colnum\endcsname}% default number of lines
+  \brl@array_cons_vrules_row%
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum% maxcolnum
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_cons_vrules_col%
+  \fi%
+}
+
+
+
+\def\brl@array_cons_vrules_row{%
+  \edef\brl@array@rowcol{\the\brl@array@rownum _\the\brl@array@colnum}%
+  %
+  \expandafter\edef\csname brl@array@vrule_\brl@array@rowcol\endcsname{%
+    \ifnum\csname brl@array@mul_\brl@array@rowcol\endcsname>\brl@array@colnum%
+      0% during multicolumn, there is no vline.
+    \else%
+      \ifcsname brl@array@vdat_\brl@array@rowcol\endcsname% if specified, assign it.
+        \csname brl@array@vdat_\brl@array@rowcol\endcsname%
+      \else%
+        \if|\csname brl@array@vdat_\the\brl@array@colnum\endcsname%
+          \brl@tmp%
+        \else%
+          0%
+        \fi%
+      \fi%
+    \fi%
+  }%
+  % \expandafter\show\csname brl@array@vrule_\brl@array@rowcol\endcsname
+  % \expandafter\show\csname brl@array@vline_\the\brl@array@colnum\endcsname
+  %
+  \ifnum\brl@array@rownum<\brl@array@maxrownum%
+    \advance\brl@array@rownum\@ne%
+    \expandafter\brl@array_cons_vrules_row%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+\brl@def{brl@array@hline_0}\brl@end{%
+  \def\brl@array_cons_hrules{%
+    \brl@array@rownum\z@% 0
+    \brl@array@rulenum\z@%
+    \brl@array_cons_hrules_row%
+    % \def\brl@array@hurulenum{#1}%
+    % \edef\brl@array@hdrulenum{\the\numexpr\brl@array@rulenum-#1\relax}%
+    \edef\brl@array@hurulenum{\brl@array@oneorzero{#1}}% multihline
+    \edef\brl@array@hdrulenum{\the\numexpr\brl@array@rulenum-\brl@array@hurulenum\relax}% multihline
+  }
+}%
+
+\def\brl@array_cons_hrules_row{%
+  \brl@array@colnum\@ne% 1
+  %
+  %
+  \ifcsname brl@array@hdat_\the\brl@array@rownum\endcsname%
+    \expandafter\def\csname brl@array@hline_\the\brl@array@rownum\endcsname{1}% default number of lines
+    \advance\brl@array@rulenum\@ne%
+    \edef\brl@tmp{\csname brl@array@hdat_\the\brl@array@rownum\endcsname}%
+    \expandafter\brl@array_cons_hrules_cline\brl@tmp\brl@end%
+  \else%
+%    \edef\brl@tmp{\brl@array@oneorzero{\csname brl@array@hline_\the\brl@array@rownum\endcsname}}% default number of lines
+    \edef\brl@tmp{\brl@array@leqtwo{\csname brl@array@hline_\the\brl@array@rownum\endcsname}}% default number of lines
+    \advance\brl@array@rulenum\brl@array@oneorzero{\brl@tmp}\relax% multihline
+    % \advance\brl@array@rulenum\brl@tmp\relax%
+    \brl@array_cons_hrules_hline%
+  \fi%
+  \ifnum\brl@array@rownum<\brl@array@maxrownum% maxrownum
+    \advance\brl@array@rownum\@ne%
+    \expandafter\brl@array_cons_hrules_row%
+  \fi%
+}
+
+  
+\def\brl@array_cons_hrules_hline{%
+  \expandafter\let\csname brl@array@hrule_\the\brl@array@rownum _\the\brl@array@colnum\endcsname\brl@tmp%
+  % 
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_cons_hrules_hline%
+  \fi%
+}
+
+\def\brl@array_cons_hrules_cline#1{% {A-B}{C-D}..\brl@end
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \expandafter\brl@array_cons_hrules_cline_%
+  \else%
+    \brl@array_cons_hrules_cline_reg#1\brl@end%
+    \expandafter\brl@array_cons_hrules_cline%
+  \fi%
+}
+
+\def\brl@array_cons_hrules_cline_reg#1-#2\brl@end{%
+  \count@#1\relax%
+  \def\brl@tmp{#2}%
+  \brl@array_cons_hrules_cline_reg_loop%
+}
+
+\def\brl@array_cons_hrules_cline_reg_loop{%
+  \expandafter\def\csname brl@array@clinedat_\the\brl@array@rownum _\the\count@\endcsname{}%
+  \ifnum\brl@tmp>\count@%
+    \advance\count@\@ne%
+    \expandafter\brl@array_cons_hrules_cline_reg_loop%
+  \fi%
+}
+
+
+\def\brl@array_cons_hrules_cline_{%
+  \expandafter\edef\csname brl@array@hrule_\the\brl@array@rownum _\the\brl@array@colnum\endcsname{%
+    \ifcsname brl@array@clinedat_\the\brl@array@rownum _\the\brl@array@colnum\endcsname% cline
+      1%
+    \else%
+      0%
+    \fi%
+  }%
+  % 
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_cons_hrules_cline_%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+\def\brl@array_cons_crules{%
+  \brl@array@colnum\@ne% 1
+  \def\brl@array_cons_crules@col{0}%
+  \brl@array_cons_crules_col%
+}
+
+\def\brl@array_cons_crules_col{%
+  %
+  \edef\brl@array_cons_crules@colone{%
+    \ifnum\brl@array@colnum>\brl@array@maxcolnum%
+      0%
+    \else%
+      \the\brl@array@colnum%
+    \fi%
+  }%
+  \brl@array@rownum\@ne% 1
+  \def\brl@array_cons_crules@row{0}%
+  \brl@array_cons_crules_row%
+  \ifnum\brl@array@colnum>\brl@array@maxcolnum% maxcolnum
+  \else%
+    \let\brl@array_cons_crules@col\brl@array_cons_crules@colone%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_cons_crules_col%
+  \fi%
+}
+
+\def\brl@array_cons_crules_row{%
+  %
+  \edef\brl@array_cons_crules@rowone{%
+    \ifnum\brl@array@rownum>\brl@array@maxrownum%
+      0%
+    \else%
+      \the\brl@array@rownum%
+    \fi%
+  }%
+  \expandafter\edef\csname brl@array@crule_\brl@array_cons_crules@row _\brl@array_cons_crules@col\endcsname{% udlr
+    {\csname brl@array@vrule_\brl@array_cons_crules@row _\brl@array_cons_crules@col\endcsname}%
+    {\csname brl@array@vrule_\brl@array_cons_crules@rowone _\brl@array_cons_crules@col\endcsname}%
+    {\csname brl@array@hrule_\brl@array_cons_crules@row _\brl@array_cons_crules@col\endcsname}%
+    {\csname brl@array@hrule_\brl@array_cons_crules@row _\brl@array_cons_crules@colone\endcsname}%
+  }%
+  %
+  \ifnum\brl@array@rownum>\brl@array@maxrownum%
+  \else%
+    \let\brl@array_cons_crules@row\brl@array_cons_crules@rowone%
+    \advance\brl@array@rownum\@ne%
+    \expandafter\brl@array_cons_crules_row%
+  \fi%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% \brl@array_set_maxcharnum
+%%
+%% input:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@charnum_(rownum)_(colnum) : charnum
+%% \brl@array@mul_(rownum)_(colnum)    = colnum' : colomns colnum -- colnum'
+%%     ...
+%% \brl@array@mul_(rownum)_(colnum'-1) = colnum' : colomns colnum -- colnum'
+%% \brl@array@mul_(rownum)_(colnum')   = colnum  : colomns colnum -- colnum'
+%%
+%% \brl@array@vline_(colnum)
+
+%% output:
+%% \brl@array@maxcharnum_(colnum) : max char number of the column 
+% \brl@array@sumcharnum_(rownum)_(colnum) : maxchanum_{b-1} + vline_{b-1} ... + maxcharnum_a + vline_a
+
+\def\brl@array_set_maxcharnum{%
+  \brl@array@colnum\@ne%
+  \brl@array_set_maxcharnum_col%
+}
+
+%% set maxcharnum for all col.
+%% 
+\def\brl@array_set_maxcharnum_col{%
+  \brl@array@maxcharnum\z@%
+  \brl@array@rownum\z@%
+  \brl@array_set_maxcharnum_row%
+  \expandafter\edef\csname brl@array@maxcharnum_\the\brl@array@colnum\endcsname{\the\brl@array@maxcharnum}%
+  %
+  \advance\brl@array@colnum\@ne%
+  \ifnum\brl@array@colnum>\brl@array@maxcolnum%
+  \else%
+    \expandafter\brl@array_set_maxcharnum_col%
+  \fi%
+}
+
+%% set maxcharnum in a given col.
+%% input : 
+%%
+
+\def\brl@array_set_maxcharnum_row{%
+  \advance\brl@array@rownum\@ne%
+  \ifnum\brl@array@rownum>\brl@array@maxrownum%
+  \else%
+    %
+    \edef\brl@array@rowcol{\the\brl@array@rownum _\the\brl@array@colnum}%
+    %
+    \count@\csname brl@array@mul_\brl@array@rowcol\endcsname\relax%
+    \ifnum\count@=\brl@array@colnum% singlecolumn
+      \ifnum\csname brl@array@charnum_\brl@array@rowcol\endcsname>\brl@array@maxcharnum%
+        \brl@array@maxcharnum\csname brl@array@charnum_\brl@array@rowcol\endcsname\relax%
+      \fi%
+    \else%
+      \ifnum\count@<\brl@array@colnum% the last of multicolumn
+        %
+        \@tempcnta\z@%
+        \brl@array_set_maxcharnum_row_calc% maxcharnum_{a-1} + vline_{a-1} ...
+        % store the width in the last column
+        %
+        % \edef\brl@tmp{\the\numexpr\csname brl@array@charnum_\brl@array@rowcol\endcsname-\@tempcnta\relax}% charnum_X_a - \@tempcnta
+        %\count@\numexpr\csname brl@array@charnum_\brl@array@rowcol\endcsname-\@tempcnta\relax% charnum_X_a - \@tempcnta
+        \count@\csname brl@array@charnum_\brl@array@rowcol\endcsname%
+        \advance\count@-\@tempcnta% charnum_X_a - \@tempcnta
+        % save \@tempcnta here
+        % \showthe\count@
+        % \showthe\brl@array@maxcharnum%
+        % \show\brl@tmp
+        \expandafter\edef\csname brl@array@sumcharnum_\brl@array@rowcol\endcsname{\the\@tempcnta}%
+        %
+        %
+        % \ifnum\brl@tmp>\brl@array@maxcharnum%
+        %   \brl@array@maxcharnum\brl@tmp\relax%
+        % \fi%
+        \ifnum\count@>\brl@array@maxcharnum%
+          \brl@array@maxcharnum\count@%
+        \fi%
+      \fi%
+    \fi%
+    % 
+    \expandafter\brl@array_set_maxcharnum_row%
+  \fi%
+}
+
+\def\brl@array_set_maxcharnum_row_calc{%
+  %
+  \advance\@tempcnta\csname brl@array@maxcharnum_\the\count@\endcsname\relax%
+  \advance\@tempcnta\csname brl@array@vline_\the\count@\endcsname\relax%
+  \advance\count@\@ne%
+  \ifnum\count@<\brl@array@colnum%
+    \expandafter\brl@array_set_maxcharnum_row_calc%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% \brl@array_arr_elements
+%% 
+%% input:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@pele_(rownum)_(colnum) : parsed element
+%% \brl@array@charnum_(rownum)_(colnum) : charnum
+%% \brl@array@totalheight_(rownum)_(colnum) : height
+%% \brl@array@totaldepth_(rownum)_(colnum) : depth
+%% \brl@array@vrulenum : total number of vrules (width)
+%% \brl@array@mul_(rownum)_(colnum)    = colnum' : colomns colnum -- colnum'
+%%     ...
+%% \brl@array@mul_(rownum)_(colnum'-1) = colnum' : colomns colnum -- colnum'
+%% \brl@array@mul_(rownum)_(colnum')   = colnum  : colomns colnum -- colnum'
+% \brl@array@sumcharnum_(rownum)_(colnum) : sumcharnum
+%% 
+%% output:
+% \brl@array@mele_(rownum)_(colnum) : replaced pele
+%% \brl@array@maxcharnum_(colnum) : max char number of the column 
+% \brl@array@width : width
+%% 
+%% if the width of an element is too long, then the element is replaced by a capital greek.
+
+%%
+%% Replace long elements. At least one element is replaced at each loop.
+%% Thus the number of the iteration is at most colnum * rownum.
+%%
+\def\brl@array_arr_elements{%
+  \brl@array_arr_elements_total%
+  \advance\brl@array@maxcharnum\brl@array@vrulenum\relax% total maxcharnum+delimwidth
+  \ifnum\brl@array_maxwidth<\brl@array@maxcharnum% over the width
+    \global\advance\brl@array@matnum\@ne%
+    \edef\brl@array@matsym{\csname brl@array@matsym_\the\brl@array@matnum\endcsname}%
+    \brl@array@iternum\@ne% iteration counter
+    \edef\brl@array@maxiternum{\the\numexpr\brl@array@maxcolnum*\brl@array@maxrownum\relax}% max iteration number = colnum * rownum
+    \expandafter\brl@array_arr_elements_%
+  \fi%
+  \edef\brl@array@width{\the\brl@array@maxcharnum}%
+}
+
+\def\brl@array_arr_elements_{%
+  \brl@array@colnum\brl@array@maxcharcolnum%
+  \brl@array@rownum\@ne%
+  %
+  \brl@array_arr_elements_replace_tmpl%
+  %
+  \brl@array_set_maxcharnum% reset maxcharnum for \brl@array@colnum.
+  % 
+  \brl@array_arr_elements_total%
+  \advance\brl@array@maxcharnum\brl@array@vrulenum\relax% total maxcharnum+delimwidth
+  \ifnum\brl@array_maxwidth<\brl@array@maxcharnum% to do to do
+    \advance\brl@array@iternum\@ne%
+    \ifnum\brl@array@maxiternum<\brl@array@iternum%
+      \PackageError{jmbraille}{The array is too big. Shorten some elements}{}%
+    \fi%
+    \expandafter\brl@array_arr_elements_%
+  \fi%
+}
+
+
+
+\def\brl@array_arr_elements_replace_tmpl{%
+  \edef\brl@array@rowcol{\the\brl@array@rownum _\the\brl@array@colnum}%
+  \edef\brl@array@replrowcol{\csname brl@array@mul_\brl@array@rowcol\endcsname}%
+  % 
+  %
+  \ifnum\brl@array@replrowcol<\brl@array@colnum% the last of multicolumn
+%    \edef\brl@tmp{\the\numexpr\csname brl@array@charnum_\brl@array@rowcol\endcsname-\csname brl@array@sumcharnum_\brl@array@rowcol\endcsname\relax}%
+    \count@\numexpr\csname brl@array@charnum_\brl@array@rowcol\endcsname-\csname brl@array@sumcharnum_\brl@array@rowcol\endcsname\relax%
+  \else%
+    % \edef\brl@tmp{\csname brl@array@charnum_\brl@array@rowcol\endcsname}%
+    \count@\csname brl@array@charnum_\brl@array@rowcol\endcsname\relax%
+  \fi%
+  %
+  %
+  % \ifnum\brl@array@maxmaxcharnum=\brl@tmp\relax%
+  \ifnum\brl@array@maxmaxcharnum=\count@%
+    %
+    %
+    % \edef\brl@tmp{\brl@math_cmd_normalfont\brl@array@matsym _{\the\brl@array@rownum\brl@math_cmd_empty\brl@array@replrowcol}}% M_{mn}
+    \brl@math_strtodigits{\the\brl@array@rownum}%
+    \let\brl@array@rowdig\brl@math@result%
+    \brl@math_strtodigits{\brl@array@replrowcol}%
+%    \edef\brl@tmp{\brl@array@matsym\the\brl@array@rownum\brl@math_cmd_empty\brl@array@replrowcol}% Mmn
+%    \edef\brl@tmp{\brl@array@matsym\brl@array@rowdig\brl@math_cmd_empty\brl@math@result}% Mmn
+    \edef\brl@tmp{\brl@array@matsym\brl@array@rowdig\brl@math_cmd{empty}{}\brl@math@result}% Mmn
+    %
+    {% the following depends on math or text
+      \brl@array_arr_elements_replace% \brl@tmp, \brl@tmpchar
+    }%
+    \edef\brl@tmpchar{{\brl@tmpchar\csname brl@array@pele_\brl@array@rowcol\endcsname}}% M_{mn}=...
+    %
+    %
+    % 
+    \expandafter\let\csname brl@array@mele_\the\brl@array@rownum _\brl@array@replrowcol\endcsname\brl@tmpchar% pele -> mele
+    % 
+    \expandafter\let\csname brl@array@pele_\brl@array@rowcol\endcsname\brl@tmp% M_{mn}
+    \brl@array_cons_elements_sub%
+  \fi%
+  \advance\brl@array@rownum\@ne%
+  \ifnum\brl@array@rownum>\brl@array@maxrownum%
+  \else%    
+    \expandafter\brl@array_arr_elements_replace_tmpl%
+  \fi%
+}
+
+
+
+
+%% math
+%% A12 = ... etc.
+\def\brl@array_arr_elements_replace_math{%
+  % 
+  % 
+  \expandafter\brl@math\expandafter{\brl@tmp}%
+  % 
+  % 
+  % 
+  \xdef\brl@tmp{\the\brl@math@toks}%
+  % Notice!!! directly write "=".
+  % 
+  % 
+  \xdef\brl@tmpchar{\the\brl@math@toks\brl@code_math_equal}%
+}
+
+%% text
+%%
+
+\def\brl@array_arr_elements_replace_text{%
+  % 
+  %
+  \expandafter\brl@math\expandafter{\brl@tmp}%
+  % 
+  % 
+  \xdef\brl@tmp{\brl@code_math_equationsign\the\brl@math@toks}%
+  % Notice!!! directly write ":".
+  %
+  % 
+  \xdef\brl@tmpchar{\brl@code_math_equationsign\the\brl@math@toks\brl@code_math_altcolon}%
+}
+
+
+
+%% \brl@array_arr_elements_total
+%%
+%% output :
+%% \brl@array@maxcharcolnum : colnum of maxcharnum
+%% \brl@array@maxmaxcharnum : max of maxcharnum
+%% \brl@array@maxcharnum : total width
+
+
+\def\brl@array_arr_elements_total{%
+  \brl@array@maxcharnum\z@%
+  \def\brl@array@maxmaxcharnum{0}%
+  \brl@array@colnum\@ne%
+  \brl@array_arr_elements_total_%
+}
+
+\def\brl@array_arr_elements_total_{%
+  \edef\brl@tmp{\csname brl@array@maxcharnum_\the\brl@array@colnum\endcsname}%
+  \advance\brl@array@maxcharnum\brl@tmp\relax%
+  \ifnum\brl@array@maxmaxcharnum<\brl@tmp\relax%
+    \let\brl@array@maxmaxcharnum\brl@tmp%
+    \edef\brl@array@maxcharcolnum{\the\brl@array@colnum}%
+  \fi%
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_arr_elements_total_%
+  \fi%
+}
+
+  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+%% \brl@array_set_heightdepth
+%%
+%% input:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@totalheight_(rownum)_(colnum) : height
+%% \brl@array@totaldepth_(rownum)_(colnum) : depth
+%% \brl@array@bvskip_(rownum)_(colnum) : bvskip
+%% \brl@array@avskip_(rownum)_(colnum) : avskip
+%%
+%% output:
+%% \brl@array@totalheight_(rownum) :
+%% \brl@array@totaldepth_(rownum) :
+%% \brl@array@totalheight : height of the array
+%% \brl@array@totaldepth : depth of the array
+%% \brl@array@bvskip : skip used outside the array
+%% \brl@array@avskip : skip used outside the array
+
+\brl@def{brl@array@totaldepth_1}{brl@array@totalheight_1}\brl@end{%
+\def\brl@array_set_heightdepth{%
+  \brl@array@rownum\@ne%
+  %
+  %
+  \brl@array_set_heightdepth_col% the first row
+  %
+  % save bvskip
+  \edef\brl@array@bvskip{% it is used for bvskip above the array
+    \ifbrl@array@bvskip% current bvskip
+      \brl@char@bvskip@true%
+    \else%
+      \brl@char@bvskip@false%
+    \fi%
+  }%
+  % save avskip
+  \edef\brl@array@avskip{%
+    \ifbrl@array@avskip% current avskip
+      \brl@char@avskip@true%
+    \else%
+      \brl@char@avskip@false%
+    \fi%
+  }%
+  %
+  %
+  % 
+  %
+  %
+  \edef#1{\the\brl@array@depth}%
+  \edef#2{\the\brl@array@height}%
+  % 
+  \edef\brl@array@totaldepth{\the\numexpr\brl@array@depth+\brl@array@hdrulenum\relax}% line
+  % 
+  \edef\brl@array@totalheight{\the\numexpr\brl@array@height-\brl@array@hurulenum\relax}% line
+  \brl@array_set_heightdepth_row%
+}
+}
+%% 
+%% 
+\def\brl@array_set_heightdepth_row{%
+  \advance\brl@array@rownum\@ne%
+  %
+  \ifnum\brl@array@rownum>\brl@array@maxrownum%
+  \else%
+    \brl@array_set_heightdepth_col%
+    %
+    % 
+    % 
+    \ifbrl@array@bvskip% current bvskiptrue
+      \advance\brl@array@height\m@ne% vglue is counted. This does not affect in the case of the first line.
+    \else%
+      \brl@array@avskip% previous avskiptrue
+      \ifbrl@char@avskip%
+        \advance\brl@array@height\m@ne%
+      \fi%
+    \fi%
+    %
+    %
+    \expandafter\edef\csname brl@array@totaldepth_\the\brl@array@rownum\endcsname{\the\brl@array@depth}%
+    \expandafter\edef\csname brl@array@totalheight_\the\brl@array@rownum\endcsname{\the\brl@array@height}%
+    \edef\brl@array@totaldepth{\the\numexpr\brl@array@totaldepth+\brl@array@depth-\brl@array@height\relax}%
+    % 
+    \edef\brl@array@avskip{\ifbrl@array@avskip\brl@char@avskip@true\else\brl@char@avskip@false\fi}% save avskip
+    %
+    %
+    \expandafter\brl@array_set_heightdepth_row%
+  \fi%
+}
+
+%%
+%% \brl@array_set_heightdepth_col
+%%
+%% set \brl@array@height, \brl@array@depth
+%% \brl@array@avskiptrue, false
+%% \brl@array@bvskiptrue, false
+%% in a given row.
+%%
+
+\def\brl@array_set_heightdepth_col{%
+  %
+  \brl@array@height\@ne% never happens  
+  \brl@array@depth\m@ne% never happens
+  \brl@array@colnum\@ne%
+  %
+  \brl@array@bvskipfalse%
+  \brl@array@avskipfalse%
+  % 
+  \brl@array_set_heightdepth_col_%
+  % 
+}
+
+% the same algorithm as that of 
+% \@namedef{brl@format_oneline_\string\brl@char@block}
+%
+\def\brl@array_set_heightdepth_col_{%
+  \edef\brl@array@rowcol{\the\brl@array@rownum _\the\brl@array@colnum}%
+  \edef\brl@array@tmpheight{\csname brl@array@totalheight_\brl@array@rowcol\endcsname}%
+  \edef\brl@array@tmpdepth{\csname brl@array@totaldepth_\brl@array@rowcol\endcsname}%
+  %
+  %
+  \csname brl@array@bvskip_\brl@array@rowcol\endcsname%
+  \csname brl@array@avskip_\brl@array@rowcol\endcsname%
+  % 
+  \ifnum\brl@array@tmpheight>\brl@array@height%
+  \else%
+    \brl@array@height\brl@array@tmpheight\relax%
+    \ifbrl@char@bvskip%
+      \brl@array@bvskiptrue% if bvskiptrue and higher than before, bvskiptrue
+    \else%
+      \ifnum\brl@array@tmpheight<\brl@array@height%
+        \brl@array@bvskipfalse% if bvskipfalse and strictly higher than before, avskipfalse
+      \fi%
+    \fi%
+  \fi%
+  \ifnum\brl@array@tmpdepth<\brl@array@depth%
+  \else%
+    \brl@array@depth\brl@array@tmpdepth\relax%
+    \ifbrl@char@avskip%
+      \brl@array@avskiptrue% if avskiptrue and deeper than before, avskiptrue
+    \else%
+      \ifnum\brl@array@tmpdepth>\brl@array@depth%
+        \brl@array@avskipfalse% if avskipfalse and strictly deeper than before, avskipfalse
+      \fi%
+    \fi%
+  \fi%
+  % 
+  %
+  %
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_set_heightdepth_col_%
+  \fi%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_hrules
+
+%% input:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@hrule_(rownum)_(colnum) : number of lines
+%% \brl@array@vrule_(rownum)_(colnum) : number of lines
+%% \brl@array@crule_(rownum)_(colnum) : udlr
+%% \brl@array@hline_(rownum) : default number of lines
+%% \brl@array@vline_(colnum) : default number of lines
+
+
+%% output:
+%%
+%% \brl@array@allhrule_(rownum) : rule all toks : e.g. ┏━━━━┓  ┣━━━━━┳━━━━━━
+
+
+
+%%
+
+\def\brl@array_hrules{%
+  \brl@array@rownum\z@%
+  \brl@array_hrules_row%
+}
+
+\def\brl@array_hrules_row{%
+  \brl@array@rulealltoks{}%
+  \edef\brl@array_hrules@ht{\csname brl@array@hline_\the\brl@array@rownum\endcsname}%
+  %
+  %
+  \ifcase\brl@array_hrules@ht\relax% 0 : nothing
+  \or%
+    \expandafter\brl@array_hrules_line%
+  \else% more than 1
+    % \brl@array@scline\thr@@%
+    % 
+    \expandafter\brl@array_hrules_lines%
+  \fi%
+  %
+  %
+  %
+  \expandafter\edef\csname brl@array@allhrule_\the\brl@array@rownum\endcsname{\the\brl@array@rulealltoks}%
+  %
+  \ifnum\brl@array@rownum<\brl@array@maxrownum%
+    \advance\brl@array@rownum\@ne%
+    \expandafter\brl@array_hrules_row%
+  \fi%
+}
+
+
+
+\def\brl@array_hrules@p_udlr{%
+  \ifnum\brl@array_hrules@u>\z@ x\else o\fi% u
+  \ifnum\brl@array_hrules@d>\z@ x\else o\fi% d
+  \ifnum\brl@array_hrules@l>\z@ x\else o\fi% l
+  \ifnum\brl@array_hrules@r>\z@ x\else o\fi% r
+  \brl@array_hrules@ht%
+}
+\def\brl@array_hrules@p_udl{%
+  \ifnum\brl@array_hrules@u>\z@ x\else o\fi% u
+  \ifnum\brl@array_hrules@d>\z@ x\else o\fi% d
+  \ifnum\brl@array_hrules@l>\z@ x\else o\fi% l
+  x%
+  \brl@array_hrules@ht%
+}
+\def\brl@array_hrules@p_udr{%
+  \ifnum\brl@array_hrules@u>\z@ x\else o\fi% u
+  \ifnum\brl@array_hrules@d>\z@ x\else o\fi% d
+  x% l
+  \ifnum\brl@array_hrules@r>\z@ x\else o\fi% r
+  \brl@array_hrules@ht%
+}
+\def\brl@array_hrules@p_ud{%
+  \ifnum\brl@array_hrules@u>\z@ x\else o\fi% u
+  \ifnum\brl@array_hrules@d>\z@ x\else o\fi% d
+  x% l
+  x% r
+  \brl@array_hrules@ht%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@array_hrules@p_ulr{%
+  \ifnum\brl@array_hrules@u>\z@ xx\else%
+    o\ifnum\brl@array_hrules@d>\z@ x\else o\fi%
+  \fi%
+  \ifnum\brl@array_hrules@l>\z@ x\else o\fi%
+  \ifnum\brl@array_hrules@r>\z@ x\else o\fi%
+  1%
+}
+\def\brl@array_hrules@p_lr{%
+  \ifnum\brl@array_hrules@u\brl@array_hrules@d>\z@ xx\else oo\fi%
+  \ifnum\brl@array_hrules@l>\z@ x\else o\fi%
+  \ifnum\brl@array_hrules@r>\z@ x\else o\fi%
+  1%
+}
+\def\brl@array_hrules@p_dlr{%
+  \ifnum\brl@array_hrules@d>\z@ xx\else%
+    \ifnum\brl@array_hrules@u>\z@ x\else o\fi%
+  o\fi%
+  \ifnum\brl@array_hrules@l>\z@ x\else o\fi%
+  \ifnum\brl@array_hrules@r>\z@ x\else o\fi%
+  1%
+}
+
+
+\def\brl@array_hrules@p_ul{%
+  \ifnum\brl@array_hrules@u>\z@ xx\else%
+    o\ifnum\brl@array_hrules@d>\z@ x\else o\fi%
+  \fi%
+  \ifnum\brl@array_hrules@l>\z@ xx\else%
+    o\ifnum\brl@array_hrules@r>\z@ x\else o\fi%
+  \fi%
+  1%
+}
+\def\brl@array_hrules@p_u{%
+  \ifnum\brl@array_hrules@u>\z@ xx\else%
+    o\ifnum\brl@array_hrules@d>\z@ x\else o\fi%
+  \fi%
+  \ifnum\brl@array_hrules@l\brl@array_hrules@r>\z@ xx\else oo\fi%%
+  1%
+}    
+\def\brl@array_hrules@p_ur{%
+  \ifnum\brl@array_hrules@u>\z@ xx\else%
+    o\ifnum\brl@array_hrules@d>\z@ x\else o\fi%
+  \fi%
+  \ifnum\brl@array_hrules@r>\z@ xx\else%
+    \ifnum\brl@array_hrules@l>\z@ x\else o\fi%
+  o\fi%
+  1%
+}%
+
+\def\brl@array_hrules@p_l{%
+  \ifnum\brl@array_hrules@u\brl@array_hrules@d>\z@ xx\else oo\fi%%
+  \ifnum\brl@array_hrules@l>\z@ xx\else%
+    o\ifnum\brl@array_hrules@r>\z@ x\else o\fi%
+  \fi%
+  1%
+}%
+\def\brl@array_hrules@p_{%
+  \ifnum\brl@array_hrules@u\brl@array_hrules@d>\z@ xx\else oo\fi%%
+  \ifnum\brl@array_hrules@l\brl@array_hrules@r>\z@ xx\else oo\fi%%
+  1%
+}%    
+\def\brl@array_hrules@p_r{%
+  \ifnum\brl@array_hrules@u\brl@array_hrules@d>\z@ xx\else oo\fi%%
+  \ifnum\brl@array_hrules@r>\z@ xx\else%
+    \ifnum\brl@array_hrules@l>\z@ x\else o\fi%
+  o\fi%
+  1%
+}%
+
+\def\brl@array_hrules@p_dl{%
+  \ifnum\brl@array_hrules@d>\z@ xx\else%
+    \ifnum\brl@array_hrules@u>\z@ x\else o\fi%
+  o\fi%
+  \ifnum\brl@array_hrules@l>\z@ xx\else%
+    o\ifnum\brl@array_hrules@r>\z@ x\else o\fi%
+  \fi%
+  1%
+}%
+\def\brl@array_hrules@p_d{%
+  \ifnum\brl@array_hrules@d>\z@ xx\else%
+    \ifnum\brl@array_hrules@u>\z@ x\else o\fi%
+  o\fi%
+  \ifnum\brl@array_hrules@l\brl@array_hrules@r>\z@ xx\else oo\fi%%
+  1%
+}%    
+\def\brl@array_hrules@p_dr{%
+  \ifnum\brl@array_hrules@d>\z@ xx\else%
+    \ifnum\brl@array_hrules@u>\z@ x\else o\fi%
+  o\fi%
+  \ifnum\brl@array_hrules@r>\z@ xx\else%
+    \ifnum\brl@array_hrules@l>\z@ x\else o\fi%
+  o\fi%
+  1%
+}%
+
+
+\def\brl@array_hrules_line{%
+  %
+  \let\brl@array_hrules@one\brl@array_hrules@p_udlr%
+  \let\brl@array_hrules@twol\brl@array_hrules@p_udl%
+  \let\brl@array_hrules@twom\brl@array_hrules@p_ud%
+  \let\brl@array_hrules@twor\brl@array_hrules@p_udr%
+  \brl@array_hrules_oneline%
+  %
+  %
+  \brl@array@rulealltoks\brl@tmp%
+  %
+}
+
+\def\brl@array_hrules_lines{%
+  %
+  \brl@array@scline\thr@@%
+  % 
+  \let\brl@array_hrules@one\brl@array_hrules@p_ulr%
+  \let\brl@array_hrules@twol\brl@array_hrules@p_ul%
+  \let\brl@array_hrules@twom\brl@array_hrules@p_u%
+  \let\brl@array_hrules@twor\brl@array_hrules@p_ur%
+  \brl@array_hrules_oneline%
+  %
+  \brl@array@rulealltoks\brl@tmp%
+  %
+  \ifnum\brl@array_hrules@ht>\tw@% if more than 2, then middle lines exist
+    % 
+    \let\brl@array_hrules@one\brl@array_hrules@p_lr%
+    \let\brl@array_hrules@twol\brl@array_hrules@p_l%
+    \let\brl@array_hrules@twom\brl@array_hrules@p_%
+    \let\brl@array_hrules@twor\brl@array_hrules@p_r%
+    \brl@array_hrules_oneline%
+    %
+    \brl@array_hrules_lines_loop%
+  \fi%
+  %
+  \let\brl@array_hrules@one\brl@array_hrules@p_dlr%
+  \let\brl@array_hrules@twol\brl@array_hrules@p_dl%
+  \let\brl@array_hrules@twom\brl@array_hrules@p_d%
+  \let\brl@array_hrules@twor\brl@array_hrules@p_dr%
+  \brl@array_hrules_oneline%
+  %
+  \expandafter\brl@array_appendrulealltoks\brl@tmp%
+  % 
+}
+
+
+\def\brl@array_hrules_lines_loop{%
+  \expandafter\brl@array_appendrulealltoks\brl@tmp%
+  \ifnum\brl@array_hrules@ht>\brl@array@scline%
+    \advance\brl@array@scline\@ne%
+    \expandafter\brl@array_hrules_lines_loop%
+  \fi%
+}
+
+
+%% output : \brl@tmp
+%% 
+\def\brl@array_hrules_oneline{%
+  % the first corner
+  \brl@array@ruletoks{}%
+  % 
+  \edef\brl@tmp{\csname brl@array@crule_\the\brl@array@rownum _0\endcsname}%
+  %
+  % 
+  % 
+  \expandafter\brl@array_hrules_corner_first\brl@tmp% the first corner
+  %
+  %
+  % 
+  \brl@array@colnum\@ne%
+  %
+  %
+  \brl@array_hrules_oneline_loop%
+  %
+  \edef\brl@tmp{{{l}{\brl@array@width}{\the\brl@array@ruletoks}}}%
+}
+
+\def\brl@array_hrules_oneline_loop{%
+  \brl@array_hrules_hrule% hrule
+  \edef\brl@tmp{\csname brl@array@crule_\the\brl@array@rownum _\the\brl@array@colnum\endcsname}%
+  %
+  %
+  \expandafter\brl@array_hrules_corner\brl@tmp% corner
+  %
+  %
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_hrules_oneline_loop%
+  \fi%
+}
+
+%% first column
+%%
+\brl@def{brl@array@vline_0}\brl@end{%
+\def\brl@array_hrules_corner_first##1##2##3##4{% udlr
+  % 
+  % 
+  \def\brl@array_hrules@u{##1}%
+  \def\brl@array_hrules@d{##2}%
+  \def\brl@array_hrules@l{##3}%
+  \def\brl@array_hrules@r{##4}%
+  %
+  \ifcase#1\relax%
+    \let\brl@array_hrules@dat\brl@@empty%{{}}%
+  \or% 1
+    \edef\brl@array_hrules@dat{{\csname brl@code_array_rule_1\brl@array_hrules@one\endcsname}}%
+  \else%
+    \brl@array_makerule{\the\numexpr#1-\tw@\relax}{1\brl@array_hrules@twom}%
+    \edef\brl@array_hrules@dat{{%
+        \csname brl@code_array_rule_1\brl@array_hrules@twol\endcsname%
+        \brl@array@fillrule%
+        \csname brl@code_array_rule_1\brl@array_hrules@twor\endcsname%
+      }}%
+  \fi%
+  \expandafter\brl@array_appendruletoks\brl@array_hrules@dat%
+}
+}
+
+%% second column ...
+\def\brl@array_hrules_corner#1#2#3#4{% udlr
+  \edef\brl@array_hrules@wd{\csname brl@array@vline_\the\brl@array@colnum\endcsname}%
+  \def\brl@array_hrules@u{#1}%
+  \def\brl@array_hrules@d{#2}%
+  \def\brl@array_hrules@l{#3}%
+  \def\brl@array_hrules@r{#4}%
+  %
+  %
+  \ifcase\brl@array_hrules@wd\relax%
+    \let\brl@array_hrules@dat\brl@@empty%{{}}%
+  \or% 1
+    \edef\brl@array_hrules@dat{{\csname brl@code_array_rule_\brl@array_hrules@one\endcsname}}%
+  \else%
+    \brl@array_makerule{\the\numexpr\brl@array_hrules@wd-\tw@\relax}{\brl@array_hrules@twom}%
+    \edef\brl@array_hrules@dat{{%
+        \csname brl@code_array_rule_\brl@array_hrules@twol\endcsname%
+        \brl@array@fillrule%
+        \csname brl@code_array_rule_\brl@array_hrules@twor\endcsname%
+      }}%
+  \fi%
+  \expandafter\brl@array_appendruletoks\brl@array_hrules@dat%
+}
+
+\def\brl@array_hrules_hrule{%
+  % \ifnum\csname brl@array@hrule_\the\brl@array@rownum _\the\brl@array@colnum\endcsname>\z@%
+  %   \def\brl@array@pattern{xx}%
+  % \else%
+  %   \def\brl@array@pattern{oo}%
+  % \fi%
+  \edef\brl@array@pattern{%
+    \ifnum\csname brl@array@hrule_\the\brl@array@rownum _\the\brl@array@colnum\endcsname>\z@%
+      xx%
+    \else%
+      oo%
+    \fi%
+  }%
+  %
+  \brl@array_makerule{\csname brl@array@maxcharnum_\the\brl@array@colnum\endcsname}{oo\brl@array@pattern\brl@array_hrules@linenum}% multihline
+%  \brl@array_makerule{\csname brl@array@maxcharnum_\the\brl@array@colnum\endcsname}{oo\brl@array@pattern1}%
+  \expandafter\brl@array_appendruletoks\expandafter{\brl@array@fillrule}%
+}
+
+%%
+%% input : #1
+%% create #1 rules
+%% #2 : pattern
+
+\def\brl@array_makerule#1#2{%
+  \expandafter\let\expandafter\brl@array@fillrule\csname brl@array@fillrule_#2_#1\endcsname%
+  \ifx\brl@array@fillrule\relax%
+    \edef\brl@tmp{\csname brl@code_array_rule_#2\endcsname}%
+    \brl@def_fill{#1}{\brl@array@fillrule}{\brl@tmp}%
+    \global\expandafter\let\csname brl@array@fillrule_#2_#1\endcsname\brl@array@fillrule%
+  \fi%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \brl@array_cons_rowcol
+
+%% input:
+%% \brl@array@maxrownum
+%% \brl@array@maxcolnum
+%% \brl@array@ele_(rownum)_(colnum) : formatted in one line
+%% \brl@array@totalheight_(rownum)_(colnum) : height of the element
+%% \brl@array@totaldepth_(rownum)_(colnum) : depth of the element
+%% \brl@array@totalheight_(rownum) : height of the row
+%% \brl@array@totaldepth_(rownum) : depth of the row
+%% \brl@array@totalheight : height of the array
+%% \brl@array@totaldepth : depth of the array
+%% \brl@array@hrule_(rownum)_(colnum) : number of lines
+%% \brl@array@vrule_(rownum)_(colnum) : number of lines
+%% \brl@array@crule_(rownum)_(colnum) : udlr
+%% \brl@array@hline_(rownum) : default number of lines
+%% \brl@array@vline_(colnum) : default number of lines
+%% \brl@array@allhrule_(rownum) : rule all toks : e.g. ┏━━━━┓  ┣━━━━━┳━━━━━━
+
+%% output: 
+%%
+
+\def\brl@array_vrules{%
+  \ifcase\csname brl@array@vrule_\the\brl@array@rownum _\the\brl@array@colnum\endcsname\relax%
+    \def\brl@array@pattern_m{oo}%
+    \def\brl@array@pattern_d{oo}%
+  \else%
+    \def\brl@array@pattern_m{xx}%
+    \ifcase\csname brl@array@hline_\the\brl@array@rownum\endcsname\relax%
+      \ifnum\brl@array@rownum<\brl@array@maxrownum%
+        \ifcase\csname brl@array@vrule_\the\numexpr\brl@array@rownum+\@ne\relax _\the\brl@array@colnum\endcsname\relax%
+          \def\brl@array@pattern_d{xo}%
+        \else%
+          \def\brl@array@pattern_d{xx}%
+        \fi%
+      \else%
+        \def\brl@array@pattern_d{xo}%        
+      \fi%
+    \else%
+      \def\brl@array@pattern_d{xx}%
+    \fi%
+  \fi%
+  \brl@array@scline\brl@array@tdp\relax%
+  \advance\brl@array@scline\m@ne%
+  %
+  \brl@array_makerule{\csname brl@array@vline_\the\brl@array@colnum\endcsname}{\brl@array@pattern_l\brl@array@pattern_d oo1}%
+  \brl@array_appendchar{\the\brl@array@scline}{\brl@array@fillrule}%  
+  % 
+  \brl@array_makerule{\csname brl@array@vline_\the\brl@array@colnum\endcsname}{\brl@array@pattern_l\brl@array@pattern_m oo1}%
+  \brl@array_vrules_append%
+}
+
+
+
+
+\def\brl@array_vrules_append{%
+  \ifnum\brl@array@tht<\brl@array@scline%
+    \advance\brl@array@scline\m@ne%
+    \brl@array_appendchar{\the\brl@array@scline}{\brl@array@fillrule}%
+    \expandafter\brl@array_vrules_append%
+  \fi%
+}
+
+\brl@def{brl@array@allhrule_0}{brl@array@totalheight_1}\brl@end{%
+  \def\brl@array_cons_rowcol{%
+    %
+    \brl@array@spacefalse% math
+    \brl@array@rownum\@ne%
+    \brl@array@toks\expandafter{#1}% store the top hlines
+    %
+    %
+    \global\brl@array@currscline#2\relax% the top scline without the first hlines
+    % 
+    \brl@array_cons_rowcol_row%
+    %
+    % finish
+    % %
+  }%
+}
+
+\def\brl@array_cons_rowcol_row{%
+  \edef\brl@array@tht{\csname brl@array@totalheight_\the\brl@array@rownum\endcsname}%
+  \edef\brl@array@tdp{\csname brl@array@totaldepth_\the\brl@array@rownum\endcsname}%
+  %
+  %
+  {%
+    %
+    \def\brl@array@pattern_l{1}%
+    \brl@array@colnum\z@%
+    \brl@array_vrules%
+    %
+    \let\brl@array@pattern_l\empty%
+    \brl@array@colnum\@ne%
+    \brl@array_cons_rowcol_col%
+    \brl@array@scline\brl@array@tht\relax%
+    \brl@array@toks{}%
+    \brl@array_cons_copy%
+    \xdef\brl@tmp{{\the\brl@array@toks\csname brl@array@allhrule_\the\brl@array@rownum\endcsname}}%
+  }%
+  \expandafter\brl@array_appendtoks\brl@tmp%
+  % 
+  %
+  %
+  \ifnum\brl@array@rownum<\brl@array@maxrownum%
+    \advance\brl@array@rownum\@ne%
+    \expandafter\brl@array_cons_rowcol_row%
+  \fi%
+}
+
+
+\def\brl@array_cons_copy{%
+  \edef\brl@tmp{\csname brl@array@content_\the\brl@array@scline\endcsname}%
+  % \ifnum\brl@array@currscline=\z@% check math space in the baseline.
+  \ifcase\brl@array@currscline% check math space in the baseline.
+    \brl@char_space{\brl@tmp}%
+    % 
+    \ifbrl@char@space%
+      \brl@array@spacetrue%
+    \fi%
+  \fi%
+  \global\advance\brl@array@currscline\@ne%
+  %
+  \edef\brl@tmp{{{l}{\brl@array@width}{\brl@tmp}}}%
+  \expandafter\brl@array_appendtoks\brl@tmp%
+  \advance\brl@array@scline\@ne%
+  \ifnum\brl@array@tdp>\brl@array@scline%
+    \expandafter\brl@array_cons_copy%
+  \fi%
+}
+
+
+\def\brl@array_cons_rowcol_col{%
+  %
+  %
+  \brl@array_cons_rowcol_oneelem%
+  %
+  \brl@array_vrules%
+  %
+  \ifnum\brl@array@colnum<\brl@array@maxcolnum%
+    \advance\brl@array@colnum\@ne%
+    \expandafter\brl@array_cons_rowcol_col%
+  \fi%
+}
+
+
+
+\def\brl@array_cons_rowcol_oneelem{%
+  \edef\brl@tmp{\csname brl@array@mul_\the\brl@array@rownum _\the\brl@array@colnum\endcsname}%
+  % 
+  % 
+  \ifnum\brl@tmp>\brl@array@colnum% the first of multicolumn
+    \brl@array@colnum\brl@tmp\relax% go to the last of multicolumn
+    \edef\brl@array@mwd{\the\numexpr\csname brl@array@maxcharnum_\the\brl@array@colnum\endcsname+\csname brl@array@sumcharnum_\the\brl@array@rownum _\the\brl@array@colnum\endcsname\relax}%
+  \else%
+    \edef\brl@array@mwd{\csname brl@array@maxcharnum_\the\brl@array@colnum\endcsname}%
+  \fi%
+  % 
+  %\show\brl@array@mwd
+  % vfill above
+  \brl@array_makespace{\brl@array@mwd}%
+  %
+  \edef\brl@array@fillspace{\brl@format@fillspace}%
+  %
+  %
+  \brl@array@scline\brl@array@tht\relax%
+  % 
+  \count@\csname brl@array@totalheight_\the\brl@array@rownum _\the\brl@array@colnum\endcsname\relax% fill vspace
+  \brl@array_fill_col%
+  % 
+  % 
+  \edef\brl@tmp{\csname brl@array@ele_\the\brl@array@rownum _\the\brl@array@colnum\endcsname}%
+  %
+  \expandafter\brl@array_cons_rowcol_filelem\brl@tmp%
+  % vfill below
+  \count@\brl@array@tdp\relax% fill vspace
+  \brl@array_fill_col%
+  % 
+}
+
+%% fill the spaces after an element.
+%% #1 : number of rows
+%%
+\def\brl@array_cons_rowcol_filelem#1{%
+  \count@#1\relax%
+  %
+  \brl@array_cons_rowcol_filelem_%
+}
+
+\def\brl@array_cons_rowcol_filelem_#1#2{% #1 : width, #2 : content
+  \brl@array_makespace{\the\numexpr\brl@array@mwd-#1\relax}%
+  %
+  %
+  \brl@array_appendchar{\the\brl@array@scline}{#2\brl@format@fillspace}%
+  % 
+  \advance\count@\m@ne%
+  \advance\brl@array@scline\@ne%
+  \ifnum\count@>\z@%
+    \expandafter\brl@array_cons_rowcol_filelem_%
+  \fi%
+}  
+
+    
+%% fill \brl@array@fillspace
+%% \brl@array@scline ... \count@-1
+%%
+
+\def\brl@array_fill_col{% 
+  \ifnum\count@>\brl@array@scline%
+    %
+    \brl@array_appendchar{\the\brl@array@scline}{\brl@array@fillspace}%
+    \advance\brl@array@scline\@ne%
+    \expandafter\brl@array_fill_col%
+  \fi%
+}
+
+
+
+
+%%
+%%
+%%
+\def\brl@array_cons_mele{%
+  \brl@array@rownum\@ne%
+  \brl@array@colnum\@ne%
+  \def\brl@array_next{\brl@array_cons_mele_}%
+  \brl@array_cons_mele_%
+}
+  
+\def\brl@array_cons_mele_{%
+  \edef\brl@tmp{brl@array@mele_\the\brl@array@rownum _\the\brl@array@colnum}%
+  \ifcsname\brl@tmp\endcsname%
+    \edef\brl@tmp{{\csname\brl@tmp\endcsname}}%
+    %
+    \expandafter\brl@text_appendmattoks\brl@tmp%
+    %
+  \fi%
+  \advance\brl@array@rownum\@ne%
+  \ifnum\brl@array@rownum>\brl@array@maxrownum%
+    \brl@array@rownum\@ne%
+    \advance\brl@array@colnum\@ne%
+    \ifnum\brl@array@colnum>\brl@array@maxcolnum%
+      \let\brl@array_next\relax%
+    \fi%
+  \fi%
+  \brl@array_next%
+}
+
+
+
+%%
+%% construct hltoks
+%% if there is no vrules in row and row+1, and rules hrules in row,
+%% register the row.
+%%
+\def\brl@array_cons_hltoks{%
+  %
+  \brl@array@scline\brl@array@totalheight\relax%
+  %
+  %
+  \brl@array@rownum\z@%
+  \brl@array_cons_hltoks_row% rows 0...maxrownum
+  %
+  %
+  % finish
+}
+
+\def\brl@array_cons_hltoks_row{%
+  \edef\brl@tmp{\csname brl@array@crule_\the\brl@array@rownum _0\endcsname}%
+  \expandafter\brl@array_hltoks_lcorner\brl@tmp% left corner
+  % 
+  \edef\brl@tmp{\csname brl@array@crule_\the\brl@array@rownum _\the\brl@array@maxcolnum\endcsname}%
+  \expandafter\brl@array_hltoks_rcorner\brl@tmp% right corner
+  %
+  % \showthe\brl@array@scline
+  %
+  %
+  \edef\brl@tmp{\brl@array@oneorzero{\csname brl@array@hline_\the\brl@array@rownum\endcsname}}%
+  \advance\brl@array@rownum\@ne%
+  %
+  %
+  \advance\brl@array@scline\numexpr\brl@tmp%\brl@array_hline_rownum%\csname brl@array@hline_\the\brl@array@rownum\endcsname% multihline
+  % \advance\brl@array@scline\numexpr\csname brl@array@hline_\the\brl@array@rownum\endcsname%
+  +\csname brl@array@totaldepth_\the\brl@array@rownum\endcsname%
+  -\csname brl@array@totalheight_\the\brl@array@rownum\endcsname\relax%
+  % \showthe\brl@array@scline
+  % 
+  \ifnum\brl@array@rownum>\brl@array@maxrownum%
+  \else%
+    \expandafter\brl@array_cons_hltoks_row%
+  \fi%
+}
+
+% multihline
+% \def\brl@array_hltoks_lcorner#1#2#3#4{% udlr
+%   \ifnum#1#2=\z@% u = d = 0
+%     \count@#4\relax%
+%     \@tempcnta\brl@array@scline%
+%     \brl@array_cons_hlltoks_appendrows%
+%   \fi%
+% }
+% \def\brl@array_hltoks_rcorner#1#2#3#4{% udlr
+%   \ifnum#1#2=\z@% u = d = 0
+%     \count@#3\relax%
+%     \@tempcnta\brl@array@scline%
+%     \brl@array_cons_hlrtoks_appendrows%
+%   \fi%
+% }
+
+\def\brl@array_cons_hlltoks_appendrows{%
+  \ifnum\count@>\z@% hlines exist
+    \edef\brl@tmp{{{\the\@tempcnta}{1}}}% add one line
+    \expandafter\brl@array_appendhlltoks\brl@tmp%
+    \advance\@tempcnta\@ne%
+    \advance\count@\m@ne%
+    \expandafter\brl@array_cons_hlltoks_appendrows%
+  \fi%
+}
+
+\def\brl@array_cons_hlrtoks_appendrows{%
+  \ifnum\count@>\z@%
+    \edef\brl@tmp{{{\the\@tempcnta}{1}}}% add one line
+    \expandafter\brl@array_appendhlrtoks\brl@tmp%
+    \advance\@tempcnta\@ne%
+    \advance\count@\m@ne%
+    \expandafter\brl@array_cons_hlrtoks_appendrows%
+  \fi%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%\brl@array_paren
+%%
+%% input:
+%% #1 : cs <- {delim}
+%% #2 : the rows of hlines
+%%
+%% \brl@array_paren@height, \brl@array_paren@depth
+%%
+%% output:
+%% \brl@array_paren@delim {{....}}
+
+%% height 0 delimiters
+%%
+\def\brl@array_paren@zero_math_angle_l{}
+\def\brl@array_paren@zero_math_angle_r{}
+
+\def\brl@array@period{.}
+
+\def\brl@array_paren_pullhltoks{%
+  \expandafter\brl@array_paren_pullhltoks_\brl@array_paren@allhlrows\brl@end%
+}
+
+\def\brl@array_paren_pullhltoks_#1#2#3\brl@end{%
+  \def\brl@array_paren@hlrow{#1}%
+  \def\brl@array_paren@hlnum{#2}% the number of lines
+  \def\brl@array_paren@allhlrows{#3}%
+}
+
+
+\def\brl@array_paren#1#2{%
+  \edef\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@array@period% if the delimiter is ".", then append nothing.
+    % 
+    \let\brl@array_paren@delim\empty% {{}}
+  \else%
+    \edef\brl@array_paren@allhlrows{#2{10000}{1}{}}%
+    %
+    \edef\brl@array_paren@depthmo{\the\numexpr\brl@array_paren@depth-\@ne\relax}%
+    \count@\brl@array_paren@height\relax%
+    %
+    %
+    \csname brl@array_paren@delim_#1\endcsname% set delim
+    %\edef\brl@tmp{#1}\show\brl@tmp
+    %
+    \ifnum\numexpr\brl@array_paren@depthmo-\count@\relax>\z@%
+      {%
+        \aftergroup\def%
+        \aftergroup\brl@tmp%
+        \aftergroup{%
+        \brl@array_paren_ud%
+        \aftergroup}%
+      }%
+%      \edef\brl@array_paren@delim{{\brl@char@block{\brl@array_paren@height}{\brl@array_paren@depth}{\brl@array_paren@delimw}{}{{}{}}{\brl@tmp}}}%
+      \edef\brl@array_paren@delim{\brl@char@block{\brl@array_paren@height}{\brl@array_paren@depth}{\brl@array_paren@delimw}{}{{}{}}{\brl@tmp}}%
+    \fi%
+  \fi%
+}
+
+\def\brl@array_paren_ud{%
+  \brl@array_paren_pullhltoks%
+  \ifnum\brl@array_paren@hlrow=\count@%
+    \aftergroup\brl@code_array_delim_ul%
+    \expandafter\aftergroup\brl@array_paren@hlnum% must be one digit
+    % \expandafter\aftergroup\csname brl@code_array_delim_ul\brl@array_paren@hlnum\endcsname%
+    \brl@array_paren_pullhltoks%
+  \else%
+    \aftergroup\brl@code_array_delim_u%
+  \fi%
+  %
+  \brl@array_paren_m%
+  %
+  \ifnum\brl@array_paren@hlrow=\count@%
+    \aftergroup\brl@code_array_delim_dl%
+    \expandafter\aftergroup\brl@array_paren@hlnum% must be one digit
+    % \expandafter\aftergroup\csname brl@code_array_delim_dl\brl@array_paren@hlnum\endcsname%
+  \else%
+    \aftergroup\brl@code_array_delim_d%
+  \fi%
+}
+
+\def\brl@array_paren_m{%
+  \advance\count@\@ne%
+  % \advance\count@\brl@array_paren@hlnum\relax% must be one digit
+  % \showthe\count@
+  \ifnum\brl@array_paren@depthmo=\count@%
+    %
+  \else%
+    \ifnum\brl@array_paren@hlrow=\count@%
+      \aftergroup\brl@code_array_delim_ml%
+      \expandafter\aftergroup\brl@array_paren@hlnum% must be one digit
+      % 
+      \brl@array_paren_pullhltoks%
+    \else%
+      \aftergroup\brl@code_array_delim_m%
+    \fi%
+    \expandafter\brl@array_paren_m%
+  \fi%
+}
+
+
+\def\brl@array_paren@delim_parenopen{%
+  \def\brl@array_paren@delim{\brl@code_math_pmatrix_l}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_pmatrix_lu}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_pmatrix_lm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_pmatrix_ld}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_pmatrix_lul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_pmatrix_lml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_pmatrix_ldl##1\endcsname}}%
+}
+\def\brl@array_paren@delim_lbrace{%cmatrix_l
+  \def\brl@array_paren@delim{\brl@code_math_cmatrix_l}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_cmatrix_lu}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_cmatrix_lm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_cmatrix_ld}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_cmatrix_lul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_cmatrix_lml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_cmatrix_ldl##1\endcsname}}%
+}
+\def\brl@array_paren@delim_lbrack{%bmatrix_l
+  \def\brl@array_paren@delim{\brl@code_math_bmatrix_l}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_bmatrix_lu}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_bmatrix_lm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_bmatrix_ld}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_bmatrix_lul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_bmatrix_lml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_bmatrix_ldl##1\endcsname}}%
+}
+\def\brl@array_paren@delim_parenclose{%pmatrix_r
+  \def\brl@array_paren@delim{\brl@code_math_pmatrix_r}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_pmatrix_ru}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_pmatrix_rm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_pmatrix_rd}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_pmatrix_rul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_pmatrix_rml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_pmatrix_rdl##1\endcsname}}%
+}
+
+\def\brl@array_paren@delim_rbrace{%cmatrix_r
+  \def\brl@array_paren@delim{\brl@code_math_cmatrix_r}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_cmatrix_ru}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_cmatrix_rm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_cmatrix_rd}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_cmatrix_rul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_cmatrix_rml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_cmatrix_rdl##1\endcsname}}%
+}
+\def\brl@array_paren@delim_rbrack{%bmatrix_r
+  \def\brl@array_paren@delim{\brl@code_math_bmatrix_r}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_bmatrix_ru}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_bmatrix_rm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_bmatrix_rd}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_bmatrix_rul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_bmatrix_rml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_bmatrix_rdl##1\endcsname}}%
+}
+
+\def\brl@array_paren@delim_lVert{%Vmatrix_l
+  \def\brl@array_paren@delim{\brl@code_math_Vmatrix_l}%
+  \def\brl@array_paren@delimw{2}%
+  \def\brl@code_array_delim_u{{l}{2}{\brl@code_math_Vmatrix_lu}}%
+  \def\brl@code_array_delim_m{{l}{2}{\brl@code_math_Vmatrix_lm}}%
+  \def\brl@code_array_delim_d{{l}{2}{\brl@code_math_Vmatrix_ld}}%
+  \def\brl@code_array_delim_ul##1{{l}{2}{\csname brl@code_math_Vmatrix_lul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{2}{\csname brl@code_math_Vmatrix_lml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{2}{\csname brl@code_math_Vmatrix_ldl##1\endcsname}}%
+}
+
+\def\brl@array_paren@delim_rVert{%Vmatrix_r
+  \def\brl@array_paren@delim{\brl@code_math_Vmatrix_r}%
+  \def\brl@array_paren@delimw{2}%
+  \def\brl@code_array_delim_u{{l}{2}{\brl@code_math_Vmatrix_ru}}%
+  \def\brl@code_array_delim_m{{l}{2}{\brl@code_math_Vmatrix_rm}}%
+  \def\brl@code_array_delim_d{{l}{2}{\brl@code_math_Vmatrix_rd}}%
+  \def\brl@code_array_delim_ul##1{{l}{2}{\csname brl@code_math_Vmatrix_rul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{2}{\csname brl@code_math_Vmatrix_rml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{2}{\csname brl@code_math_Vmatrix_rdl##1\endcsname}}%
+}
+
+\def\brl@array_paren@delim_lvert{%
+  \def\brl@array_paren@delim{\brl@code_math_vmatrix_l}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_vmatrix_lu}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_vmatrix_lm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_vmatrix_ld}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_vmatrix_lul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_vmatrix_lml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_vmatrix_ldl##1\endcsname}}%
+}
+\def\brl@array_paren@delim_rvert{%
+  \def\brl@array_paren@delim{\brl@code_math_vmatrix_r}%
+  \def\brl@array_paren@delimw{1}%
+  \def\brl@code_array_delim_u{{l}{1}{\brl@code_math_vmatrix_ru}}%
+  \def\brl@code_array_delim_m{{l}{1}{\brl@code_math_vmatrix_rm}}%
+  \def\brl@code_array_delim_d{{l}{1}{\brl@code_math_vmatrix_rd}}%
+  \def\brl@code_array_delim_ul##1{{l}{1}{\csname brl@code_math_vmatrix_rul##1\endcsname}}%
+  \def\brl@code_array_delim_ml##1{{l}{1}{\csname brl@code_math_vmatrix_rml##1\endcsname}}%
+  \def\brl@code_array_delim_dl##1{{l}{1}{\csname brl@code_math_vmatrix_rdl##1\endcsname}}%
+}
+
+
+\def\brl@array_paren@delim_langle{%
+  \def\brl@array_paren@delim{\brl@code_math_angle_l}%
+  \def\brl@array_paren@depthmo{\z@}% force zero
+  \count@\z@% force zero
+}
+
+\def\brl@array_paren@delim_rangle{%
+  \def\brl@array_paren@delim{\brl@code_math_angle_r}%
+  \def\brl@array_paren@depthmo{\z@}% force zero
+  \count@\z@% force zero
+}
+
+
+%%
+%% multiple lines in oneline or a line in oneline.
+%%
+%%
+%%
+
+\ifbrl@option@multihline
+%
+\def\brl@array_hrules@linenum{1}
+\let\brl@array@oneorzero\brl@@asis
+\let\brl@array@leqtwo\brl@@asis
+
+\def\brl@array_hltoks_lcorner#1#2#3#4{% udlr
+%  \ifnum#1#2=\z@% u = d = 0
+  \ifcase#1#2 % u = d = 0
+    \count@#4\relax%
+    \@tempcnta\brl@array@scline%
+    \brl@array_cons_hlltoks_appendrows%
+  \fi%
+}
+\def\brl@array_hltoks_rcorner#1#2#3#4{% udlr
+  % \ifnum#1#2=\z@% u = d = 0
+  \ifcase#1#2 % u = d = 0
+    \count@#3\relax%
+    \@tempcnta\brl@array@scline%
+    \brl@array_cons_hlrtoks_appendrows%
+  \fi%
+}
+  
+\else
+
+\let\brl@array_hrules_lines\brl@array_hrules_line% multiple lines = single line.
+%
+\def\brl@array_hrules@linenum{\brl@array_hrules@ht}% default
+\def\brl@array@oneorzero#1{\ifcase#1 0\else1\fi}% must be digit.
+\def\brl@array@leqtwo#1{\ifcase#1 0\or1\else2\fi}% must be digit.
+
+
+\def\brl@array_hltoks_lcorner#1#2#3#4{% udlr
+  % \ifnum#1#2=\z@% u = d = 0
+  \ifcase#1#2 % u = d = 0
+    \ifnum#4>\z@%
+      \edef\brl@tmp{{{\the\brl@array@scline}{#4}}}% add multiple lines
+      \expandafter\brl@array_appendhlltoks\brl@tmp%
+    \fi%
+  \fi%
+}
+\def\brl@array_hltoks_rcorner#1#2#3#4{% udlr
+%  \ifnum#1#2=\z@% u = d = 0
+  \ifcase#1#2 % u = d = 0
+    \ifnum#3>\z@%
+      \edef\brl@tmp{{{\the\brl@array@scline}{#3}}}% add multiple lines
+      \expandafter\brl@array_appendhlrtoks\brl@tmp%
+    \fi%
+  \fi%
+}
+
+
+
+\fi
+  
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

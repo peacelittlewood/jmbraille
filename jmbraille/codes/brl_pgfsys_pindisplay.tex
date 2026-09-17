@@ -1,0 +1,112 @@
+% Time-stamp: <2024-08-18 20:00:10 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% pgf for pindisplay
+%
+
+%%%%%%%%%%%%%%% 
+% input:
+%  \brl@pgf@currx, \brl@pgf@curry
+%
+% output:
+%  determine whether this point is saved or not,
+%  and save if needed.
+
+\def\brl@pgf@oneletter{4}% total height
+\def\brl@pgf_filldef@plotunit{1}%
+
+\let\brl@pgf@leastdist\z@
+
+
+
+%
+% output:
+% \brl@pgf@ptx, \brl@pgf@pty
+% \box : sumiji letters for check
+\protected\def\brl@pgf_hbox#1#2#3{%
+  \brl@pgf@ptx#1\relax%
+  \brl@pgf@pty#2\relax%
+  %
+  \count@\brl@pgf@minx\relax%
+  \advance\count@\brl@pgf@ptx\relax%
+  \ifodd\count@% a letter begins at odd.
+    \advance\brl@pgf@ptx\@ne%
+  \fi%
+  %
+  \setbox\pgf@hbox\hbox{\raise\numexpr\brl@pgf@pty*8\relax bp\hbox{\kern\numexpr\brl@pgf@ptx*8\relax bp #3}}%
+  %
+  \wd\pgf@hbox\z@%
+  \ht\pgf@hbox\z@%
+  \dp\pgf@hbox\z@%
+  %
+  \box\pgf@hbox%
+}
+
+\def\brl@pgf_drawpoint_init{%
+  \edef\brl@pgf@transx{\the\brl@pgf@currx}%
+  \edef\brl@pgf@transy{\the\brl@pgf@curry}%
+}
+
+
+\brl@pgf_filldef_save{4}{1}{1}{%
+  {11}%
+  {11}%
+}
+\brl@pgf_filldef_save{3}{1}{1}{%
+  {01}%
+  {11}%
+}
+\brl@pgf_filldef_save{2}{1}{1}{%
+  {01}%
+  {10}%
+}
+\brl@pgf_filldef_save{1}{1}{1}{%
+  {00}%
+  {10}%
+}
+\brl@pgf_filldef_save{0}{10000}{10000}{%
+  {0}%
+}
+
+
+% grayscale
+
+% 0 1 2 3 4
+
+\def\brl@pgf_model_gray_#1\brl@end{%
+  \count@\numexpr4-\dimexpr#1pt*4\relax/\p@\relax%
+  % \showthe\count@
+}
+
+% gray := 0.3 · red + 0.59 · green + 0.11 · blue
+
+\def\brl@pgf_model_rgb_#1,#2,#3\brl@end{%
+  \count@\numexpr4-\dimexpr#1pt*3+#2pt*59+#3pt*11\relax/\p@/25\relax%
+}
+
+% gray := 1 − min{1, 0.3 · cyan + 0.59 · magenta + 0.11 · yellow + black}
+
+\def\brl@pgf_model_cmyk_#1,#2,#3,#4\brl@end{%
+  \count@\numexpr\dimexpr#1pt*3+#2pt*59+#3pt*11+#4pt\relax/\p@/25\relax%
+  \ifnum4<\count@%
+    \count@4\relax
+  \fi%
+}
+
+% gray := 1 − (0.3 · cyan + 0.59 · magenta + 0.11 · yellow)
+
+\def\brl@pgf_model_cmy_#1,#2,#3\brl@end{%
+  \count@\numexpr\dimexpr#1pt*3+#2pt*59+#3pt*11\relax/\p@/25\relax%
+}
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

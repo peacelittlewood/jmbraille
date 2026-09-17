@@ -1,0 +1,24 @@
+;
+; Configuration file for jmbraille
+;
+
+cost-factor = 800
+bos-feature = BOS/EOS,*,*,*,*,*,*,*,*,*,*
+eval-size = 7
+unk-eval-size = 4
+config-charset = utf-8
+
+; braille
+node-format-braille = {%h}{%f[7]}{%m}{%f[8]}{%f[9]}{{%f[0]}{%f[1]}{%f[2]}{%f[3]}}{{%f[4]}{%f[5]}{%f[6]}}
+unk-format-braille  = {%h}{%f[7]}{%m}{%f[8]}{}{{%f[0]}{%f[1]}{%f[2]}{%f[3]}}{{%f[4]}{%f[5]}{%m}}
+eos-format-braille  = \\f
+
+; braille-file
+node-format-braille-file = {%h}{%f[7]}{%m}{%f[8]}{%f[9]}{{%f[0]}{%f[1]}{%f[2]}{%f[3]}}{{%f[4]}{%f[5]}{%f[6]}}
+unk-format-braille-file  = {%h}{%f[7]}{%m}{%f[8]}{}{{%f[0]}{%f[1]}{%f[2]}{%f[3]}}{{%f[4]}{%f[5]}{%m}}
+eos-format-braille-file  = {-1}
+
+; corpus
+node-format-corpus = %m\t%f[0],%f[1],%f[2],%f[3],%f[4],%f[5],%f[6]\n
+unk-format-corpus  = %m\t%f[0],%f[1],%f[2],%f[3],%f[4],%f[5],%m\n
+eos-format-corpus  = EOS\n

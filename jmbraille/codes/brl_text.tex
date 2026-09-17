@@ -1,0 +1,1126 @@
+% Time-stamp: <2026-09-16 22:30:27 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@text
+%% 
+%% output : \brl@text@toks, \brl@document@mattoks, \global\brl@document@indentfalse, \brl@text@glue
+%% 
+%% caller :
+%% \brl@document_exec_text
+%% \brl@text_appendmath
+%% \brl@info_appendtop
+%% etc...
+\def\brl@text_appendtoks#1{\brl@text@toks\expandafter{\the\brl@text@toks#1}}
+\newtoks\brl@text@toks
+
+\def\brl@text_appendmattoks#1{\global\brl@text@mattoks\expandafter{\the\brl@text@mattoks#1}}
+\newtoks\brl@text@mattoks
+
+
+\newcount\brl@text@parenlevel
+
+\newif\ifbrl@text@prevdigit
+\newif\ifbrl@text@prevalph
+
+\newif\ifbrl@text@amb
+\newif\ifbrl@text@unk
+\newif\ifbrl@text_appendmath@topeq
+
+
+
+\def\brl@text_appendbreaks#1#2{%
+  \brl@text_appendtoks{\brl@char@breakable{t}{#1}{#2}}%
+}
+
+
+
+%%
+%%
+%% \brl@text_jp
+%
+% output:
+% \brl@text@toks: unbreaked.
+% 
+% \global\brl@document@indentfalse% if needed.
+% 
+% \brl@document_appendmattoks{...}%
+%
+% \brl@text@glue: used only in Braille Remark in japanese.
+
+
+\ifbrl@option@cache%
+
+
+%%
+%% \expandafter\gdef\csname brl@text@orig_\detokenize{...\virtualchar{...}...}\endcsname{{ABC}{CDE}...}
+%%
+%% 
+%%
+  
+\protected\def\brl@text_jp#1{% we assume that #1 is already expanded.
+  %%
+  %%
+  \def\brl@tmp{#1}%\show\brl@tmp%
+  \ifx\brl@tmp\empty%
+  \else%
+    \let\brl@tmpmat\empty%
+    {%
+      {%
+        \let\brl@text_cmd_empty\brl@@empty%
+        \def\brl@text_cmd_glue{\ }%
+        %
+        % use ..._save to shorten virtualchars in detokenized strings.
+        %
+        \let\brl@do\brl@do_save%
+        \let\brl@char@block\brl@char@block_save%
+        \let\brl@text_cmd_virtualchar\brl@text_cmd_virtualchar_save%
+        \let\brl@char@space@true\brl@char@space@true_save%
+        %
+        \xdef\brl@tmp{#1}%
+      }%
+      \let\brl@text@csname\brl@tmp%
+      \edef\brl@text@origcs{brl@text@orig_\detokenize\expandafter{\brl@text@csname}}%
+      %
+      \ifcsname\brl@text@origcs\endcsname%
+        \expandafter\let\expandafter\brl@tmp\csname\brl@text@origcs\endcsname%
+        \immediate\write\brl@text@file{%
+          \noexpand\expandafter%
+          \gdef%
+          \noexpand\csname%
+          brl@text@orig_\noexpand\detokenize%
+          {\unexpanded\expandafter{\brl@text@csname}}%
+          \noexpand\endcsname%
+          {\unexpanded\expandafter{\brl@tmp}}%
+        }%
+        \brl@tmp%
+      \else%
+        \brl@mecab{#1}% mecab
+        %% 
+        % 
+        \brl@text@toks{}%
+        \brl@text@prevdigitfalse%
+        \brl@text@prevalphfalse%
+        \def\brl@text@glue{1}% default glue
+        \expandafter\brl@text_loop\brl@text@text\brl@end%
+        %
+        \xdef\brl@tmp{\the\brl@text@toks}% formatted texts
+        % 
+        \xdef\brl@tmpmat{\the\brl@text@mattoks}%
+        \global\brl@text@mattoks{}%
+        % 
+        \let\brl@do\brl@do_save%
+        \let\brl@char@cmd_direct\brl@char@cmd_direct_save%
+        \let\brl@char@block\brl@char@block_save%
+        \let\brl@char@breakable\brl@char@breakable_save%
+        \let\brl@char@space@true\brl@char@space@true_save%
+        %
+        \immediate\write\brl@text@file{%
+          \noexpand\expandafter%
+          \gdef%
+          \noexpand\csname%
+          brl@text@orig_\noexpand\detokenize%
+          {\unexpanded\expandafter{\brl@text@csname}}%
+          \noexpand\endcsname%
+          {%
+            \xdef\noexpand\brl@tmp%
+            {%
+              \noexpand\brl@text_load%
+              \expandafter\brl@text_save\brl@tmp\empty%
+              Z%
+            }%
+            \ifx\brl@tmpmat\empty%
+            \else%
+              \xdef\noexpand\brl@tmpmat%
+              {%
+                \expandafter\brl@text_save_matrix\brl@tmpmat\brl@end%
+              }%
+            \fi%
+            % appendmath
+            \ifbrl@text_appendmath@topeq%
+              \noexpand\brl@text_appendmath@topeqtrue%
+            \fi%
+            % glue
+            \def\noexpand\brl@text@glue{\brl@text@glue}%
+          }%
+        }%
+      \fi%
+      \expandafter\brl@document_appendmattoks\expandafter{\brl@tmpmat}%
+      \ifbrl@text_appendmath@topeq%
+        \global\brl@document@indentfalse% to begin with an equation, force noindent.
+      \fi%
+      \xdef\brl@tmpglue{\brl@text@glue}%
+    }%
+    \let\brl@text@glue\brl@tmpglue% used only in Braille Remark.
+  \fi%
+  \brl@text@toks\expandafter{\brl@tmp}%
+}
+
+%%
+%% \brl@text_direct does neither expand nor mecab anything.
+%%
+%% there appears no mattoks
+%%               no \brl@text_appendmath@topeqtrue
+\protected\def\brl@text_direct#1{%
+  %%
+  %%
+  {%
+    \edef\brl@text@origcs{brl@text@mcborig_\detokenize{#1}}%
+    \ifcsname\brl@text@origcs\endcsname%
+      \expandafter\let\expandafter\brl@tmp\csname\brl@text@origcs\endcsname%
+      \immediate\write\brl@text@file{%
+        \noexpand\expandafter%
+        \gdef%
+        \noexpand\csname%
+        brl@text@mcborig_\noexpand\detokenize%
+        {\unexpanded{#1}}%
+        \noexpand\endcsname%
+        {\unexpanded\expandafter{\brl@tmp}}%
+      }%
+      \brl@tmp%
+    \else%
+      % 
+      \brl@text@toks{}%
+      \brl@text@prevdigitfalse%
+      \brl@text@prevalphfalse%
+      \def\brl@text@glue{1}% default glue
+      \brl@text_loop#1\brl@end%
+      %
+      %
+      % \brl@format_unbreak{\brl@text@toks}%
+      % \xdef\brl@tmp{\the\brl@format@toks}%
+      \xdef\brl@tmp{\the\brl@text@toks}%
+      %
+      \let\brl@do\brl@do_save%
+      \let\brl@char@cmd_direct\brl@char@cmd_direct_save%
+      \let\brl@char@block\brl@char@block_save%
+      \let\brl@char@breakable\brl@char@breakable_save%
+      \let\brl@char@space@true\brl@char@space@true_save%
+      %
+      \immediate\write\brl@text@file{%
+        \noexpand\expandafter%
+        \gdef%
+        \noexpand\csname%
+        brl@text@mcborig_\noexpand\detokenize%
+        {\unexpanded{#1}}%
+        \noexpand\endcsname%
+        {%
+          \xdef\noexpand\brl@tmp%
+          {%
+            \noexpand\brl@text_load%
+            \expandafter\brl@text_save\brl@tmp\empty%
+            Z%
+          }%
+        }%
+      }%
+    \fi%
+  }%
+  \brl@text@toks\expandafter{\brl@tmp}%
+}
+ 
+
+\def\brl@text_save#1{%
+  \expandafter\empty#1% expand forcibly
+}
+
+\def\brl@do_save#1{%
+  {#1}%
+  \brl@text_save%
+}
+
+\protected\def\brl@char@space@true_save{%
+  R%
+  \brl@text_save%
+}
+
+\def\brl@text_cmd_virtualchar_save#1{%
+  U{\brl@text_save#1\empty}%
+}
+
+\protected\def\brl@char@breakable_save#1#2#3{%
+  \ifnum\brl@char@break_lineend=#2 %
+    \brl@text_save_breakable#1\brl@end{#2}{#3}%
+  \else%
+    V{#1}{#2}{#3}%
+  \fi%
+  \brl@text_save%
+}
+
+\def\brl@text_save_breakable#1{%
+  \ifx#1\brl@end% empty
+    V{}%
+  \else%
+    W{\brl@text_save#1\empty}%
+    \expandafter\brl@text_save_breakable_label%
+  \fi%
+}
+\def\brl@text_save_breakable_label#1#2#3\brl@end{%
+  {\brl@text_save#1\empty}{#2}{#3}%
+}
+
+\protected\def\brl@char@block_save#1#2#3#4#5#6{%
+  X{#1}{#2}{#3}{#4}{#5}{\brl@text_save_block#6\brl@end\brl@end\brl@end}%
+  \brl@text_save%
+}
+\def\brl@text_save_block#1#2#3{%
+  \ifx\brl@end#1%
+  \else%
+    {#1}{#2}{\brl@text_save#3\empty}%
+    \expandafter\brl@text_save_block%
+  \fi%
+}
+
+\protected\def\brl@char@cmd_direct_save#1{%
+  Y\unexpanded{{#1}}%
+  \brl@text_save%
+}
+
+\def\brl@text_save_matrix#1{%
+  \ifx#1\brl@end%
+  \else%
+    {%
+      \noexpand\brl@text_load%
+      \brl@text_save#1\empty%
+      Z%
+    }%
+    \expandafter\brl@text_save_matrix%
+  \fi%
+}
+
+
+% R \char@space@true
+% U \virtualchar
+% V \breakable with label
+% W \breakable
+% X \block
+% Y \direct
+% Z \end
+% \def\brl@text_load#1{%
+%   \if Z#1\else%
+%     \csname brl@char@load_#1\expandafter\endcsname%
+%     \expandafter\brl@text_load%
+%   \fi%
+% }
+\def\brl@text_load#1{%
+  \csname brl@char@load_#1\endcsname%
+  \brl@text_load%
+}
+
+\def\brl@char@load_R{%
+  \brl@char@space@true%
+}
+
+\def\brl@char@load_U#1#2{%
+  \brl@text_cmd_virtualchar{\brl@text_load#2Z}%
+  \brl@text_load%
+}
+
+\def\brl@char@load_V#1#2#3#4{%
+  \brl@char@breakable{#2}{#3}{#4}\brl@text_load%
+}
+\def\brl@char@load_W#1#2#3#4#5#6#7{%
+  \brl@char@breakable{{\brl@text_load#2Z}{\brl@text_load#3Z}{#4}{#5}}{#6}{#7}\brl@text_load%
+}
+\def\brl@char@load_X#1#2#3#4#5#6#7{%
+  \brl@char@block{#2}{#3}{#4}{#5}{#6}{\brl@text_load_block#7ZZZ}\brl@text_load%
+}
+\def\brl@char@load_Y#1#2{%
+  \brl@char@cmd_direct{\unexpanded{#2}}\brl@text_load%
+}
+\def\brl@char@load_Z#1{}%
+
+\def\brl@text_load_block#1#2#3{%
+  \if Z#1\else%
+    {#1}{#2}{\brl@text_load#3Z}%
+    \expandafter\brl@text_load_block%
+  \fi%
+}
+
+
+
+
+
+\else% \ifbrl@option@cache%
+
+\protected\def\brl@text_jp#1{% we assume that #1 is already expanded.
+  %%
+  %%
+  \def\brl@tmp{#1}%\show\brl@tmp%%
+  \ifx\brl@tmp\empty%
+  \else%
+    {%
+      %
+      \brl@mecab{#1}%
+      \brl@text@toks{}%
+      \brl@text@prevdigitfalse%
+      \brl@text@prevalphfalse%
+      \def\brl@text@glue{1}% default glue
+      \expandafter\brl@text_loop\brl@text@text\brl@end%
+      %
+      \xdef\brl@tmp{\the\brl@text@toks}%
+      %
+      \expandafter\brl@document_appendmattoks\expandafter{\the\brl@text@mattoks}%
+      \global\brl@text@mattoks{}%
+      % 
+      \ifbrl@text_appendmath@topeq%
+        \global\brl@document@indentfalse% to begin with an equation, force noindent.
+      \fi%
+      \xdef\brl@tmpglue{\brl@text@glue}%
+    }%
+    %
+    \let\brl@text@glue\brl@tmpglue%
+    % 
+  \fi%
+  %
+  \brl@text@toks\expandafter{\brl@tmp}%
+%  \show\brl@tmp
+}
+
+%%
+%% \brl@text_direct does neither expand nor mecab anything.
+%%
+\protected\def\brl@text_direct#1{%
+  %%
+  %%
+  {%
+    \brl@text@toks{}%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphfalse%
+    \def\brl@text@glue{1}% default glue
+    \brl@text_loop#1\brl@end%
+    %
+    \xdef\brl@tmp{\the\brl@text@toks}%
+    % 
+  }%
+  \brl@text@toks\expandafter{\brl@tmp}%
+}
+
+
+\fi% \ifbrl@option@cache%
+
+
+\def\brl@text_loop#1{%
+  %% determine: 
+  %% \brl@text_next
+  %% \brl@text@prevdigittrue or false
+  %% \brl@text@prevalphtrue or false
+  %% \brl@text@glue
+  \edef\brl@text@tmp{brl@text_dospecial_\string#1}%
+  \ifcsname\brl@text@tmp\endcsname% dospecial
+    \ifcsname brl@text_setglue_\string#1\endcsname% set glue = ignore default glue
+    \else%
+      \def\brl@text@glue{1}% default glue
+    \fi%
+    \csname\brl@text@tmp\expandafter\endcsname%
+  \else% not dospecial
+    \ifbrl@text@prevdigit%
+      \brl@text@prevdigitfalse%
+      \ifcsname brl@text_prevdigit@\string#1\endcsname%
+        \brl@text_appendtoks{\brl@code_text_tsunagi}%
+      \fi%
+    \else%
+      \ifbrl@text@prevalph%
+        \brl@text@prevalphfalse%
+        \ifcsname brl@text_prevalph@\string#1\endcsname%
+          \brl@text_appendtoks{\brl@code_text_tsunagi}%
+        \fi%
+      \fi%
+    \fi%
+    \expandafter\brl@text_appendtoks\expandafter{\csname brl@code_text_\string#1\endcsname}%
+    \def\brl@text@glue{1}% default glue
+    \expandafter\brl@text_loop%
+  \fi% dospecial or not
+}
+
+
+\def\brl@text_setgluedef#1{%
+  \@namedef{brl@text_setglue_\string#1}{}%
+}
+
+\brl@text_setgluedef{\brl@end}% does not change glue
+\brl@text_setgluedef{\brl@text_cmd_firstindclose}
+\brl@text_setgluedef{\brl@text_cmd_secondindclose}
+\brl@text_setgluedef{\brl@text_cmd_thirdindclose}
+\brl@text_setgluedef{\brl@text_cmd_eqquoteclose}
+\brl@text_setgluedef{\brl@text_cmd_transclose}
+\brl@text_setgluedef{\brl@text_cmd_space}
+
+\brl@text_setgluedef{）}
+\brl@text_setgluedef{⸩}
+\brl@text_setgluedef{］}
+%
+\brl@text_setgluedef{」}
+\brl@text_setgluedef{』}
+\brl@text_setgluedef{”}
+
+%% glue is set to be one after dospecial.
+%%
+\brl@text_setgluedef{\brl@text_cmd_glue}% does not change glue
+
+%
+\brl@text_setgluedef{⇒}% in the case ". ⇒", the glue is 2, which should be presereved.
+\brl@text_setgluedef{⇐}%
+\brl@text_setgluedef{⇔}%
+
+\def\brl@text_aradef#1{%
+  \@namedef{brl@text_prevdigit@#1}{}%
+  \@namedef{brl@text_prevalph@#1}{}%
+}
+\def\brl@text_nonaradef#1{%
+  \@namedef{brl@text_prevalph@#1}{}%
+}
+
+
+\brl@text_aradef{あ}
+\brl@text_aradef{い}
+\brl@text_aradef{う}
+\brl@text_aradef{え}
+\brl@text_aradef{お}
+\brl@text_aradef{ら}
+\brl@text_aradef{り}
+\brl@text_aradef{る}
+\brl@text_aradef{れ}
+\brl@text_aradef{ろ}
+
+\brl@text_aradef{ア}
+\brl@text_aradef{イ}
+\brl@text_aradef{ウ}
+\brl@text_aradef{エ}
+\brl@text_aradef{オ}
+\brl@text_aradef{ラ}
+\brl@text_aradef{リ}
+\brl@text_aradef{ル}
+\brl@text_aradef{レ}
+\brl@text_aradef{ロ}
+
+\brl@text_nonaradef{か}
+\brl@text_nonaradef{き}
+\brl@text_nonaradef{く}
+\brl@text_nonaradef{け}
+\brl@text_nonaradef{こ}
+\brl@text_nonaradef{さ}
+\brl@text_nonaradef{し}
+\brl@text_nonaradef{す}
+\brl@text_nonaradef{せ}
+\brl@text_nonaradef{そ}
+\brl@text_nonaradef{た}
+\brl@text_nonaradef{ち}
+\brl@text_nonaradef{つ}
+\brl@text_nonaradef{て}
+\brl@text_nonaradef{と}
+\brl@text_nonaradef{な}
+\brl@text_nonaradef{に}
+\brl@text_nonaradef{ぬ}
+\brl@text_nonaradef{ね}
+\brl@text_nonaradef{の}
+\brl@text_nonaradef{は}
+\brl@text_nonaradef{ひ}
+\brl@text_nonaradef{ふ}
+\brl@text_nonaradef{へ}
+\brl@text_nonaradef{ほ}
+\brl@text_nonaradef{ま}
+\brl@text_nonaradef{み}
+\brl@text_nonaradef{む}
+\brl@text_nonaradef{め}
+\brl@text_nonaradef{も}
+\brl@text_nonaradef{や}
+
+\brl@text_nonaradef{ゆ}
+
+\brl@text_nonaradef{よ}
+\brl@text_nonaradef{わ}
+\brl@text_nonaradef{ゐ}
+
+\brl@text_nonaradef{ゑ}
+\brl@text_nonaradef{を}
+\brl@text_nonaradef{ん}
+\brl@text_nonaradef{っ}
+
+\brl@text_nonaradef{が}
+\brl@text_nonaradef{ぎ}
+\brl@text_nonaradef{ぐ}
+\brl@text_nonaradef{げ}
+\brl@text_nonaradef{ご}
+\brl@text_nonaradef{ざ}
+\brl@text_nonaradef{じ}
+\brl@text_nonaradef{ず}
+\brl@text_nonaradef{ぜ}
+\brl@text_nonaradef{ぞ}
+\brl@text_nonaradef{だ}
+\brl@text_nonaradef{ぢ}
+\brl@text_nonaradef{づ}
+\brl@text_nonaradef{で}
+\brl@text_nonaradef{ど}
+\brl@text_nonaradef{ば}
+\brl@text_nonaradef{び}
+\brl@text_nonaradef{ぶ}
+\brl@text_nonaradef{べ}
+\brl@text_nonaradef{ぼ}
+\brl@text_nonaradef{ぱ}
+\brl@text_nonaradef{ぴ}
+\brl@text_nonaradef{ぷ}
+\brl@text_nonaradef{ぺ}
+\brl@text_nonaradef{ぽ}
+
+\brl@text_nonaradef{ゔ}
+
+\brl@text_nonaradef{カ}
+\brl@text_nonaradef{キ}
+\brl@text_nonaradef{ク}
+\brl@text_nonaradef{ケ}
+\brl@text_nonaradef{コ}
+\brl@text_nonaradef{サ}
+\brl@text_nonaradef{シ}
+\brl@text_nonaradef{ス}
+\brl@text_nonaradef{セ}
+\brl@text_nonaradef{ソ}
+\brl@text_nonaradef{タ}
+\brl@text_nonaradef{チ}
+\brl@text_nonaradef{ツ}
+\brl@text_nonaradef{テ}
+\brl@text_nonaradef{ト}
+\brl@text_nonaradef{ナ}
+\brl@text_nonaradef{ニ}
+\brl@text_nonaradef{ヌ}
+\brl@text_nonaradef{ネ}
+\brl@text_nonaradef{ノ}
+\brl@text_nonaradef{ハ}
+\brl@text_nonaradef{ヒ}
+\brl@text_nonaradef{フ}
+\brl@text_nonaradef{ヘ}
+\brl@text_nonaradef{ホ}
+\brl@text_nonaradef{マ}
+\brl@text_nonaradef{ミ}
+\brl@text_nonaradef{ム}
+\brl@text_nonaradef{メ}
+\brl@text_nonaradef{モ}
+\brl@text_nonaradef{ヤ}
+
+\brl@text_nonaradef{ユ}
+
+\brl@text_nonaradef{ヨ}
+\brl@text_nonaradef{ワ}
+\brl@text_nonaradef{ヰ}
+
+\brl@text_nonaradef{ヱ}
+\brl@text_nonaradef{ヲ}
+\brl@text_nonaradef{ン}
+\brl@text_nonaradef{ッ}
+
+\brl@text_nonaradef{ガ}
+\brl@text_nonaradef{ギ}
+\brl@text_nonaradef{グ}
+\brl@text_nonaradef{ゲ}
+\brl@text_nonaradef{ゴ}
+\brl@text_nonaradef{ザ}
+\brl@text_nonaradef{ジ}
+\brl@text_nonaradef{ズ}
+\brl@text_nonaradef{ゼ}
+\brl@text_nonaradef{ゾ}
+\brl@text_nonaradef{ダ}
+\brl@text_nonaradef{ヂ}
+\brl@text_nonaradef{ヅ}
+\brl@text_nonaradef{デ}
+\brl@text_nonaradef{ド}
+\brl@text_nonaradef{バ}
+\brl@text_nonaradef{ビ}
+\brl@text_nonaradef{ブ}
+\brl@text_nonaradef{ベ}
+\brl@text_nonaradef{ボ}
+\brl@text_nonaradef{パ}
+\brl@text_nonaradef{ピ}
+\brl@text_nonaradef{プ}
+\brl@text_nonaradef{ペ}
+\brl@text_nonaradef{ポ}
+\brl@text_nonaradef{ヴ}
+
+
+
+
+
+\expandafter\let\csname brl@text_dospecial_\string\brl@end\endcsname\relax%
+
+
+
+
+\@namedef{brl@text_dospecial_^}#1#2{% 2 chars
+  \ifbrl@text@prevalph%
+    \brl@text@prevalphfalse%
+    \brl@text_appendtoks{\brl@code_text_tsunagi}%
+  \fi%
+  \brl@text@prevdigitfalse%
+  \expandafter\brl@text_appendtoks\expandafter{\csname brl@code_text_#1#2\endcsname}%
+%
+  \brl@text_loop% return to hiragana
+}
+
+
+
+\def\brl@text_dospecialdef#1{%
+  \brl@def{brl@text_cmd_#1}{brl@code_text_#1}\brl@end{%
+    \@namedef{brl@text_dospecial_\string##1}{%
+      \brl@text_appendtoks{##2}%
+      \brl@text@prevdigitfalse%
+      \brl@text@prevalphfalse%
+      \brl@text_loop%
+    }
+  }
+}
+
+
+\brl@text_dospecialdef{desci}
+\brl@text_dospecialdef{descii}
+\brl@text_dospecialdef{space}
+\brl@text_dospecialdef{ambb}
+\brl@text_dospecialdef{ambe}
+\brl@text_dospecialdef{unkb}
+\brl@text_dospecialdef{unke}
+\brl@text_dospecialdef{commamath}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% dospecial
+%%
+
+
+\brl@def{brl@code_text_％}\brl@end{%
+  \@namedef{brl@text_dospecial_％}{%
+    \brl@text_appendtoks{#1}%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphtrue% needs tsunagi
+    \brl@text_loop%
+  }
+}
+
+\brl@def{brl@code_text_♯}\brl@end{%
+  \@namedef{brl@text_dospecial_♯}{%
+    \brl@text_appendtoks{#1}%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphtrue% needs tsunagi
+    \brl@text_loop%
+  }
+}
+
+\brl@def{brl@code_text_＊}\brl@end{%
+  \@namedef{brl@text_dospecial_＊}{%
+    \brl@text_appendtoks{#1}%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphtrue% needs tsunagi
+    \brl@text_loop%
+  }
+}
+
+%
+% keep the flags
+\@namedef{brl@text_dospecial_\string\brl@char@cmd_direct}#1{%
+  \brl@text_appendtoks{\brl@char@cmd_direct{#1}}%
+  \brl@text_loop%
+}%
+
+
+%
+% {} -> \cmd_empty (in document) -> _ (in mecab)
+%
+\def\brl@text_dospecial__{% {} admits no break.
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+
+
+%
+% virtualchar
+%
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_virtualchar}#1{%
+  \brl@text_appendtoks{#1}%
+  \brl@text_loop%
+}%
+
+
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_alphabet}#1{%
+  {%
+    % XXZ. -> XXZ.␣ in mecab
+    % XXZ -> Z must be L or U
+    %
+    % / - may also be included as an alphabet, but assumed not to be at the last of the word.
+    %
+    \def\brl@alph@small{\brl@code_text_small}%
+    \brl@alph{#1}%
+    \xdef\brl@tmp{{\brl@code_text_small\the\brl@alph@toks}}%
+  }%
+  % 
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  %
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphtrue%
+  \brl@text_loop%
+}
+
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_phrase}#1{%
+  {%
+    \def\brl@alph@small{\brl@code_text_stopcapital}%
+    \brl@alph{#1}%
+    \xdef\brl@tmp{{\brl@code_text_foreignquoteopen\the\brl@alph@toks\brl@code_text_foreignquoteclose}}%
+  }%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  %
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphtrue%
+  \brl@text_loop%
+}
+
+
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_info}#1{%
+  {%
+    \brl@info_infomode%
+    \brl@info{#1}%
+    \xdef\brl@tmp{{\brl@code_text_infoquoteopen\the\brl@info@toks\brl@code_text_infoquoteclose}}%
+  }%
+  %
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  % 
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphtrue%
+  \brl@text_loop%
+}
+
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_verb}#1{%
+  {%
+    \brl@info_verbmode%
+    \brl@info{#1}%
+    \xdef\brl@tmp{{\brl@code_text_verbquoteopen\the\brl@info@toks\brl@code_text_verbquoteclose}}%
+  }%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  % 
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphtrue%
+  \brl@text_loop%
+  % 
+}
+
+
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_footnotemark}#1{%
+  {%
+    \brl@text{#1}%
+    \xdef\brl@tmp{{\brl@code_text_footnoteopen\the\brl@text@toks\brl@code_text_footnoteclose}}%
+  }%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_noun}#1{%
+  {%
+    \brl@text{#1}%
+    \xdef\brl@tmp{{\the\brl@text@toks}}%
+  }%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_eqquote}#1{%
+  {%
+    \brl@text{#1}%
+    \xdef\brl@tmp{{\brl@code_text_eqquoteopen\the\brl@text@toks\brl@code_text_eqquoteclose}}%
+  }%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_env}#1#2{% #3 is already treated in mecab.
+  \edef\brl@tmp{\the\brl@text@toks}%
+  \ifx\brl@tmp\empty%
+    % 
+    \brl@text_appendmath@topeqtrue%
+  \else%
+    \brl@text_appendtoks{\brl@char@breakable{}{\brl@char@break_lineend}{}}%
+  \fi%
+  \csname brl@text_dospecial_#1\endcsname{#2}%
+  \expandafter\brl@text_appendtoks\brl@text@math%
+  % \showthe\brl@text@toks
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+%  \search
+}
+
+
+%%
+%% output: \brl@text@math
+%%
+\def\brl@text_dospecial_gather#1{%
+  {%
+    \brl@text@toks{}%
+    \brl@math_gather_parse#1\brl@end\brl@end\brl@end%
+  }%
+}
+
+\@namedef{brl@text_dospecial_gather*}#1{%
+  {%
+    \brl@text@toks{}%
+    \brl@math_gather_parse#1\brl@end\brl@end\brl@end%
+  }%
+}
+
+\def\brl@text_dospecial_align#1{%
+  {%
+    \brl@text@toks{}%
+    \brl@math_align_parse#1\brl@end\brl@end\brl@end%
+  }%
+}
+
+\@namedef{brl@text_dospecial_align*}#1{%
+  {%
+    \brl@text@toks{}%
+    \brl@math_align_parse#1\brl@end\brl@end\brl@end%
+  }%
+}
+
+
+%%
+%% left delimiter 
+%%
+
+
+\brl@def{brl@code_text_（}{brl@code_text_⸨}\brl@end{%
+  \@namedef{brl@text_dospecial_（}{%
+    \advance\brl@text@parenlevel\@ne%
+    \ifnum\brl@text@parenlevel=\@ne%
+      \brl@text_appendtoks{#1}%
+    \else%
+      \brl@text_appendtoks{#2}%
+    \fi%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphfalse%
+    \brl@text_loop%
+  }
+}
+
+
+
+%%
+%% right delimiter 
+%%
+
+
+\brl@def{brl@code_text_）}{brl@code_text_⸩}\brl@end{%
+  \@namedef{brl@text_dospecial_）}{%
+    \ifnum\brl@text@parenlevel=\@ne%
+      \brl@text_appendtoks{#1}%
+    \else%
+      \brl@text_appendtoks{#2}%
+    \fi%
+    \advance\brl@text@parenlevel\m@ne%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphfalse%
+    \brl@text_loop%
+  }
+}
+
+
+
+\def\brl@text_delimdef#1#2{%
+  \brl@def{brl@code_text_#1}\brl@end{%
+    \@namedef{brl@text_dospecial_\string#2}{%
+      \brl@text_appendtoks{##1}%
+      % 
+      \brl@text@prevdigitfalse%
+      \brl@text@prevalphfalse%
+      \brl@text_loop%
+    }%
+  }%
+}
+
+
+\brl@text_delimdef{firstindopen}{\brl@text_cmd_firstindopen}
+\brl@text_delimdef{secondindopen}{\brl@text_cmd_secondindopen}
+\brl@text_delimdef{thirdindopen}{\brl@text_cmd_thirdindopen}
+\brl@text_delimdef{transopen}{\brl@text_cmd_transopen}
+\brl@text_delimdef{⸨}{⸨}
+\brl@text_delimdef{［}{［}
+\brl@text_delimdef{「}{「}
+\brl@text_delimdef{『}{『}
+\brl@text_delimdef{“}{“}
+
+
+% \brl@text_delimdef{eqquoteopen}{\brl@text_cmd_eqquoteopen}
+% \brl@text_delimdef{⸨}{《}
+% \brl@text_delimdef{［}{〈}
+% \brl@text_delimdef{［}{〔}
+% \brl@text_delimdef{［}{【}
+% \brl@text_delimdef{「}{‘}
+
+
+% \def\brl@text_delimrightdef#1#2{%
+%   \brl@def{brl@code_text_#1}\brl@end{%
+%     \@namedef{brl@text_dospecial_\string#2}{%
+%       \brl@text_appendtoks{##1}%
+%       % 
+%       \brl@text@prevdigitfalse%
+%       \brl@text@prevalphfalse%
+%       \brl@text_loop%
+%     }%
+%   }%
+% }
+
+\brl@text_delimdef{firstindclose}{\brl@text_cmd_firstindclose}
+\brl@text_delimdef{secondindclose}{\brl@text_cmd_secondindclose}
+\brl@text_delimdef{thirdindclose}{\brl@text_cmd_thirdindclose}
+\brl@text_delimdef{transclose}{\brl@text_cmd_transclose}
+\brl@text_delimdef{⸩}{⸩}
+\brl@text_delimdef{］}{］}
+\brl@text_delimdef{」}{」}
+\brl@text_delimdef{』}{』}
+\brl@text_delimdef{”}{”}
+
+
+% \brl@text_delimdef{eqquoteclose}{\brl@text_cmd_eqquoteclose}
+% \brl@text_delimdef{⸩}{》}
+% \brl@text_delimdef{］}{〉}
+% \brl@text_delimdef{］}{〕}
+% \brl@text_delimdef{］}{】}
+% \brl@text_delimdef{」}{’}
+
+
+%%
+%% period
+%%
+
+\def\brl@text_perioddef#1{%
+  \expandafter\brl@text_perioddef_\csname brl@code_text_#1\endcsname{#1}%
+}
+\def\brl@text_perioddef_#1#2{%
+  \@namedef{brl@text_dospecial_#2}{%
+    %
+    \brl@text_appendtoks{#1}%
+    \def\brl@text@glue{2}%
+    \brl@text@prevdigitfalse%
+    \brl@text@prevalphfalse%
+    \brl@text_loop%
+  }% 
+}
+
+\brl@text_perioddef{。}
+\brl@text_perioddef{？}
+\brl@text_perioddef{！}
+
+
+
+%%
+%% glue
+%%
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_glue}{%
+  %
+  \edef\brl@tmp{{\brl@char@break_big}{\brl@text@glue}}%
+  \expandafter\brl@text_appendbreaks\brl@tmp%
+  \def\brl@text@glue{1}% default glue
+  %
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+
+%%
+%% breakable
+%%
+%% \breakable（
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_breakable}{%
+  %
+  \edef\brl@tmp{{\brl@char@break_big}{0}}%
+  \expandafter\brl@text_appendbreaks\brl@tmp%
+  %
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+
+
+%%
+%% math
+%%
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_dollar}#1{%
+  %
+  \brl@math{#1}%
+  \brl@char_space{\the\brl@math@toks}%
+  %
+  %
+  \ifbrl@char@space%
+    \def\brl@text@glue{2}%
+  \fi%
+  %
+  %
+  \edef\brl@tmp{{\brl@code_math_equationsign\the\brl@math@toks}}%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  %
+  %
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphfalse%
+  \brl@text_loop%
+}
+
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_unit}#1{%
+  %
+  \brl@math{#1}%
+  %
+  \edef\brl@tmp{{\brl@code_math_equationsign\the\brl@math@toks}}%
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  %
+  \brl@text@prevdigitfalse%
+  \brl@text@prevalphtrue%
+  \brl@text_loop%
+}
+
+
+
+%%
+%% number
+%%
+\@namedef{brl@text_dospecial_\string\brl@text_cmd_number}#1{%
+  \brl@text@prevalphfalse% default
+  \brl@text@prevdigittrue%
+  \brl@text_appendtoks{\brl@code_text_numbersign}%
+  \brl@text_number_loop#1\brl@end%
+}
+
+\def\brl@text_number_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \expandafter\brl@text_loop%
+  \else%
+    \edef\brl@tmp{{\csname brl@code_text_#1\endcsname}}%
+    \expandafter\brl@text_appendtoks\brl@tmp%
+    \expandafter\brl@text_number_loop%
+  \fi%
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,441 @@
+% Time-stamp: <2026-09-05 22:47:07 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@bc
+% \brl@ebc
+% \brl@dbc
+
+\def\brl@bc_appendtoks#1{\brl@bc@toks\expandafter{\the\brl@bc@toks#1}}
+\newtoks\brl@bc@toks%
+
+\def\brl@bc_appendextoks#1{\brl@bc@extoks\expandafter{\the\brl@bc@extoks#1}}
+\newtoks\brl@bc@extoks%
+
+\def\brl@ebc_appendtoks#1{\brl@ebc@toks\expandafter{\the\brl@ebc@toks#1}}
+\newtoks\brl@ebc@toks%
+
+\def\brl@ebc_appendextoks#1{\brl@ebc@extoks\expandafter{\the\brl@ebc@extoks#1}}
+\newtoks\brl@ebc@extoks%
+
+\def\brl@dbc_appendtoks#1{\brl@dbc@toks\expandafter{\the\brl@dbc@toks#1}}
+\newtoks\brl@dbc@toks
+
+\def\brl@dbc_appendextoks#1{\brl@dbc@extoks\expandafter{\the\brl@dbc@extoks#1}}
+\newtoks\brl@dbc@extoks
+
+% default
+\def\brl@braille@font{\brl@braille@fontA}% default
+
+%% for pdf
+\def\brl@bc_braille#1{%
+  {%
+    \brl@bc_braille_spread%
+    \brl@braille@font%
+    \char#1\relax% A or P
+  }%
+}%
+
+\def\brl@ebc_braille#1#2#3{%
+  {%
+    \brl@bc_braille_spread%
+    \brl@braille@font%
+    \char\numexpr#1+#2*64+#3*128\relax%
+  }%
+}%
+
+% \brl@bc_braille_spread : insert a box when the char is in the position \brl@bse@width.
+\def\brl@bc_braille_spread{%
+  \ifnum\brl@bse@width=\brl@print@letternum%
+  {%
+    \brl@orig@color{\brl@char@meancolor}%
+    \brl@orig@vrule\@width\brl@braille@width\@height\brl@braille@height\@depth\brl@braille@depth%
+  }%
+  \fi%
+  \global\advance\brl@print@letternum\@ne%
+}
+
+
+
+%% for nab
+\def\brl@bc_bascii{%
+  \ifnum\brl@bse@width>\brl@print@letternum%
+    \expandafter\brl@bc_bascii_%
+  \else%
+    \let\brl@bc\brl@bc_bascii_expage%
+    \expandafter\brl@bc_bascii_expage%
+  \fi%
+}%
+
+\def\brl@bc_bascii_#1{%
+  \edef\brl@tmp{{\csname brl@bc@bascii_#1\endcsname}}%
+  \expandafter\brl@bc_appendtoks\brl@tmp%
+  \global\advance\brl@print@letternum\@ne%
+}%
+
+\def\brl@bc_bascii_expage#1{%
+  \edef\brl@tmp{{\csname brl@bc@bascii_#1\endcsname}}%
+  \expandafter\brl@bc_appendextoks\brl@tmp%
+  \global\advance\brl@print@letternum\@ne%
+}
+
+
+\def\brl@ebc_ebascii{% extended bascii
+  \ifnum\brl@bse@width>\brl@print@letternum%
+    \expandafter\brl@ebc_ebascii_%
+  \else%
+    \let\brl@ebc\brl@ebc_ebascii_expage%
+    \expandafter\brl@ebc_ebascii_expage%
+  \fi%
+}%
+
+\def\brl@ebc_ebascii_#1#2#3{% extended bascii
+  % \edef\brl@tmp{{\the\brl@ebc@toks{\the\brl@print@letternum}#2#3}}%
+  % \brl@ebc@toks\brl@tmp%
+  \edef\brl@tmp{{{\the\brl@print@letternum}#2#3}}%
+  \expandafter\brl@ebc_appendtoks\brl@tmp%
+  \brl@bc{#1}%
+}%
+
+\def\brl@ebc_ebascii_expage#1#2#3{% extended bascii
+  % \edef\brl@tmp{{\the\brl@ebc@extoks{\the\numexpr\brl@print@letternum-\brl@bse@width\relax}#2#3}}%
+  % \brl@ebc@extoks\brl@tmp%
+  \edef\brl@tmp{{{\the\numexpr\brl@print@letternum-\brl@bse@width\relax}#2#3}}%
+  \expandafter\brl@ebc_appendextoks\brl@tmp%
+  \brl@bc{#1}%
+}%
+
+%% for txt (unicode) 
+\ifdefined\Uchar% if \Uchar can be used, we use it.
+\def\brl@bc_Ucode#1{%
+  \expandafter\aftergroup\Uchar\numexpr10240+#1\relax%
+}%
+\def\brl@ebc_Ucode#1#2#3{%
+  \expandafter\aftergroup\Uchar\numexpr10240+#1+#2*64+#3*128\relax%
+}%
+\else%
+\def\brl@bc_Ucode#1{%
+  \edef\brl@tmp{\csname brl@bc@Ucode_#1\endcsname}%
+  \expandafter\aftergroup\brl@tmp%
+}%
+\def\brl@ebc_Ucode#1#2#3{%
+  \edef\brl@tmp{\csname brl@bc@Ucode_\the\numexpr#1+#2*64+#3*128\relax\endcsname}%
+  \expandafter\aftergroup\brl@tmp%
+}%
+\fi
+
+%% for \DeclareMathOperator
+%%
+\def\brl@bc_patch#1{%
+  \brl@char_appendtoks{\brl@bc{#1}}%
+}
+\def\brl@ebc_patch#1#2#3{%
+  \brl@char_appendtoks{\brl@ebc{#1}#2#3}%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% \brl@dbc
+%%
+%% default
+
+%% for pdf
+\protected\def\brl@dbc_draw#1{% 
+  %
+  \brl@bc{0}%
+  \brl@@pdf_bcontent%
+  \brl@@pdf_invoke{q 1 0 0 1 -\expandafter\brl@@strip@pt\the\brl@braille@width\brl@@space\brl@pgf@dbcht\brl@@space cm}% move \braille@width to the left (back) and translate by \brl@pgf@dbcht
+  \brl@dbc_draw_#1\brl@end\brl@end%
+}
+
+%% for draw_tikz
+\def\brl@dbc_tikz#1{%
+  %
+  \brl@bc{0}%
+  \brl@@pdf_bcontent%
+  \brl@@pdf_invoke{q \brl@dbc@scale\brl@@space 0 0 \brl@dbc@scale\brl@@space 0 0 cm}% scale and pt -> bp
+  %
+  \brl@@pdf_invoke{1 0 0 1 -\expandafter\brl@@strip@pt\the\dimexpr\brl@figure@scale\brl@braille@width\relax\brl@@space\brl@pgf@dbcht\brl@@space cm}% move braille@width to the left (back) and translate by \brl@pgf@dbcht
+  \brl@dbc_draw_#1\brl@end\brl@end%
+}
+
+\def\brl@dbc_draw_#1#2{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \brl@@pdf_invoke{Q}% finished translation
+    \brl@@pdf_econtent%
+  \else%
+    \brl@@pdf_invoke{q 1 0 0 1 #1 -#2 cm}% translation
+    \brl@dbc@circle% draw a circle
+    \brl@@pdf_invoke{Q}% finish translation
+    \expandafter\brl@dbc_draw_%
+  \fi%
+}
+
+
+\ifbrl@lualatex%
+
+\newbox\brl@dbc@circle_
+\def\brl@dbc_init{%
+  \setbox\@ne\hbox{}\wd\@ne\p@\ht\@ne\p@%
+  \setbox\z@\hbox{%
+    \pdfextension literal{0 g \brl@@cira}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-1 -1 1 1]}\z@%
+  \setbox\brl@dbc@circle_\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\brl@dbc@circle_\z@%
+  \ht\brl@dbc@circle_\z@%
+  \dp\brl@dbc@circle_\z@%
+}
+\def\brl@dbc@circle{\copy\brl@dbc@circle_}
+
+\else%
+  % 
+\def\brl@dbc_init{%
+  \AtBeginDvi{%
+    \special{pdf:bxobj @circle0 bbox -1 -1 1 1}%
+    \special{pdf:code 0 g \brl@@cira}%
+    \special{pdf:exobj}%
+  }
+  %
+  %
+}
+\def\brl@dbc@circle{%
+  \special{pdf:uxobj @circle0}% draw circle
+}%
+\fi
+
+
+%% for print script for ESA721
+%% There exists no application which can print out both graphics and texts.
+%% The following is a script which gives direct commands to the printer.
+%%
+%% echo 'commands' > /dev/serialprinter
+%%
+
+%% coordinate of ESA721
+%%   -> Y
+%% |
+%% V X
+%%
+%% for drawing brailles
+%% 文字数 行数 X     Y
+%% 30     18   0-593 0-449
+%% 32     18   0-593 0-479
+%% 32     22   0-725 0-479 * use this setting.
+%% 40     24   0-792 0-599 ( <- X may be 0-791 (?) )
+%%
+%% important notices.
+%% notice : \dbc@x, \dbc@y employes the ESA721's coordinates
+%% notice : after \advance\brl@print@letternum\@ne
+%%
+\edef\brl@dbc@plotwidth{\the\numexpr\brl@dbc@width*(\brl@bse@width+1)\relax}% 15*(32+1) (the start point of expage)
+
+\let\brl@dbc_appendtmptoks\brl@dbc_appendtoks% default
+
+
+
+\def\brl@dbc_output{%
+  \ifnum\brl@bse@width>\brl@print@letternum% 32...
+    \expandafter\brl@dbc_output_%
+  \else% 0...31, i.e., within one page.
+    \let\brl@dbc_appendtmptoks\brl@dbc_appendextoks% This change is only local and set the default (appendtoks) after writing one bse line.
+    \let\brl@dbc\brl@dbc_output_expage%
+    \expandafter\brl@dbc_output_expage%
+  \fi%
+}
+
+\def\brl@dbc_output_#1{%
+  \brl@bc{0}%
+  \edef\brl@dbc@y{\the\numexpr\brl@print@letternum*\brl@dbc@width-\brl@dbc@width\relax}% one letter width back.
+  \brl@dbc_output_cons#1\brl@end\brl@end%%
+}
+
+\def\brl@dbc_output_expage#1{%
+  \brl@bc{0}%
+  \edef\brl@dbc@y{\the\numexpr\brl@print@letternum*\brl@dbc@width-\brl@dbc@plotwidth\relax}% (one page)+(one letter) width back
+  \brl@dbc_output_cons#1\brl@end\brl@end%%
+}
+
+\def\brl@dbc_output_cons#1#2{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    {%
+      \@tempcnta\numexpr\brl@dbc@y+#1\relax% nonexpr
+      \@tempcntb\@tempcnta% Y
+      \divide\@tempcnta\@xxxii% [Y/32]
+      \@tempcntb\numexpr\@tempcntb-\@tempcnta*\@xxxii+96\relax% Y-[Y/32]*32+96
+      \advance\@tempcnta\@xxxii% [Y/32]+32
+      \lccode`\!\@tempcnta% YHIGH 0x20-0x3f
+      \lccode`\?\@tempcntb% YLOW  0x60-0x7f
+      \lowercase{\edef\brl@tmp{\brl@dbc_check_a!\brl@dbc_check_c?}}% YHIGH,YLOW
+      %
+      \@tempcnta\numexpr\brl@dbc@x+#2\relax% nonexpr
+      \@tempcntb\@tempcnta% X
+      \divide\@tempcnta\@xxxii% [X/32]
+      \@tempcntb\numexpr\@tempcntb-\@tempcnta*\@xxxii+64\relax% X-[X/32]*32+64
+      \advance\@tempcnta\@xxxii% [X/32]+32
+      \lccode`\!\@tempcnta% XHIGH 0x20-0x3f
+      \lccode`\?\@tempcntb% XLOW  0x40-0x5f
+      \lowercase{\xdef\brl@tmp{{\brl@tmp\brl@dbc_check_a!\brl@dbc_check_b?}}}% XHIGH,XLOW
+      % (0,0) = 0x20 0x60 0x20 0x40 = " ` @"
+    }%
+    \expandafter\brl@dbc_appendtmptoks\brl@tmp%
+    % \show\brl@tmp
+    \expandafter\brl@dbc_output_cons%
+  \fi%
+}
+
+\def\brl@dbc_check_a#1{% 0x20-0x3f
+  \if'#1%
+    \brl@bse@singleq%
+  \else
+    #1%
+  \fi%
+}
+
+{
+\catcode`\!=\z@%
+!catcode`\\=12!relax%
+!gdef!brl@dbc_check_b#1{% 0x40-0x5f
+  !if\#1%
+    !brl@bse@bs%
+  !else%
+    #1%
+  !fi%
+}
+}
+
+{
+\catcode`\^^?=12\relax%
+\gdef\brl@dbc_check_c#1{% 0x60-0x7f
+  \if^^?#1%
+    \brl@bse@del%
+  \else%
+    #1%
+  \fi%
+}
+}
+
+
+
+\ifbrl@option@pindisplay%
+  \input{jmbraille/codes/brl_bc_pindisplay.tex}
+\else% \ifbrl@option@pindisplay%
+  \input{jmbraille/codes/brl_bc_plotter.tex}
+\fi% \ifbrl@option@pindisplay%
+%%
+%% default
+%%
+\let\brl@bc\brl@bc_braille%
+\let\brl@ebc\brl@ebc_braille%
+\let\brl@dbc\brl@dbc_draw%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% 6bit number to braille ascii code
+%%
+%% \csname brl@bc@bascii_(6bit number)\endcsname = braille ascii code
+%%
+% UTF+2800 <-> NABCC
+%0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF
+% A1B'K2L@CIF/MSP"E3H9O6R^DJG>NTQ,*5<-U8V.%[$+X!&;:4\0Z7(_?W]#Y)=
+
+% 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+% 32 65 49 66 39 75 50 76 64 67 73 70 47 77 83 80
+% 34 69 51 72 57 79 54 82 94 68 74 71 62 78 84 81
+% 44 42 53 60 45 85 56 86 46 37 91 36 43 88 33 38
+% 59 58 52 92 48 90 55 40 95 63 87 93 35 89 41 61 
+
+% "'" (singleeq) if the output is nab, while it is escaped if the output is draw
+% "\" (bs) if the output is nab, while it is escaped if the output is draw
+
+
+
+{\catcode`\ =11\relax\global\@namedef{brl@bc@bascii_0}{ }}
+\@namedef{brl@bc@bascii_1}{A}
+\@namedef{brl@bc@bascii_2}{1}
+\@namedef{brl@bc@bascii_3}{B}
+\@namedef{brl@bc@bascii_4}{\brl@bc@bascii_singleq}% expanded when it is written
+\@namedef{brl@bc@bascii_5}{K}
+\@namedef{brl@bc@bascii_6}{2}
+\@namedef{brl@bc@bascii_7}{L}
+\@namedef{brl@bc@bascii_8}{@}
+\@namedef{brl@bc@bascii_9}{C}
+\@namedef{brl@bc@bascii_10}{I}
+\@namedef{brl@bc@bascii_11}{F}
+\@namedef{brl@bc@bascii_12}{/}
+\@namedef{brl@bc@bascii_13}{M}
+\@namedef{brl@bc@bascii_14}{S}
+\@namedef{brl@bc@bascii_15}{P}
+\@namedef{brl@bc@bascii_16}{"}
+\@namedef{brl@bc@bascii_17}{E}
+\@namedef{brl@bc@bascii_18}{3}
+\@namedef{brl@bc@bascii_19}{H}
+\@namedef{brl@bc@bascii_20}{9}
+\@namedef{brl@bc@bascii_21}{O}
+\@namedef{brl@bc@bascii_22}{6}
+\@namedef{brl@bc@bascii_23}{R}
+\expandafter\let\csname brl@bc@bascii_24\endcsname\brl@@circum
+\@namedef{brl@bc@bascii_25}{D}
+\@namedef{brl@bc@bascii_26}{J}
+\@namedef{brl@bc@bascii_27}{G}
+\@namedef{brl@bc@bascii_28}{>}
+\@namedef{brl@bc@bascii_29}{N}
+\@namedef{brl@bc@bascii_30}{T}
+\@namedef{brl@bc@bascii_31}{Q}
+\@namedef{brl@bc@bascii_32}{,}
+\@namedef{brl@bc@bascii_33}{*}
+\@namedef{brl@bc@bascii_34}{5}
+\@namedef{brl@bc@bascii_35}{<}
+\@namedef{brl@bc@bascii_36}{-}
+\@namedef{brl@bc@bascii_37}{U}
+\@namedef{brl@bc@bascii_38}{8}
+\@namedef{brl@bc@bascii_39}{V}
+\@namedef{brl@bc@bascii_40}{.}
+\expandafter\let\csname brl@bc@bascii_41\endcsname\brl@@percent
+\@namedef{brl@bc@bascii_42}{[}
+\expandafter\let\csname brl@bc@bascii_43\endcsname\brl@@dollar
+\@namedef{brl@bc@bascii_44}{+}
+\@namedef{brl@bc@bascii_45}{X}
+\@namedef{brl@bc@bascii_46}{!}
+\expandafter\let\csname brl@bc@bascii_47\endcsname\brl@@ampersand
+\@namedef{brl@bc@bascii_48}{;}
+\@namedef{brl@bc@bascii_49}{:}
+\@namedef{brl@bc@bascii_50}{4}
+\@namedef{brl@bc@bascii_51}{\brl@bc@bascii_bs}% expanded when it is written
+\@namedef{brl@bc@bascii_52}{0}
+\@namedef{brl@bc@bascii_53}{Z}
+\@namedef{brl@bc@bascii_54}{7}
+\@namedef{brl@bc@bascii_55}{(}
+\@namedef{brl@bc@bascii_56}{_}
+\@namedef{brl@bc@bascii_57}{?}
+\@namedef{brl@bc@bascii_58}{W}
+\@namedef{brl@bc@bascii_59}{]}
+\expandafter\let\csname brl@bc@bascii_60\endcsname\brl@@sharp
+\@namedef{brl@bc@bascii_61}{Y}
+\@namedef{brl@bc@bascii_62}{)}
+\@namedef{brl@bc@bascii_63}{=}
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

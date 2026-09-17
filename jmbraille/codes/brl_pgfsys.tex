@@ -1,0 +1,2247 @@
+% Time-stamp: <2026-01-10 14:49:13 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% pgfsys
+%
+
+
+% output : 
+%
+% \brl@pgf@size_x_y : size at (x,y)
+% \brl@pgf@minxaty_y : min of x at y
+% \brl@pgf@maxxaty_y : max of x at y
+% \brl@pgf@minx : min of x
+% \brl@pgf@miny : min of y
+% \brl@pgf@maxx : max of x
+% \brl@pgf@maxy : max of y
+%
+% context : \empty or matrix_xxx_yyy_
+% 
+% in draw
+%
+% \brl@pgf@nodeboxa : box of nodes
+% \brl@pgf@nodeboxa : box of nodes
+%
+% in draw matrix
+%
+% \brl@pgf_matrix@xxx_yyy a
+% \brl@pgf_matrix@xxx_yyy b
+%
+% in plot
+% \brl@pgf@nodetoks : toks of nodes
+
+
+% \pgf@xb, \pgf@yb : start point
+% \pgf@xc, \pgf@yc : current point
+%
+\newbox\brl@pgf@nodeboxa
+\newbox\brl@pgf@nodeboxb
+
+\newtoks\brl@pgf@invoketoks%
+\newtoks\brl@pgf@invokemattoks%
+
+\newtoks\brl@pgf@nodetoks%
+\def\brl@pgf_appendnodetoks#1{\global\brl@pgf@nodetoks\expandafter{\the\brl@pgf@nodetoks#1}}
+
+
+\newtoks\brl@pgf@settoks%
+\def\brl@pgf_appendsettoks#1{\brl@pgf@settoks\expandafter{\the\brl@pgf@settoks#1}}
+
+
+% Path construction:
+\protected\def\brl@pgfsys@moveto#1#2{\pgfsysprotocol@literal{\brl@pgf_moveto{#1}{#2}}}
+\protected\def\brl@pgfsys@lineto#1#2{\pgfsysprotocol@literal{\brl@pgf_lineto{#1}{#2}}}
+\protected\def\brl@pgfsys@curveto#1#2#3#4#5#6{\pgfsysprotocol@literal{\brl@pgf_curveto{#1}{#2}{#3}{#4}{#5}{#6}}}
+\protected\def\brl@pgfsys@rect#1#2#3#4{\pgfsysprotocol@literal{\brl@pgf_rect{#1}{#2}{#3}{#4}}}
+\protected\def\brl@pgfsys@closepath{\pgfsysprotocol@literal{\brl@pgf_closepath}}
+
+% Path usage:
+\protected\def\brl@pgfsys@stroke{\pgfsysprotocol@literal{\brl@pgf_stroke}}%
+\protected\def\brl@pgfsys@closestroke{\pgfsysprotocol@literal{\brl@pgf_closepath\brl@pgf_stroke}}
+\protected\def\brl@pgfsys@fill{\pgfsysprotocol@literal{%
+    \brl@pgf_fill%
+    {\ifx\tikz@textcolor\empty\tikz@fillcolor\else\tikz@textcolor\fi}%
+    {\ifpgfsys@eorule\brl@qs@eorule\else\brl@qs@zerorule\fi}%
+  }%
+}%
+\protected\def\brl@pgfsys@fillstroke{\pgfsysprotocol@literal{%
+    \brl@pgf_fillstroke%
+    {\ifx\tikz@textcolor\empty\tikz@fillcolor\else\tikz@textcolor\fi}%
+    {\ifpgfsys@eorule\brl@qs@eorule\else\brl@qs@zerorule\fi}%
+  }%
+}%
+\protected\def\brl@pgfsys@clipnext{\pgfsysprotocol@literal{\brl@pgf_clipnext{\ifpgfsys@eorule\brl@qs@eorule\else\brl@qs@zerorule\fi}}}%
+
+\def\brl@pgfsys@discardpath{}%
+
+
+% Transformation:
+\protected\def\brl@pgfsys@transformcm#1#2#3#4#5#6{%
+  \brl@pgf@x#5\relax%
+  \brl@pgf@y#6\relax%
+  \pgfsysprotocol@literal{\brl@pgf_transformcm{#1}{#2}{#3}{#4}{\the\brl@pgf@x}{\the\brl@pgf@y}}%
+}
+
+
+% Scopes
+\protected\def\brl@pgfsys@beginscope{\pgfsysprotocol@literal{\brl@pgf_beginscope}}%
+\protected\def\brl@pgfsys@endscope{\pgfsysprotocol@literal{\brl@pgf_endscope}}%
+
+
+\protected\def\brl@pgf_beginscope{\begingroup}
+\protected\def\brl@pgf_endscope{\endgroup}
+
+\protected\def\brl@pgfsys@setdash#1#2{\pgfsysprotocol@literal{\brl@pgf_setdash{#1}{#2}}}%
+
+
+
+% \protected\def\brl@pgfsys@setlinewidth#1{\pgfsysprotocol@literal{\brl@pgf_setlinewidth{#1}}}
+
+%
+% \pgfsys@setlinewidth is executed in \tikz@options of ``Step 5' : Setup options'' in \tikz@finish. (tikz.code.tex)
+%
+\newif\ifbrl@pgfsys@double% override \tikz@mode@double
+\let\tikz@mode@doublefalse\brl@pgfsys@doublefalse
+\let\tikz@mode@doubletrue\brl@pgfsys@doubletrue
+
+\ifdefined\tikzset
+\tikzset{every double/.style={line width=0.5pt}}% forcibly set line width.
+\fi
+
+\protected\def\brl@pgfsys@setlinewidth#1{%
+  \ifbrl@pgfsys@double%
+    \pgfsysprotocol@literal{%
+      \brl@pgf_setlinewidth_setdouble{#1}%
+    }%
+  \else%
+    \pgfsysprotocol@literal{%
+      \brl@pgf_setlinewidth{#1}%
+    }%
+  \fi%
+}
+
+
+% \protected\def\brl@pgfsys@setlinewidth#1{%
+%   \iftikz@mode@double%
+%     \tikz@mode@doublefalse% forcibly reset the switch and double lines.
+%     \pgfsysprotocol@literal{%
+%       \brl@pgf_setlinewidth_setdouble{#1}%
+%     }%
+%   \else%
+%     \pgfsysprotocol@literal{%
+%       \brl@pgf_setlinewidth{#1}%
+%     }%
+%   \fi%
+% }
+
+
+
+
+\def\brl@pgfsys@setmiterlimit#1{}
+\def\brl@pgfsys@buttcap{}
+\def\brl@pgfsys@roundcap{}
+\def\brl@pgfsys@rectcap{}
+\def\brl@pgfsys@miterjoin{}
+\def\brl@pgfsys@roundjoin{}
+\def\brl@pgfsys@beveljoin{}
+
+% \def\brl@pgfsys@color@rgb@stroke#1#2#3{\pgfsysprotocol@literal{\brl@pgf_stroke}}
+% \def\brl@pgfsys@color@cmyk@stroke#1#2#3#4{\pgfsysprotocol@literal{\brl@pgf_stroke}}
+% \def\brl@pgfsys@color@cmy@stroke#1#2#3{\pgfsysprotocol@literal{\brl@pgf_stroke}}
+% \def\brl@pgfsys@color@gray@stroke#1{\pgfsysprotocol@literal{\brl@pgf_stroke}}
+
+% \def\brl@pgfsys@color@rgb@fill#1#2#3{\pgfsysprotocol@literal{\brl@pgf_color_rgb_fill{#1}{#2}{#3}}}
+% \def\brl@pgfsys@color@cmyk@fill#1#2#3#4{\pgfsysprotocol@literal{\brl@pgf_color_cmyk_fill{#1}{#2}{#3}{#4}}}
+% \def\brl@pgfsys@color@cmy@fill#1#2#3{\pgfsysprotocol@literal{\brl@pgf_color_cmy_fill{#1}{#2}{#3}}}
+% \def\brl@pgfsys@color@gray@fill#1{\pgfsysprotocol@literal{\brl@pgf_color_gray_fill{#1}}}
+
+\def\brl@pgfsys@color@rgb@stroke#1#2#3{}
+\def\brl@pgfsys@color@cmyk@stroke#1#2#3#4{}
+\def\brl@pgfsys@color@cmy@stroke#1#2#3{}
+\def\brl@pgfsys@color@gray@stroke#1{}
+\def\brl@pgfsys@color@rgb@fill#1#2#3{}
+\def\brl@pgfsys@color@cmyk@fill#1#2#3#4{}
+\def\brl@pgfsys@color@cmy@fill#1#2#3{}
+\def\brl@pgfsys@color@gray@fill#1{}
+
+
+\def\brl@pgfsys@setmiterlimit#1{}
+
+
+% Visibility
+\def\brl@pgfsys@begininvisiblescope{}
+\def\brl@pgfsys@endinvisiblescope{}
+
+% Opacity
+\def\brl@pgfsys@stroke@opacity#1{}%
+\def\brl@pgfsys@fill@opacity#1{}%
+
+% Blending
+\def\brl@pgfsys@blend@mode#1{}%
+
+% Literals:
+\def\brl@pgfsys@invoke#1{%
+  \edef\brl@pgfsysprotocol@tmp{{\the\brl@pgf@invoketoks#1}}%
+  \global\brl@pgf@invoketoks\brl@pgfsysprotocol@tmp%
+}%
+
+\def\brl@pgfsys@invoke_matrix#1{%
+  \edef\brl@pgfsysprotocol@tmp{{\the\brl@pgf@invokemattoks#1}}%
+  \global\brl@pgf@invokemattoks\brl@pgfsysprotocol@tmp%
+}%
+
+\def\brl@pgfsysprotocol@literalbuffered#1{%
+  \edef\pgfsysprotocol@temp{{#1}}% <- here \space is removed.
+  \expandafter\pgfutil@g@addto@macro\expandafter\pgfsysprotocol@currentprotocol\pgfsysprotocol@temp%
+}
+
+% Text:
+% output:
+% \brl@pgf@nodetoks{\brl@pgf_hbox{xxx}{yyy}{brailles}...}
+%
+\def\brl@pgfsys@hbox#1{% #1 box : boxname is used
+  \pgfsys@begin@idscope%
+  % 
+    %
+  \ifcsname brl@pgf@nodetext_\string#1\endcsname%
+    %
+    %
+    \pgfsysprotocol@literal{\brl@pgf_put{\the\brl@pgf@pt_x}{\the\brl@pgf@pt_y}{\csname brl@pgf@nodetext_\string#1\endcsname}}%
+    \global\expandafter\let\csname brl@pgf@nodetext_\string#1\endcsname\@undefined% clear
+    \fi%
+    %
+    % 
+    % boxname is of the form \pgfnodepart[boxname]box
+    % 
+    %% box#1 is ignored. all data is restored in \brl@pgf@nodetext_boxname, which is globally defined in brl_print.
+    % 
+  \pgfsys@end@idscope%
+}
+
+%
+% the following is the original code of \pgfsys@hboxsynced, which
+% is overwritten by pgfsys-dvipdfmx.
+%
+
+\def\brl@pgfsys@hboxsynced#1{%
+  \pgfsys@beginscope%
+  % \pgflowlevelsynccm
+  \pgfsys@transformcm%
+  % \pgf_transformcm%
+  {\pgf@pt@aa}{\pgf@pt@ab}%
+  {\pgf@pt@ba}{\pgf@pt@bb}%
+  {\pgf@pt@x}{\pgf@pt@y}%
+  \pgfsys@hbox#1%
+  \pgfsys@endscope%
+}%
+
+
+%% replace the codes by those for plots.
+\def\brl@pgfsys_init{%
+  \let\pgfsys@moveto\brl@pgfsys@moveto%
+  \let\pgfsys@lineto\brl@pgfsys@lineto%
+  \let\pgfsys@curveto\brl@pgfsys@curveto%
+  \let\pgfsys@rect\brl@pgfsys@rect%
+  \let\pgfsys@closepath\brl@pgfsys@closepath%
+  \let\pgfsys@stroke\brl@pgfsys@stroke%
+  \let\pgfsys@closestroke\brl@pgfsys@closestroke%
+  \let\pgfsys@fill\brl@pgfsys@fill%
+  \let\pgfsys@fillstroke\brl@pgfsys@fillstroke%
+  \let\pgfsys@clipnext\brl@pgfsys@clipnext%
+  \let\pgfsys@discardpath\brl@pgfsys@discardpath%
+  \let\pgfsys@transformcm\brl@pgfsys@transformcm%
+  \let\pgfsys@beginscope\brl@pgfsys@beginscope%
+  \let\pgfsys@endscope\brl@pgfsys@endscope%
+  \let\pgfsys@setdash\brl@pgfsys@setdash%
+  \let\pgfsys@setmiterlimit\brl@pgfsys@setmiterlimit%
+  \let\pgfsys@buttcap\brl@pgfsys@buttcap%
+  \let\pgfsys@roundcap\brl@pgfsys@roundcap%
+  \let\pgfsys@rectcap\brl@pgfsys@rectcap%
+  \let\pgfsys@miterjoin\brl@pgfsys@miterjoin%
+  \let\pgfsys@roundjoin\brl@pgfsys@roundjoin%
+  \let\pgfsys@beveljoin\brl@pgfsys@beveljoin%
+  \let\pgfsys@color@rgb@stroke\brl@pgfsys@color@rgb@stroke%
+  \let\pgfsys@color@rgb@fill\brl@pgfsys@color@rgb@fill%
+  \let\pgfsys@color@cmyk@stroke\brl@pgfsys@color@cmyk@stroke%
+  \let\pgfsys@color@cmyk@fill\brl@pgfsys@color@cmyk@fill%
+  \let\pgfsys@color@cmy@stroke\brl@pgfsys@color@cmy@stroke%
+  \let\pgfsys@color@cmy@fill\brl@pgfsys@color@cmy@fill%
+  \let\pgfsys@color@gray@stroke\brl@pgfsys@color@gray@stroke%
+  \let\pgfsys@color@gray@fill\brl@pgfsys@color@gray@fill%
+  \let\pgfsys@setmiterlimit\brl@pgfsys@setmiterlimit%
+  \let\pgfsys@setlinewidth\brl@pgfsys@setlinewidth%
+  \let\pgfsys@begininvisiblescope\brl@pgfsys@begininvisiblescope%
+  \let\pgfsys@endinvisiblescope\brl@pgfsys@endinvisiblescope%
+  \let\pgfsys@stroke@opacity\brl@pgfsys@stroke@opacity%
+  \let\pgfsys@fill@opacity\brl@pgfsys@fill@opacity%
+  \let\pgfsys@blend@mode\brl@pgfsys@blend@mode%
+  \let\pgfsys@invoke\brl@pgfsys@invoke%
+  \let\pgfsys@hbox\brl@pgfsys@hbox%
+  \let\pgfsys@hboxsynced\brl@pgfsys@hboxsynced%
+  %
+  % space after commands should be ignored 
+  \let\pgfsysprotocol@literalbuffered\brl@pgfsysprotocol@literalbuffered%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% pgf subroutine
+%
+
+\newtoks\brl@pgf@pathtoks
+\def\brl@pgf_appendpathtoks#1{\brl@pgf@pathtoks\expandafter{\the\brl@pgf@pathtoks#1}}%
+
+\newtoks\brl@pgf@pointtoks
+\def\brl@pgf_appendpointtoks#1{\brl@pgf@pointtoks\expandafter{\the\brl@pgf@pointtoks#1}}%
+
+\newtoks\brl@pgf@cliptoks
+\protected\def\brl@pgf_appendcliptoks#1{\brl@pgf@cliptoks\expandafter{\the\brl@pgf@cliptoks#1}}%
+
+\newtoks\brl@pgf@clipytoks
+\def\brl@pgf_appendclipytoks#1{\brl@pgf@clipytoks\expandafter{\the\brl@pgf@clipytoks#1}}%
+
+\newtoks\brl@pgf@clipalltoks
+\def\brl@pgf_appendclipalltoks#1{\brl@pgf@clipalltoks\expandafter{\the\brl@pgf@clipalltoks#1}}%
+
+\newcount\brl@pgf@lineerr
+\newcount\brl@pgf@linedx
+\newcount\brl@pgf@linedy
+\newcount\brl@pgf@lineex
+\newcount\brl@pgf@lineey
+\newcount\brl@pgf@dx
+\newcount\brl@pgf@dy
+\newcount\brl@pgf@ptx
+\newcount\brl@pgf@pty
+\newcount\brl@pgf@dnum
+
+\newcount\brl@pgf@currx
+\newcount\brl@pgf@curry
+\newcount\brl@pgf@currxa
+\newcount\brl@pgf@currya
+\newcount\brl@pgf@currxb
+\newcount\brl@pgf@curryb
+
+\newcount\brl@pgf@prevx
+\newcount\brl@pgf@prevy
+\newcount\brl@pgf@prevxa
+\newcount\brl@pgf@prevya
+\newcount\brl@pgf@prevxb
+\newcount\brl@pgf@prevyb
+
+\newcount\brl@pgf_stroke@pattern_num
+\newcount\brl@pgf_stroke@pattern_phase
+
+\newcount\brl@pgf_fill@x
+\newcount\brl@pgf_fill@y
+\newcount\brl@pgf_fill@num
+\newcount\brl@pgf_fill@mody
+
+\newcount\brl@pgf_clip_save@y
+
+\newcount\brl@pgf_filldef@currx%
+\newcount\brl@pgf_filldef@curry%
+\newcount\brl@pgf_filldef@prevx%
+\newcount\brl@pgf_filldef@dotnum%
+
+
+% local variables
+\newdimen\brl@pgf@x
+\newdimen\brl@pgf@y
+\newdimen\brl@pgf@xa
+\newdimen\brl@pgf@ya
+\newdimen\brl@pgf@xb
+\newdimen\brl@pgf@yb
+\newdimen\brl@pgf@xc
+\newdimen\brl@pgf@yc
+\newdimen\brl@pgf@xd
+\newdimen\brl@pgf@yd
+\newdimen\brl@pgf@xe
+\newdimen\brl@pgf@ye
+\newdimen\brl@pgf@xf
+\newdimen\brl@pgf@yf
+\newdimen\brl@pgf@length
+
+\newdimen\brl@pgf@pt_x
+\newdimen\brl@pgf@pt_y
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% path construction
+%
+
+
+\protected\def\brl@pgf_moveto#1#2{%
+  \brl@pgf_appendpathtoks{\brl@pgf_moveto_do{#1}{#2}}%
+}
+
+\def\brl@pgf_moveto_do#1#2{%
+  % These two store the current position:
+  \pgf@xc#1\relax%
+  \pgf@yc#2\relax%
+  % These two store the last moveto:
+  \pgf@xb\pgf@xc%
+  \pgf@yb\pgf@yc%
+  % 
+  \brl@pgf@prevx\@M% initialize
+  \brl@pgf@prevy\@M%
+  \brl@pgf@prevxa\@M% initialize
+  \brl@pgf@prevya\@M%
+  \brl@pgf@prevxb\@M% initialize
+  \brl@pgf@prevyb\@M%
+  %
+}
+
+\protected\def\brl@pgf_lineto#1#2{%
+  \brl@pgf_appendpathtoks{\brl@pgf_lineto_do{#1}{#2}}%
+}
+
+
+
+\protected\def\brl@pgf_lineto_do#1#2{%
+  %
+  \brl@pgf@xa#1\relax%
+  \brl@pgf@ya#2\relax%
+  % 
+  \brl@pgf_transform{\brl@pgf@xa}{\brl@pgf@ya}%
+  \brl@pgf_transform{\pgf@xc}{\pgf@yc}%
+  % 
+  \edef\brl@pgf@endx{\the\numexpr\brl@pgf@xa/\p@\relax}% end
+  \edef\brl@pgf@endy{\the\numexpr\brl@pgf@ya/\p@\relax}% end
+  % 
+  \brl@pgf@currx\numexpr\pgf@xc/\p@\relax% start
+  \brl@pgf@curry\numexpr\pgf@yc/\p@\relax% start
+  % 
+  \brl@pgf@linedx\brl@pgf@endx\relax\advance\brl@pgf@linedx-\brl@pgf@currx%
+  \brl@pgf@linedy\brl@pgf@endy\relax\advance\brl@pgf@linedy-\brl@pgf@curry%
+  %
+  % \ifnum\brl@pgf@linedx=\z@%
+  %   \ifnum\brl@pgf@linedy=\z@%
+  \ifcase\brl@pgf@linedx%
+    \ifcase\brl@pgf@linedy%
+    \else%
+      \brl@pgf_lineto_do_sub%
+    \fi%
+  \else%
+    \brl@pgf_lineto_do_sub%
+  \fi%
+  \pgf@xc#1\relax%
+  \pgf@yc#2\relax%
+}
+
+
+\def\brl@pgf_lineto_do_normalize_double{%
+  \pgf@x\brl@pgf@xa\advance\pgf@x-\pgf@xc%
+  \pgf@y\brl@pgf@ya\advance\pgf@y-\pgf@yc%
+  \brl@pgf_normalize%
+}
+
+\def\brl@pgf_lineto_do_sub{%
+  % linewidth
+  \brl@pgf_lineto_do_normalize%
+  %
+  % 
+  % 
+  \brl@pgf_renew_localminmax% currx, curry
+  % 
+  % 
+  \brl@pgf@dx\brl@pgf@prevx\advance\brl@pgf@dx-\brl@pgf@currx%
+  \brl@pgf@dy\brl@pgf@prevy\advance\brl@pgf@dy-\brl@pgf@curry%
+  \brl@pgf_clip_save_do%
+  \brl@pgf@prevx\brl@pgf@currx% start point
+  \brl@pgf@prevy\brl@pgf@curry% start point
+  %
+  \ifx\brl@pgf_stroke_save_do\empty%
+  \else%
+    \ifnum\brl@pgf@linedx>\z@%
+      \let\brl@pgf@onex\@ne%
+    \else%
+      \brl@pgf@linedx-\brl@pgf@linedx%
+      \let\brl@pgf@onex\m@ne%
+    \fi%
+    %
+    \ifnum\brl@pgf@linedy>\z@%
+      \brl@pgf@linedy-\brl@pgf@linedy%
+      \let\brl@pgf@oney\@ne%
+    \else%
+      \let\brl@pgf@oney\m@ne%
+    \fi%
+    %
+    \brl@pgf@lineex\brl@pgf@linedx\multiply\brl@pgf@lineex\tw@% ex=2dx
+    \brl@pgf@lineey\brl@pgf@linedy\multiply\brl@pgf@lineey\tw@% ey=2dy
+    \brl@pgf@lineerr\brl@pgf@lineex\advance\brl@pgf@lineerr\brl@pgf@lineey% ex+ey
+    \def\brl@pgf_lineto_next{\brl@pgf_lineto_loop}%
+    % 
+    %
+    %
+    %
+    \brl@pgf_lineto_loop%
+    %
+  \fi%
+  %
+  %
+  \brl@pgf@currx\brl@pgf@endx\relax%
+  \brl@pgf@curry\brl@pgf@endy\relax%
+  % 
+  \brl@pgf@dx\brl@pgf@prevx\advance\brl@pgf@dx-\brl@pgf@currx%
+  \brl@pgf@dy\brl@pgf@prevy\advance\brl@pgf@dy-\brl@pgf@curry%
+  \brl@pgf_clip_save_do%
+  \brl@pgf@prevx\brl@pgf@currx%
+  \brl@pgf@prevy\brl@pgf@curry%
+  %
+  % 
+  %
+}
+
+% only for stroke
+\def\brl@pgf_lineto_loop{%
+  % 
+  \brl@pgf_setpoint_line%
+  %
+  %
+  %
+  \ifnum\brl@pgf@endx=\brl@pgf@currx%
+    \ifnum\brl@pgf@endy=\brl@pgf@curry%
+      \let\brl@pgf_lineto_next\empty%
+    \fi%
+  \fi%
+  \count@\brl@pgf@lineerr%
+  \ifnum\count@>\brl@pgf@linedy%
+    \advance\brl@pgf@lineerr\brl@pgf@lineey%
+    \advance\brl@pgf@currx\brl@pgf@onex%
+  \fi%
+  \ifnum\count@<\brl@pgf@linedx%
+    \advance\brl@pgf@lineerr\brl@pgf@lineex%
+    \advance\brl@pgf@curry\brl@pgf@oney%
+  \fi%
+  \brl@pgf_lineto_next%
+}
+
+
+% for line
+\def\brl@pgf_setpoint_line_single{%
+  %
+  % 
+  \brl@pgf@dx\brl@pgf@prevxa\advance\brl@pgf@dx-\brl@pgf@currx%
+  \brl@pgf@dy\brl@pgf@prevya\advance\brl@pgf@dy-\brl@pgf@curry%
+  % 
+  \ifnum\numexpr\brl@pgf@dx*\brl@pgf@dx+\brl@pgf@dy*\brl@pgf@dy\relax>\brl@pgf@leastdist%
+    % 
+    % 
+    % \brl@pgf@prevx, \brl@pgf@currx
+    % \brl@pgf@prevy, \brl@pgf@curry
+    % \brl@pgf@dx, \brl@pgf@dy
+    %
+    \brl@pgf_stroke_save_do%
+    \brl@pgf@prevxa\brl@pgf@currx%
+    \brl@pgf@prevya\brl@pgf@curry%
+    % 
+  \fi%
+}
+
+\def\brl@pgf_setpoint_line_double{%
+  %
+  % 
+  \brl@pgf@currxa\brl@pgf@currx\advance\brl@pgf@currxa\brl@pgf@normal_x\relax%
+  \brl@pgf@currya\brl@pgf@curry\advance\brl@pgf@currya\brl@pgf@normal_y\relax%
+  % 
+  \brl@pgf@dx\brl@pgf@prevxa\advance\brl@pgf@dx-\brl@pgf@currxa%
+  \brl@pgf@dy\brl@pgf@prevya\advance\brl@pgf@dy-\brl@pgf@currya%
+  % 
+  \ifnum\numexpr\brl@pgf@dx*\brl@pgf@dx+\brl@pgf@dy*\brl@pgf@dy\relax>\brl@pgf@leastdist%
+    % 
+    % 
+    % \brl@pgf@prevx, \brl@pgf@currx
+    % \brl@pgf@prevy, \brl@pgf@curry
+    % \brl@pgf@dx, \brl@pgf@dy
+    %
+    \brl@pgf@currxb\brl@pgf@currx\advance\brl@pgf@currxb-\brl@pgf@normal_x\relax%
+    \brl@pgf@curryb\brl@pgf@curry\advance\brl@pgf@curryb-\brl@pgf@normal_y\relax%
+    % 
+    \brl@pgf_stroke_save_do%
+    \brl@pgf@prevxa\brl@pgf@currxa%
+    \brl@pgf@prevya\brl@pgf@currya%
+    \brl@pgf@prevxb\brl@pgf@currxb%
+    \brl@pgf@prevyb\brl@pgf@curryb%
+    %
+    % 
+  \fi%
+}
+
+
+
+\protected\def\brl@pgf_curveto#1#2#3#4#5#6{%
+  \brl@pgf_appendpathtoks{\brl@pgf_curveto_do{#1}{#2}{#3}{#4}{#5}{#6}}%
+}
+
+\def\brl@pgf_curveto_do#1#2#3#4#5#6{%
+  % 
+  \brl@pgf@xa#1\relax%
+  \brl@pgf@ya#2\relax%
+  \brl@pgf@xb#3\relax%
+  \brl@pgf@yb#4\relax%
+  \brl@pgf@xc#5\relax%
+  \brl@pgf@yc#6\relax%
+  % 
+  \brl@pgf_transform{\pgf@xc}{\pgf@yc}%
+  \brl@pgf_transform{\brl@pgf@xa}{\brl@pgf@ya}%
+  \brl@pgf_transform{\brl@pgf@xb}{\brl@pgf@yb}%
+  \brl@pgf_transform{\brl@pgf@xc}{\brl@pgf@yc}%
+  %
+  % 
+  % 
+  \pgfutil@tempdima\z@%
+  %
+  \def\brl@pgf@xasign{0}%
+  \brl@pgf_curveto_loop%
+  % 
+  \pgf@xc#5\relax%
+  \pgf@yc#6\relax%
+}
+
+
+\def\brl@pgf_curveto_do_normalize_double{%
+  \brl@pgf_normalize%
+  \@tempdimb\expandafter\brl@@strip@pt\the\@tempdimc\@tempdimb%
+}%
+
+
+\def\brl@pgf_curveto_loop{%
+  % 
+  \pgfutil@tempdimb\p@\advance\pgfutil@tempdimb-\pgfutil@tempdima% 1-t
+  % 
+  \edef\brl@pgf@time_t{\pgf@sys@tonumber{\pgfutil@tempdima}}%
+  \edef\brl@pgf@time_s{\pgf@sys@tonumber{\pgfutil@tempdimb}}%
+  % 
+  %
+  % First iteration:
+  \brl@pgf@xd\brl@pgf@time_s\pgf@xc\advance\brl@pgf@xd\brl@pgf@time_t\brl@pgf@xa% (1-t) P0 + t P1
+  \brl@pgf@yd\brl@pgf@time_s\pgf@yc\advance\brl@pgf@yd\brl@pgf@time_t\brl@pgf@ya%
+  % 
+  \brl@pgf@xe\brl@pgf@time_s\brl@pgf@xa\advance\brl@pgf@xe\brl@pgf@time_t\brl@pgf@xb% (1-t) P1 + t P2
+  \brl@pgf@ye\brl@pgf@time_s\brl@pgf@ya\advance\brl@pgf@ye\brl@pgf@time_t\brl@pgf@yb%
+  % 
+  \brl@pgf@xf\brl@pgf@time_s\brl@pgf@xb\advance\brl@pgf@xf\brl@pgf@time_t\brl@pgf@xc% (1-t) P2 + t P3
+  \brl@pgf@yf\brl@pgf@time_s\brl@pgf@yb\advance\brl@pgf@yf\brl@pgf@time_t\brl@pgf@yc%
+  % Second iteration:
+  \brl@pgf@xd\brl@pgf@time_s\brl@pgf@xd\advance\brl@pgf@xd\brl@pgf@time_t\brl@pgf@xe% (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
+  \brl@pgf@yd\brl@pgf@time_s\brl@pgf@yd\advance\brl@pgf@yd\brl@pgf@time_t\brl@pgf@ye%
+  % 
+  \brl@pgf@xe\brl@pgf@time_s\brl@pgf@xe\advance\brl@pgf@xe\brl@pgf@time_t\brl@pgf@xf% (1-t)^2 P1 + 2(1-t)t P2 + t^2 P3
+  \brl@pgf@ye\brl@pgf@time_s\brl@pgf@ye\advance\brl@pgf@ye\brl@pgf@time_t\brl@pgf@yf%
+  % Third iteration:
+  \brl@pgf@xf\brl@pgf@time_s\brl@pgf@xd\advance\brl@pgf@xf\brl@pgf@time_t\brl@pgf@xe%
+  \brl@pgf@yf\brl@pgf@time_s\brl@pgf@yd\advance\brl@pgf@yf\brl@pgf@time_t\brl@pgf@ye%
+  %
+  \pgf@x\brl@pgf@xe\advance\pgf@x-\brl@pgf@xd% derivative / 3
+  \pgf@y\brl@pgf@ye\advance\pgf@y-\brl@pgf@yd% derivative / 3
+  %
+  \brl@pgf_curveto_do_normalize%
+  % 
+  \brl@pgf@currx\numexpr\brl@pgf@xf/\p@\relax%
+  \brl@pgf@curry\numexpr\brl@pgf@yf/\p@\relax%
+  %
+  %
+  \brl@pgf_setpoint_curve%
+  %
+  %
+  % determine the next step
+  %
+  % f(t)  = (1-t)^3 P0 + 3(1-t)^2t P1 + 3(1-t)t^2 P2 + t^3 P3
+  % f'(t) = 3( (P1-P0)(1-t)^2 + 2(P2-P1)(1-t)t + (P3-P2)t^2 )
+  %
+  \ifx\brl@pgf@xasign\brl@pgf@xsign%
+    \ifx\brl@pgf@yasign\brl@pgf@ysign%
+    \else% min or max
+      \brl@pgf_renew_localminmax%
+    \fi%
+  \else% min or max
+    \brl@pgf_renew_localminmax%
+  \fi%
+  \let\brl@pgf@xasign\brl@pgf@xsign%
+  \let\brl@pgf@yasign\brl@pgf@ysign%
+  %
+  \ifdim\@tempdimb>512\p@%
+    \brl@pgf@length0.000651042\p@% 1/512/3 = 0.00195313/3
+  \else%
+    \ifdim\@tempdimb>3.33333\p@%
+      \brl@pgf@length\dimexpr0.333333\p@*\p@/\@tempdimb\relax%
+    \else%
+      \brl@pgf@length0.1\p@% 
+    \fi%
+  \fi%
+  %
+  % 
+  \advance\pgfutil@tempdima\brl@pgf@length% almost 1
+  \ifdim\p@<\pgfutil@tempdima%
+  \else%
+    \expandafter\brl@pgf_curveto_loop%
+  \fi%
+}
+
+
+
+
+\def\brl@pgf_setpoint_curve_single{%
+  %
+  %
+  \brl@pgf@dx\brl@pgf@prevx\advance\brl@pgf@dx-\brl@pgf@currx%
+  \brl@pgf@dy\brl@pgf@prevy\advance\brl@pgf@dy-\brl@pgf@curry%
+  % 
+  \ifnum\numexpr\brl@pgf@dx*\brl@pgf@dx+\brl@pgf@dy*\brl@pgf@dy\relax>\brl@pgf@leastdist%
+    % 
+    % 
+    % \brl@pgf@prevx, \brl@pgf@currx
+    % \brl@pgf@prevy, \brl@pgf@curry
+    % \brl@pgf@dx, \brl@pgf@dy
+    % 
+    \brl@pgf_clip_save_do%
+    \brl@pgf@prevx\brl@pgf@currx%
+    \brl@pgf@prevy\brl@pgf@curry%
+    % 
+    \brl@pgf_stroke_save_do%
+    \brl@pgf@prevxa\brl@pgf@currx%
+    \brl@pgf@prevya\brl@pgf@curry%
+    % 
+  \fi%
+}
+
+
+\def\brl@pgf_setpoint_curve_double{%
+  %
+  %
+  %
+  \ifx\brl@pgf_stroke_save_do\empty%
+  \else%
+    \brl@pgf@currxa\brl@pgf@currx\advance\brl@pgf@currxa\brl@pgf@normal_x\relax%
+    \brl@pgf@currya\brl@pgf@curry\advance\brl@pgf@currya\brl@pgf@normal_y\relax%
+    \brl@pgf@dx\brl@pgf@prevxa\advance\brl@pgf@dx-\brl@pgf@currxa%
+    \brl@pgf@dy\brl@pgf@prevya\advance\brl@pgf@dy-\brl@pgf@currya%
+    % 
+    \ifnum\numexpr\brl@pgf@dx*\brl@pgf@dx+\brl@pgf@dy*\brl@pgf@dy\relax>\brl@pgf@leastdist%
+      % 
+      \brl@pgf@currxb\brl@pgf@currx\advance\brl@pgf@currxb-\brl@pgf@normal_x\relax%
+      \brl@pgf@curryb\brl@pgf@curry\advance\brl@pgf@curryb-\brl@pgf@normal_y\relax%
+      \brl@pgf@dx\brl@pgf@prevxb\advance\brl@pgf@dx-\brl@pgf@currxb%
+      \brl@pgf@dy\brl@pgf@prevyb\advance\brl@pgf@dy-\brl@pgf@curryb%
+      % 
+      \ifnum\numexpr\brl@pgf@dx*\brl@pgf@dx+\brl@pgf@dy*\brl@pgf@dy\relax>\brl@pgf@leastdist%
+        \brl@pgf_stroke_save_do%
+        \brl@pgf@prevxa\brl@pgf@currxa%
+        \brl@pgf@prevya\brl@pgf@currya%
+        \brl@pgf@prevxb\brl@pgf@currxb%
+        \brl@pgf@prevyb\brl@pgf@curryb%
+      \fi%
+    \fi%
+  \fi%
+  %
+  \brl@pgf@dx\brl@pgf@prevx\advance\brl@pgf@dx-\brl@pgf@currx%
+  \brl@pgf@dy\brl@pgf@prevy\advance\brl@pgf@dy-\brl@pgf@curry%
+  \ifnum\numexpr\brl@pgf@dx*\brl@pgf@dx+\brl@pgf@dy*\brl@pgf@dy\relax>\brl@pgf@leastdist%
+    % 
+    % 
+    % \brl@pgf@prevx, \brl@pgf@currx
+    % \brl@pgf@prevy, \brl@pgf@curry
+    % \brl@pgf@dx, \brl@pgf@dy
+    % 
+    \brl@pgf_clip_save_do%
+    \brl@pgf@prevx\brl@pgf@currx%
+    \brl@pgf@prevy\brl@pgf@curry%
+    % 
+  \fi%
+}
+
+
+
+\protected\def\brl@pgf_rect#1#2#3#4{%
+  \brl@pgf_appendpathtoks{\brl@pgf_rect_do{#1}{#2}{#3}{#4}}%
+}
+
+\def\brl@pgf_rect_do#1#2#3#4{%
+  \pgf@x#1\relax%
+  \pgf@y#2\relax%
+  \pgf@xa#3\relax\advance\pgf@xa\pgf@x%
+  \pgf@ya#4\relax\advance\pgf@ya\pgf@y%
+  \brl@pgf_moveto_do{\pgf@x}{\pgf@y}%
+  \brl@pgf_lineto_do{\pgf@xa}{\pgf@y}%
+  \brl@pgf_lineto_do{\pgf@xa}{\pgf@ya}%
+  \brl@pgf_lineto_do{\pgf@x}{\pgf@ya}%
+  \brl@pgf_closepath_do%
+}
+
+\protected\def\brl@pgf_closepath{%
+  \brl@pgf_appendpathtoks{\brl@pgf_closepath_do}%
+}
+
+\def\brl@pgf_closepath_do{%
+  \brl@pgf_lineto_do{\pgf@xb}{\pgf@yb}%
+  \brl@pgf_clip_save_closepath%
+  \brl@pgf_modify% if the closed path is too small, then it is replaced by a big dot.
+}
+
+
+\def\brl@pgf_renew_localminmax{%
+  \ifnum\brl@pgf@localminx>\brl@pgf@currx%
+    \edef\brl@pgf@localminx{\the\brl@pgf@currx}%
+  \fi%
+  \ifnum\brl@pgf@localminy>\brl@pgf@curry%
+    \edef\brl@pgf@localminy{\the\brl@pgf@curry}%
+  \fi%
+  \ifnum\brl@pgf@localmaxx<\brl@pgf@currx%
+    \edef\brl@pgf@localmaxx{\the\brl@pgf@currx}%
+  \fi%
+  \ifnum\brl@pgf@localmaxy<\brl@pgf@curry%
+    \edef\brl@pgf@localmaxy{\the\brl@pgf@curry}%
+  \fi%
+}
+
+\def\brl@pgf_modify{%
+  \ifnum\brl@pgf@localminx=\@M%
+  \else%
+    \@tempcnta\brl@pgf@localmaxx\advance\@tempcnta-\brl@pgf@localminx\relax%
+    \@tempcntb\brl@pgf@localmaxy\advance\@tempcntb-\brl@pgf@localminy\relax%
+    \ifnum\numexpr\@tempcnta*\@tempcnta+\@tempcntb*\@tempcntb\relax<\csname brl@pgf_modify@leastdist\brl@pgf@pointsize\endcsname\relax% very small
+      \brl@pgf@pointtoks{}% no storke
+      \def\brl@pgf_clip@maxy{-\@M}% no fill or no clip
+      \def\brl@pgf_clip@miny{\@M}%
+      % set a big point.
+      \brl@pgf@currx\numexpr(\brl@pgf@localmaxx+\brl@pgf@localminx)/\tw@\relax%
+      \brl@pgf@curry\numexpr(\brl@pgf@localmaxy+\brl@pgf@localminy)/\tw@\relax%
+      \brl@pgf@prevx\@M% initialize
+      \brl@pgf@prevy\@M%
+      \brl@pgf@prevxa\@M% initialize
+      \brl@pgf@prevya\@M%
+      \brl@pgf@prevxb\@M% initialize
+      \brl@pgf@prevyb\@M%
+      {%
+        \def\brl@pgf@pointsize{3}% a big point
+        \brl@pgf_drawpoint%
+      }%
+    \fi%
+  \fi%
+}
+
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% path usage
+%
+
+
+% Graphics state
+%
+% #1 : pattern. on off on off ...
+% #2 : phase of the start.
+%
+% \brl@pgf_stroke@pattern_name_1pt,2pt,... = \brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _0
+%
+% \brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _X
+% X = 0 : X = 1 & \brl@pgf_appendpoint
+% X = 1 : X = 2
+% X = 2 : X = 3 & \brl@pgf_appendpoint etc.
+% ...
+% X = n equiv X = 0
+%
+% no pattern
+% \brl@pgf_stroke@pattern_name_ = \brl@pgf_appendpoint
+
+
+
+
+\protected\def\brl@pgf_stroke{%
+  % stroke_on
+  \brl@pgf@pointtoks{}%
+  \let\brl@pgf_stroke_save_do\brl@pgf_stroke_save%
+  % clip_off
+  \let\brl@pgf_clip_save_do\empty%
+  %
+  %
+  \brl@pgf_reset_localminmax%
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  %
+  % stroke_do
+  \brl@pgf_stroke_do%
+}
+
+
+\protected\def\brl@pgf_fill#1#2{%
+  \brl@pgf_color{#1}%
+  % stroke_off
+  \let\brl@pgf_stroke_save_do\empty%
+  % clip_on
+  \brl@pgf@cliptoks{}%
+  \let\brl@pgf_clip_save_do\brl@pgf_clip_save%
+  \def\brl@pgf_clip@maxy{-\@M}%
+  \def\brl@pgf_clip@miny{\@M}%
+  %
+  \brl@pgf_reset_localminmax%
+  #2% eorule
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  \brl@pgf_clip_save_closepath%
+  %
+  % fill_do
+  \brl@pgf_fill_do%
+}
+
+\protected\def\brl@pgf_fillstroke#1#2{%
+  \brl@pgf_color{#1}%
+  % stroke_on 
+  \brl@pgf@pointtoks{}%
+  \let\brl@pgf_stroke_save_do\brl@pgf_stroke_save%
+  % clip_on
+  \brl@pgf@cliptoks{}%
+  \let\brl@pgf_clip_save_do\brl@pgf_clip_save%
+  \def\brl@pgf_clip@maxy{-\@M}%
+  \def\brl@pgf_clip@miny{\@M}%
+  %
+  \brl@pgf_reset_localminmax%
+  #2% eorule
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  \brl@pgf_clip_save_closepath%
+  %
+  % fill_do
+  \brl@pgf_fill_do%
+  % draw_do
+  \brl@pgf_stroke_do%
+}
+
+
+
+\protected\def\brl@pgf_clipnext#1{%
+  %
+  \def\brl@pgf_clipnext_choose{#1}%
+  \futurelet\brl@tmp\brl@pgf_clipnext_%
+}
+
+
+\def\brl@pgf_clipnext_{%
+  \ifx\brl@tmp\brl@pgf_stroke%
+    \def\brl@pgf_next{\brl@pgf_clipnext_stroke}%
+  \else%
+    \ifx\brl@tmp\brl@pgf_fillstroke%
+      \def\brl@pgf_next{\brl@pgf_clipnext_fillstroke}%
+    \else%
+      \ifx\brl@tmp\brl@pgf_fill%
+        \def\brl@pgf_next{\brl@pgf_clipnext_fill}%
+      \else
+        \def\brl@pgf_next{\brl@pgf_clipnext_clip}%
+      \fi%
+    \fi%
+  \fi%
+  \brl@pgf_next%
+}
+
+\def\brl@pgf_clipnext_stroke#1{%
+  % stroke_on
+  \brl@pgf@pointtoks{}%
+  \let\brl@pgf_stroke_save_do\brl@pgf_stroke_save%
+  % clip_on
+  \brl@pgf@cliptoks{}%
+  \let\brl@pgf_clip_save_do\brl@pgf_clip_save%
+  \def\brl@pgf_clip@maxy{-\@M}%
+  \def\brl@pgf_clip@miny{\@M}%
+  %
+  \brl@pgf_reset_localminmax%
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  \brl@pgf_clip_save_closepath%
+  % 
+  % draw_do
+  \brl@pgf_stroke_do%
+  % clip_do
+  \brl@pgf_clip_do%
+}
+
+\def\brl@pgf_clipnext_fill#1#2#3{%
+  \brl@pgf_color{#2}%
+  % stroke_off
+  \let\brl@pgf_stroke_save_do\empty%
+  % clip_on
+  \brl@pgf@cliptoks{}%
+  \let\brl@pgf_clip_save_do\brl@pgf_clip_save%
+  \def\brl@pgf_clip@maxy{-\@M}%
+  \def\brl@pgf_clip@miny{\@M}%
+  %
+  \brl@pgf_reset_localminmax%
+  #3% eorule
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  \brl@pgf_clip_save_closepath%
+  %
+  % fill_do
+  \brl@pgf_fill_do%
+  % clip_do
+  \brl@pgf_clip_do%
+}
+
+\def\brl@pgf_clipnext_fillstroke#1#2#3{%
+  \brl@pgf_color{#2}%
+  % stroke_on
+  \brl@pgf@pointtoks{}%
+  \let\brl@pgf_stroke_save_do\brl@pgf_stroke_save%
+  % clip_on
+  \brl@pgf@cliptoks{}%
+  \let\brl@pgf_clip_save_do\brl@pgf_clip_save%
+  \def\brl@pgf_clip@maxy{-\@M}%
+  \def\brl@pgf_clip@miny{\@M}%
+  %
+  \brl@pgf_reset_localminmax%
+  #3% eorule
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  \brl@pgf_clip_save_closepath%
+  %
+  % fill_do
+  \brl@pgf_fill_do%
+  % stroke_do
+  \brl@pgf_stroke_do%
+  % clip_do
+  \brl@pgf_clip_do%
+}
+
+\def\brl@pgf_clipnext_clip{%
+  % stroke_off
+  \let\brl@pgf_stroke_save_do\empty%
+  % clip_on
+  \brl@pgf@cliptoks{}%
+  \let\brl@pgf_clip_save_do\brl@pgf_clip_save%
+  \def\brl@pgf_clip@maxy{-\@M}%
+  \def\brl@pgf_clip@miny{\@M}%
+  %
+  \brl@pgf_reset_localminmax%
+  \the\brl@pgf@pathtoks%
+  \brl@pgf@pathtoks{}%
+  \brl@pgf_clip_save_closepath%
+  %
+  % clip_do
+  \brl@pgf_clip_do%
+}
+
+
+
+
+\def\brl@pgf_clip_save_closepath{%
+  %
+  % \brl@pgf@prevx, \brl@pgf@currx
+  % \brl@pgf@prevy, \brl@pgf@curry
+  % \brl@pgf@dx, \brl@pgf@dy
+  % 
+  \brl@pgf@x\pgf@xb%
+  \brl@pgf@y\pgf@yb%
+  \brl@pgf_transform{\brl@pgf@x}{\brl@pgf@y}%
+  \brl@pgf@currx\numexpr\brl@pgf@x/\p@\relax%
+  \brl@pgf@curry\numexpr\brl@pgf@y/\p@\relax%
+  %
+  \brl@pgf@dx\brl@pgf@prevx\advance\brl@pgf@dx-\brl@pgf@currx%
+  \brl@pgf@dy\brl@pgf@prevy\advance\brl@pgf@dy-\brl@pgf@curry%
+  \brl@pgf_clip_save_do%
+  % 
+  \brl@pgf@prevx\@M% initialize
+  \brl@pgf@prevy\@M%
+  \brl@pgf@prevxa\@M% initialize
+  \brl@pgf@prevya\@M%
+  \brl@pgf@prevxb\@M% initialize
+  \brl@pgf@prevyb\@M%
+  %
+  %
+  \pgf@xc\pgf@xb%
+  \pgf@yc\pgf@yb%
+}%
+
+
+\def\brl@pgf_reset_localminmax{%
+  \def\brl@pgf@localminx{\@M}%
+  \def\brl@pgf@localminy{\@M}%
+  \def\brl@pgf@localmaxx{-\@M}%
+  \def\brl@pgf@localmaxy{-\@M}%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% stroke, fill, clip
+%
+
+
+
+\def\brl@pgf_stroke_do{%
+  \expandafter\brl@pgf_stroke_do_loop\the\brl@pgf@pointtoks\brl@end\brl@end\brl@end%
+}
+
+\def\brl@pgf_stroke_do_loop#1#2#3{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@pgf@currx#1\relax%
+    \brl@pgf@curry#2\relax%
+    \def\brl@pgf@pointsize{#3}% point size can be determined for each point.
+    %
+    \brl@pgf_drawpoint%
+    \expandafter\brl@pgf_stroke_do_loop%
+  \fi%
+}
+
+\def\brl@pgf_stroke_save{%
+  \brl@pgf_stroke@pattern_do%
+}%
+
+
+% default
+%
+\def\brl@pgf_stroke@pattern_name_{%
+  \brl@pgf_appendpoint%
+}
+
+
+
+
+
+%   step = 10
+% 11 -> 20 -> 20
+% 10 -> 19 -> 10
+%  1 -> 10 -> 10
+%  0 ->  9 ->  0
+% -1       ->  0
+% -9       ->  0
+% -10      -> -10
+%
+
+\def\brl@pgf_fill_do{%
+  %
+  % 
+  \brl@pgf_fill@y\brl@pgf_clip@miny\relax%
+  %
+  %
+  % calculate \brl@pgf_fill@mody
+  %
+  \ifnum\brl@pgf_fill@y>\z@%
+    \advance\brl@pgf_fill@y\brl@pgf_fill@stepym@ne\relax%
+  \fi%
+  \divide\brl@pgf_fill@y\brl@pgf_fill@stepy\relax%
+  \brl@pgf_fill@mody\brl@pgf_fill@y%
+  \count@\brl@pgf_fill@y%
+  \multiply\brl@pgf_fill@y\brl@pgf_fill@stepy\relax%
+  % 
+  % 
+  %
+  % step = 10
+  % 11 -> 1
+  % 10 -> 0
+  %  9 -> 9
+  %  0 -> 0
+  % -1 -> -1
+  % -9 -> -9
+  % -10 -> 0
+  % -11 -> -1
+  \divide\count@\brl@pgf_fill@maxmody\relax%
+  \multiply\count@\brl@pgf_fill@maxmody\relax%
+  \advance\brl@pgf_fill@mody-\count@% 
+  %
+  \ifnum\brl@pgf_fill@mody<\z@%
+    \advance\brl@pgf_fill@mody\brl@pgf_fill@maxmody\relax%
+  \fi%
+  %
+  %
+  \brl@pgf_fill_do_loop%
+}
+
+
+\def\brl@pgf_fill_do_loop{%
+  % 
+  \ifnum\brl@pgf_clip@maxy>\brl@pgf_fill@y% data of maxy is not defined.
+    % 
+    %
+    \brl@pgf@curry\brl@pgf_fill@y%
+    %
+    %
+    %
+    % 
+    \brl@pgf_fill@num\@ne%
+    \brl@pgf@settoks{}%
+    \def\brl@pgf_fill_clip_next{\brl@pgf_fill_clip_y}%
+    \expandafter\brl@pgf_fill_clip_y\the\brl@pgf@clipalltoks\brl@end\brl@end\brl@end\brl@end%
+    % 
+    \advance\brl@pgf_fill@y\brl@pgf_fill@stepy\relax%
+    % 
+    % 
+    \advance\brl@pgf_fill@mody\@ne%
+    \ifnum\brl@pgf_fill@maxmody=\brl@pgf_fill@mody%
+      \brl@pgf_fill@mody\z@%
+    \fi%
+    % 
+    %
+    \expandafter\brl@pgf_fill_do_loop%
+  \fi%
+}
+
+
+
+%   x -> x/10*10
+%  14 -> 10
+%   4 -> 0
+%  -4 -> 0
+% -14 -> -10
+
+%
+% #1, #2 : xpos
+%
+% #1 = #2 may happen.
+%
+\def\brl@pgf_fill_do_dots#1#2{% 
+  \def\brl@pgf_fill@startx{#1}%
+  \ifx\brl@pgf_fill@startx\brl@@end%
+  \else%
+    % 
+    %
+    % \brl@pgf_fill@x mod \brl@pgf_fill@stepx + \brl@pgf_fill@step_\mody
+    %
+    % step = 10
+    % 11 -> 10
+    % 10 -> 10
+    % 9 -> 0
+    % 0 -> 0
+    % -1 -> -10
+    % -9 -> -10
+    % -10 -> -20
+    % -11 -> -20
+    %
+    \brl@pgf_fill@x#1\relax%
+    \ifnum\brl@pgf_fill@x<\z@%
+      \advance\brl@pgf_fill@x-\brl@pgf_fill@stepx\relax%
+    \fi%
+    \divide\brl@pgf_fill@x\brl@pgf_fill@stepx\relax%
+    \multiply\brl@pgf_fill@x\brl@pgf_fill@stepx\relax%
+    %
+    \csname brl@pgf_fill@pattern_\brl@pgf_fill@pattern_name _\the\brl@pgf_fill@mody _0\endcsname% init
+    %
+    %
+    \brl@pgf_fill_do_search_startx%
+    %
+    \def\brl@pgf_fill@maxx{#2}%
+    %
+    \brl@pgf_fill_do_dots_loop%
+    % 
+    \expandafter\brl@pgf_fill_do_dots%
+  \fi%
+}
+
+\def\brl@pgf_fill_do_search_startx{%
+  \ifnum\brl@pgf_fill@startx>\brl@pgf_fill@x%
+    \brl@pgf_fill@dostepx%
+    \expandafter\brl@pgf_fill_do_search_startx%
+  \fi%
+}
+
+
+\def\brl@pgf_fill_do_dots_loop{%
+  \ifnum\brl@pgf_fill@maxx>\brl@pgf_fill@x%
+    \brl@pgf@currx\brl@pgf_fill@x%
+    %
+    \brl@pgf_drawpoint_noclip%
+    % 
+    \brl@pgf_fill@dostepx%
+    \expandafter\brl@pgf_fill_do_dots_loop%
+  \fi%
+}
+
+
+
+
+
+\def\brl@pgf_fill_clip_y#1#2#3#4{% #1: eorule #2: ymin, #3: ymax, #4: path
+  \def\brl@tmp{#1}%
+  % 
+  \ifx\brl@tmp\brl@@end%
+    % OK
+    %
+    \brl@pgf@clipytoks{}%
+    %
+    \expandafter\brl@pgf_clip_truncate\the\brl@pgf@cliptoks\brl@end\brl@end\brl@end\brl@end\brl@end%
+    {%
+      \let\brl@qs_choose_def\brl@qs_choose_def_set_p% union of disjoint sets of intervals
+      \expandafter\brl@qs\expandafter{\the\brl@pgf@clipytoks}%
+    }% quick sort
+    %
+    \expandafter\brl@pgf_appendsettoks\expandafter{\brl@qs@res}%
+    {%
+      \let\brl@qs_choose\brl@qs_choose_set% intersection of union of disjoint sets of intervals
+      \expandafter\brl@qs\expandafter{\the\brl@pgf@settoks}%
+    }% quick sort
+    \expandafter\brl@pgf_fill_do_dots\brl@qs@res\brl@end\brl@end%
+    % 
+  \else%
+    \ifnum#2<\brl@pgf@curry%
+      \ifnum#3>\brl@pgf@curry% inside
+        % 
+        % 
+        \brl@pgf@clipytoks{}%
+        \brl@pgf_clip_truncate#4\brl@end\brl@end\brl@end\brl@end\brl@end%
+        {%
+          #1% eorule
+          \let\brl@qs_choose_def\brl@qs_choose_def_set_p% union of disjoint sets of intervals
+          \expandafter\brl@qs\expandafter{\the\brl@pgf@clipytoks}%
+        }% quick sort
+        %
+        \advance\brl@pgf_fill@num\@ne%
+        \expandafter\brl@pgf_appendsettoks\expandafter{\brl@qs@res}%
+        %
+      \else%
+        \def\brl@pgf_fill_clip_next{\brl@pgf_fill_clip_end}%
+      \fi%
+    \else%
+      \def\brl@pgf_fill_clip_next{\brl@pgf_fill_clip_end}%
+    \fi%
+    \expandafter\brl@pgf_fill_clip_next%
+  \fi%
+}
+
+
+\def\brl@pgf_fill_clip_end#1\brl@end\brl@end\brl@end\brl@end{}%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@pgf_clip_save
+%
+% make clip path
+%
+% input :
+% \brl@pgf@dx, \brl@pgf@dy
+% \brl@pgf@currx, \brl@pgf@curry
+% \brl@pgf@prevx, \brl@pgf@prevy
+%
+% output : \brl@pgf@cliptoks
+% \brl@pgf_clip@miny
+% \brl@pgf_clip@maxy
+%
+
+\def\brl@pgf_clip_save{%
+  \ifnum\brl@pgf@prevx=\@M%
+  \else%
+    \ifnum\brl@pgf@dy>\z@% \brl@pgf@prevy > \brl@pgf@curry
+      %
+      \brl@pgf_clip_save_slope{\brl@pgf@currx}{\brl@pgf@curry}{\brl@pgf@prevy}\@ne%
+    \else%
+      \ifnum\brl@pgf@dy<\z@% \brl@pgf@prevy < \brl@pgf@curry
+        %
+        \brl@pgf_clip_save_slope{\brl@pgf@prevx}{\brl@pgf@prevy}{\brl@pgf@curry}\m@ne%
+      \fi%
+      % ignore horizontal lines
+    \fi%
+  \fi%
+}
+
+\def\brl@pgf_clip_save_slope#1#2#3#4{% (#1,#2) (??,#3) : #2<#3
+  \edef\brl@tmp{{{\the#1}{\the#2}{\the#3}{\the\brl@pgf@dx/\the\brl@pgf@dy}#4}}%
+  \expandafter\brl@pgf_appendcliptoks\brl@tmp%
+  \ifnum\brl@pgf_clip@miny>#2%
+    \edef\brl@pgf_clip@miny{\the#2}%
+  \fi%
+  \ifnum\brl@pgf_clip@maxy<#3%
+    \edef\brl@pgf_clip@maxy{\the#3}%
+  \fi%
+}
+
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@pgf_clip_truncate
+%
+%
+% input:
+% \brl@pgf@cliptoks, \brl@pgf@curry
+% 
+% outout: x coordinates width \@ne (upwards) or \m@ne (downwards)
+% 
+%
+% algorithm : consider the intersecting points of
+% the line (\brl@pgf@prevx, \brl@pgf@prevy) to (\brl@pgf@currx,\brl@pgf@curry) 
+%
+
+%
+%
+%   step = 10
+% 11 -> 20 -> 20
+% 10 -> 19 -> 10
+%  1 -> 10 -> 10
+%  0 ->  9 ->  0
+% -1       ->  0
+% -9       ->  0
+% -10      -> -10
+
+\def\brl@pgf_clip_truncate#1#2#3#4#5{% #4 = \brl@pgf@dx/\brl@pgf@dy, #5 = \@ne or \m@ne
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    %
+    \ifnum#2>\brl@pgf@curry% #2 <= \brl@pgf@curry < #3
+    \else%
+      \ifnum#3>\brl@pgf@curry%
+        \edef\brl@tmp{{{\the\numexpr(\brl@pgf@curry-#2)*#4+#1\relax}#5}}%
+        \expandafter\brl@pgf_appendclipytoks\brl@tmp%
+        %
+      \fi%
+    \fi%
+    \expandafter\brl@pgf_clip_truncate%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% input : \brl@pgf_clip@miny, \brl@pgf_clip@maxy, \brl@pgf@cliptoks
+%
+\def\brl@pgf_clip_do{%
+  \edef\brl@tmp{{{\brl@pgf_clipnext_choose}{\brl@pgf_clip@miny}{\brl@pgf_clip@maxy}{\the\brl@pgf@cliptoks}}}%
+  \expandafter\brl@pgf_appendclipalltoks\brl@tmp%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% transformation
+%
+
+% Transformation matrix
+
+
+\def\brl@pgf@pt_aa{1.0}\def\brl@pgf@pt_ab{0.0}
+\def\brl@pgf@pt_ba{0.0}\def\brl@pgf@pt_bb{1.0}
+
+\protected\def\brl@pgf_transform#1#2{%
+  \pgf@pt@temp#1%
+  #1\dimexpr\brl@pgf@pt_aa\pgf@pt@temp+\brl@pgf@pt_ba#2+\brl@pgf@pt_x\relax%
+  #2\dimexpr\brl@pgf@pt_ab\pgf@pt@temp+\brl@pgf@pt_bb#2+\brl@pgf@pt_y\relax%
+}
+
+\protected\def\brl@pgf_transformcm#1#2#3#4#5#6{%
+  %
+  \brl@pgf@xc#5\relax%
+  \brl@pgf@yc#6\relax%
+  % 
+  \brl@pgf@x#1\p@%
+  \brl@pgf@y#2\p@%
+  % 
+  \brl@pgf@xa\brl@pgf@pt_aa\brl@pgf@x\advance\brl@pgf@xa\brl@pgf@pt_ba\brl@pgf@y%
+  \brl@pgf@ya\brl@pgf@pt_ab\brl@pgf@x\advance\brl@pgf@ya\brl@pgf@pt_bb\brl@pgf@y%
+  % 
+  \brl@pgf@x#3\p@%
+  \brl@pgf@y#4\p@%
+  % 
+  \brl@pgf@xb\brl@pgf@pt_aa\brl@pgf@x\advance\brl@pgf@xb\brl@pgf@pt_ba\brl@pgf@y%
+  \brl@pgf@yb\brl@pgf@pt_ab\brl@pgf@x\advance\brl@pgf@yb\brl@pgf@pt_bb\brl@pgf@y%
+  % 
+  \advance\brl@pgf@pt_x\brl@pgf@pt_aa\brl@pgf@xc\advance\brl@pgf@pt_x\brl@pgf@pt_ba\brl@pgf@yc%
+  \advance\brl@pgf@pt_y\brl@pgf@pt_ab\brl@pgf@xc\advance\brl@pgf@pt_y\brl@pgf@pt_bb\brl@pgf@yc%
+  % 
+  \edef\brl@pgf@pt_aa{\pgf@sys@tonumber{\brl@pgf@xa}}%
+  \edef\brl@pgf@pt_ab{\pgf@sys@tonumber{\brl@pgf@ya}}%
+  \edef\brl@pgf@pt_ba{\pgf@sys@tonumber{\brl@pgf@xb}}%
+  \edef\brl@pgf@pt_bb{\pgf@sys@tonumber{\brl@pgf@yb}}%
+  %
+}
+
+
+
+\protected\def\brl@pgf_setdash#1#2{% #1 : pattern, #2 : phase
+  %
+  \ifcsname brl@pgf_stroke@pattern_name_#1\endcsname%
+  \else% if the cs is not defined, then create it and register it.
+    \global\advance\brl@pgf_stroke@pattern_num\@ne%
+    % 
+    \def\brl@pgf_stroke@pattern_point{\brl@pgf_appendpoint}%
+    \count@\z@%
+    \expandafter\brl@pgf_setdash_pattern#1,\brl@end,%
+    % the last = 0
+    \global\expandafter\let\csname brl@pgf_stroke@pattern_name_#1\expandafter\endcsname\csname brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _0\endcsname%
+    \global\expandafter\let\csname brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _\the\count@\expandafter\endcsname\csname brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _0\endcsname%
+    % 
+  \fi%
+  \expandafter\let\expandafter\brl@pgf_stroke@pattern_do\csname brl@pgf_stroke@pattern_name_#1\endcsname%
+}
+
+
+\def\brl@pgf_setdash_pattern#1,{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    % 
+    \brl@pgf_stroke@pattern_phase\numexpr\dimexpr#1\relax/\p@\relax%
+    \ifnum\brl@pgf_stroke@pattern_phase<\@ne%
+      \brl@pgf_stroke@pattern_phase\@ne%
+    \fi%
+    \brl@pgf_setdash_loop%
+    \ifx\brl@pgf_stroke@pattern_point\empty%
+      \def\brl@pgf_stroke@pattern_point{\brl@pgf_appendpoint}% on
+    \else%
+      \let\brl@pgf_stroke@pattern_point\empty% off
+    \fi%
+    \expandafter\brl@pgf_setdash_pattern%
+  \fi%
+}
+
+\def\brl@pgf_setdash_loop{%
+  \edef\brl@tmp{\the\count@}%
+  \advance\count@\@ne%
+  \expandafter\xdef\csname brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _\brl@tmp\endcsname{%
+    \let\noexpand\brl@pgf_stroke@pattern_do\expandafter\noexpand\csname brl@pgf_stroke@pattern_\the\brl@pgf_stroke@pattern_num _\the\count@\endcsname%
+    \brl@pgf_stroke@pattern_point%
+  }%
+  %
+  \ifnum\brl@pgf_stroke@pattern_phase>\@ne%
+    \advance\brl@pgf_stroke@pattern_phase\m@ne%
+    \expandafter\brl@pgf_setdash_loop%
+  \fi%
+}
+
+
+\protected\def\brl@pgf_appendpoint_single{%
+  \edef\brl@tmp{{{\the\brl@pgf@currx}{\the\brl@pgf@curry}{\brl@pgf@pointsize}}}% currx, curry, pointsize
+  \expandafter\brl@pgf_appendpointtoks\brl@tmp%
+}%
+
+\protected\def\brl@pgf_appendpoint_double{%
+  \edef\brl@tmp{{{\the\brl@pgf@currxa}{\the\brl@pgf@currya}{\brl@pgf@pointsize@p}%
+      {\the\brl@pgf@currxb}{\the\brl@pgf@curryb}{\brl@pgf@pointsize@p}}}% currx, curry, pointsize
+  \expandafter\brl@pgf_appendpointtoks\brl@tmp%
+}%
+
+\protected\def\brl@pgf_appendpoint_triple{%
+  \edef\brl@tmp{{{\the\brl@pgf@currx}{\the\brl@pgf@curry}{\brl@pgf@pointsize@p}%
+      {\the\brl@pgf@currxa}{\the\brl@pgf@currya}{\brl@pgf@pointsize@p}%
+      {\the\brl@pgf@currxb}{\the\brl@pgf@curryb}{\brl@pgf@pointsize@p}}}% currx, curry, pointsize
+  \expandafter\brl@pgf_appendpointtoks\brl@tmp%
+}%
+
+
+
+% Line width
+
+% ultra thin 0.1pt
+% very thin 0.2pt
+% thin 0.4pt
+% semithick 0.6pt
+% thick 0.8pt
+% very thick 1.2pt
+% ultra thick 1.6pt
+
+
+\protected\def\brl@pgf_setlinewidth#1{%
+  \@tempdima#1\relax%
+  \ifdim\@tempdima<1.5\p@%
+    \brl@pgf_setlinewidth_single%
+  \else%
+    \let\brl@pgf_setpoint_line\brl@pgf_setpoint_line_double%
+    \let\brl@pgf_lineto_do_normalize\brl@pgf_lineto_do_normalize_double%
+    \let\brl@pgf_setpoint_curve\brl@pgf_setpoint_curve_double%
+    \let\brl@pgf_curveto_do_normalize\brl@pgf_curveto_do_normalize_double%
+    \ifdim\@tempdima<3.0\p@%
+      \brl@pgf_setlinewidth_double%
+    \else%
+      \brl@pgf_setlinewidth_triple%
+    \fi%
+  \fi%
+}%
+
+
+\def\brl@pgf_setlinewidth_single{%
+  \let\brl@pgf_setpoint_line\brl@pgf_setpoint_line_single%  
+  \let\brl@pgf_lineto_do_normalize\empty%
+  \let\brl@pgf_setpoint_curve\brl@pgf_setpoint_curve_single%  
+  \let\brl@pgf_curveto_do_normalize\brl@pgf_normalize_novec%
+  \let\brl@pgf_appendpoint\brl@pgf_appendpoint_single%
+  % 
+  \ifdim\@tempdima<0.5\p@%
+    \def\brl@pgf@pointsize{1}%
+  \else%
+    \ifdim\@tempdima<\p@%
+      \def\brl@pgf@pointsize{2}%
+    \else%
+      \def\brl@pgf@pointsize{3}%
+    \fi%
+  \fi%
+}%
+
+\def\brl@pgf_setlinewidth_double{%
+  \let\brl@pgf_appendpoint\brl@pgf_appendpoint_double%
+  %
+  \ifdim\@tempdima<2.0\p@%
+    \def\brl@pgf@pointsize{4}%
+    \def\brl@pgf@pointsize@p{1}% pointsize
+    \def\brl@pgf@pointsize@d{2.5}% distance of two points
+  \else%
+    \ifdim\@tempdima<2.5\p@%
+      \def\brl@pgf@pointsize{5}%
+      \def\brl@pgf@pointsize@p{2}%
+      \def\brl@pgf@pointsize@d{2.75}%
+    \else%
+      \def\brl@pgf@pointsize{6}%
+      \def\brl@pgf@pointsize@p{3}%
+      \def\brl@pgf@pointsize@d{3}%
+    \fi%
+  \fi%
+}
+
+\def\brl@pgf_setlinewidth_triple{%
+  \let\brl@pgf_appendpoint\brl@pgf_appendpoint_triple%
+  %
+  \ifdim\@tempdima<3.5\p@%
+    \def\brl@pgf@pointsize{7}%
+    \def\brl@pgf@pointsize@p{1}% pointsize
+    \def\brl@pgf@pointsize@d{4}% distance of two points
+  \else%
+    \ifdim\@tempdima<4.0\p@%
+      \def\brl@pgf@pointsize{8}%
+      \def\brl@pgf@pointsize@p{2}%
+      \def\brl@pgf@pointsize@d{5}%
+    \else%
+      \def\brl@pgf@pointsize{9}%
+      \def\brl@pgf@pointsize@p{3}%
+      \def\brl@pgf@pointsize@d{6}%
+    \fi%
+  \fi%
+}
+
+%% if the option includes `double', then, double is cancelled and the line is doubled.
+
+\protected\def\brl@pgf_setlinewidth_setdouble#1{%
+  \@tempdima#1\relax%
+  \let\brl@pgf_setpoint_line\brl@pgf_setpoint_line_double%
+  \let\brl@pgf_lineto_do_normalize\brl@pgf_lineto_do_normalize_double%
+  \let\brl@pgf_setpoint_curve\brl@pgf_setpoint_curve_double%
+  \let\brl@pgf_curveto_do_normalize\brl@pgf_curveto_do_normalize_double%
+  \brl@pgf_setlinewidth_double%
+}%
+
+% input :
+% \brl@pgf@currx, \brl@pgf@curry, \brl@pgf@pointsize
+% \brl@pgf@clipalltoks (clip path)
+%
+% output :
+% \brl@pgf@\brl@pgfminx, \brl@pgf@miny, \brl@pgf@maxx, \brl@pgf@maxy
+% \brl@pgf@minxaty_y
+% \brl@pgf@maxxaty_y
+% \brl@pgf@size_x_y
+
+
+\def\brl@pgf_drawpoint{%
+  %
+  \def\brl@pgf_drawpoint_clip_next{\brl@pgf_drawpoint_clip}%
+  % 
+  \expandafter\brl@pgf_drawpoint_clip\the\brl@pgf@clipalltoks\brl@end\brl@end\brl@end\brl@end%
+}
+
+\def\brl@pgf_drawpoint_clip#1#2#3#4{% #1: eorule #2: ymin, #3: ymax, #4: path
+  \def\brl@tmp{#1}%
+  % 
+  \ifx\brl@tmp\brl@@end%
+    % OK
+    %
+    \expandafter\brl@pgf_drawpoint_noclip%
+    % 
+  \else%
+    \ifnum#2<\brl@pgf@curry%
+      \ifnum#3>\brl@pgf@curry% inside
+        % 
+        % 
+        \brl@pgf@clipytoks{}%
+        \brl@pgf_clip_truncate#4\brl@end\brl@end\brl@end\brl@end\brl@end%
+        {%
+          #1% eorule
+          \expandafter\brl@qs\expandafter{\the\brl@pgf@clipytoks}%
+        }% quick sort
+        %
+        \def\brl@pgf_drawpoint_clip__next{\brl@pgf_drawpoint_clip_}%
+        \expandafter\brl@pgf_drawpoint_clip_\brl@qs@res\brl@end\brl@end%
+      \else%
+        %
+        \def\brl@pgf_drawpoint_clip_next{\brl@pgf_drawpoint_clip_end}%
+      \fi%
+    \else%
+      %
+      \def\brl@pgf_drawpoint_clip_next{\brl@pgf_drawpoint_clip_end}%
+    \fi%
+    \expandafter\brl@pgf_drawpoint_clip_next%
+  \fi%
+}
+
+\def\brl@pgf_drawpoint_clip_end#1\brl@end\brl@end\brl@end\brl@end{}%
+
+\def\brl@pgf_drawpoint_clip_#1#2{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    % larger than all.
+    \def\brl@pgf_drawpoint_clip_next{\brl@pgf_drawpoint_clip_end}%
+  \else%
+    \ifnum#1<\brl@pgf@currx%
+      \ifnum#2>\brl@pgf@currx%
+        % OK
+        \def\brl@pgf_drawpoint_clip__next{\brl@pgf_drawpoint_clip__end}%
+        % \else
+        % not yet determined
+      \fi%
+    \else%
+      \def\brl@pgf_drawpoint_clip_next{\brl@pgf_drawpoint_clip_end}%
+      %
+      \def\brl@pgf_drawpoint_clip__next{\brl@pgf_drawpoint_clip__end}%
+    \fi%
+    \expandafter\brl@pgf_drawpoint_clip__next%
+  \fi%
+}
+
+\def\brl@pgf_drawpoint_clip__end#1\brl@end\brl@end{}%
+
+
+
+\def\brl@pgf_drawpoint_noclip{%
+  \brl@pgf_drawpoint_init%
+  % \brl@pgf@currx, \brl@pgf@curry -> \brl@pgf@transx, \brl@pgf@transy 
+  %
+  \ifnum\brl@pgf@pointsize>\z@%
+    %
+    % set global min, max
+    %
+    \ifnum\brl@pgf@transx<\brl@pgf@minx\relax%
+      \global\let\brl@pgf@minx\brl@pgf@transx%
+    \fi%
+    \ifnum\brl@pgf@transy<\brl@pgf@miny\relax%
+      \global\let\brl@pgf@miny\brl@pgf@transy%
+    \fi%
+    \ifnum\brl@pgf@transx>\brl@pgf@maxx\relax%
+      \global\let\brl@pgf@maxx\brl@pgf@transx%
+    \fi%
+    \ifnum\brl@pgf@transy>\brl@pgf@maxy\relax%
+      \global\let\brl@pgf@maxy\brl@pgf@transy%
+    \fi%
+    % 
+    % set local min, max
+    %
+    \edef\brl@tmpmin{brl@pgf@minxaty_\brl@pgf@transy}%
+    \edef\brl@tmpmax{brl@pgf@maxxaty_\brl@pgf@transy}%
+    \ifcsname\brl@tmpmin\endcsname%
+      \ifnum\csname\brl@tmpmin\endcsname>\brl@pgf@transx\relax%
+        \global\expandafter\let\csname\brl@tmpmin\endcsname\brl@pgf@transx%
+      \fi%
+      \ifnum\csname\brl@tmpmax\endcsname<\brl@pgf@transx\relax%
+        \global\expandafter\let\csname\brl@tmpmax\endcsname\brl@pgf@transx%
+      \fi%
+    \else%
+      \global\expandafter\let\csname\brl@tmpmin\endcsname\brl@pgf@transx%
+      \global\expandafter\let\csname\brl@tmpmax\endcsname\brl@pgf@transx%
+    \fi%
+    % 
+    \global\expandafter\let\csname brl@pgf@size_\brl@pgf@transx _\brl@pgf@transy\endcsname\brl@pgf@pointsize% set
+    % 
+  \else%
+    \global\expandafter\let\csname brl@pgf@size_\brl@pgf@transx _\brl@pgf@transy\endcsname\@undefined% unset
+  \fi%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% text
+%
+
+%
+%
+
+\protected\def\brl@pgf_put#1#2#3{%
+  \brl@pgf@x#1\relax%
+  \brl@pgf@y#2\relax%
+  \brl@pgf_transform{\brl@pgf@x}{\brl@pgf@y}%
+  \brl@pgf@ptx\numexpr\brl@pgf@x/\p@\relax%
+  \brl@pgf@pty\numexpr\brl@pgf@y/\p@\relax%
+  \brl@pgf_put_loop#3\brl@end%
+}
+
+\def\brl@pgf_put_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \edef\brl@tmp{{\brl@pgf_hbox{\the\brl@pgf@ptx}{\the\brl@pgf@pty}\unexpanded{{#1}}}}%
+    \expandafter\brl@pgf_appendnodetoks\brl@tmp% save position
+    %
+    % 
+    %
+    \advance\brl@pgf@pty-\brl@pgf@oneletter\relax% advance one letter.
+    \expandafter\brl@pgf_put_loop%
+  \fi%
+}
+
+
+%
+% color -> fill pattern
+%
+% #1 : gray_0.1, rgb_0,0,1 etc.
+%
+% if the corresponding pattern is defined, then use it.
+%
+% Otherwise, use the grayscale.
+%
+% \brl@pgf_fill@pattern_name : data of fill pattern
+% \brl@pgf_fill@pattern_name_num : patterns
+%
+
+
+
+% \numexpr / \relax
+% 19/10  = 1
+% 10/10  = 1
+% 5/10   = 1
+% 4/10   = 0
+% -4/10  = 0
+% -5/10  = -1
+% -9/10  = -1
+% -10/10 = -1
+% -14/10 = -1
+% -15/10 = -2
+% -19/10 = -2
+
+
+
+% \divide
+% 19/10  = 1   -> 20
+% 10/10  = 1   -> 10
+% 9/10   = 0   -> 10
+% 4/10   = 0   -> 10
+% 1/10   = 0   -> 10
+% 0/10   = 0   -> 0
+% -9/10  = 0   -> 0
+% -10/10 = -1  -> -10
+% -19/10 = -1  -> -10
+% -20/10 = -2  -> -20
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@pgf_filldef
+%
+% define fill pattern
+%
+
+\def\brl@pgf_filldef_getcolor#1#2#3#4#5{#4_#5}
+
+
+
+% \brl@pgf_filldef{10}{1}{1}{%
+%   {0101}%
+%   {1010}%
+%   {0101}%
+%   {1010}%
+% }
+
+%
+% #1 : pattern_name
+% #2 : xstep (the distance between two dots)
+% #3 : ystep (the distance between two dots)
+% #4 : set of pattern
+
+
+\def\brl@pgf_filldef_save#1#2#3#4{%
+  \expandafter\gdef\csname brl@pgf_filldef_save@#1\endcsname{%
+    \brl@pgf_filldef{#1}{#2}{#3}{#4}%
+  }%
+}
+
+
+
+\def\brl@pgf_plot_filldef#1#2#3#4{%
+  \edef\brl@pgf_filldef@pattern_name{#1}%
+  \brl@pgf_filldef@curry\z@%
+  \def\brl@pgf_filldef@maxx{-1}%
+  \edef\brl@pgf_filldef@minstepx{\the\numexpr\brl@pgf_filldef@plotunit*#2\relax}%
+  \edef\brl@pgf_filldef@minstepy{\the\numexpr\brl@pgf_filldef@plotunit*#3\relax}%
+  %
+  \brl@pgf_plot_filldef_count#4\brl@end% to reverse the order, count the number of patterns
+  \edef\brl@pgf_filldef@maxy{\the\brl@pgf_filldef@curry}%
+  %
+  % plot
+  %
+  \brl@pgf_plot_filldef_pattern#4%
+  % 
+  \edef\brl@tmp{%
+    \gdef\noexpand\brl@pgf_fill@stepx{\brl@pgf_filldef@maxx}%
+    \gdef\noexpand\brl@pgf_fill@stepy{\brl@pgf_filldef@minstepy}%
+    \gdef\noexpand\brl@pgf_fill@stepym@ne{\the\numexpr\brl@pgf_filldef@minstepy-\@ne\relax}%
+    \gdef\noexpand\brl@pgf_fill@maxmody{\brl@pgf_filldef@maxy}%
+    \gdef\noexpand\brl@pgf_fill@pattern_name{\brl@pgf_filldef@pattern_name}%
+  }%
+  \global\expandafter\let\csname brl@pgf_fill@pattern_\brl@pgf_filldef@pattern_name\endcsname\brl@tmp%
+  %
+  \brl@tmp% execute right now.
+}
+
+\def\brl@pgf_plot_filldef_count#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \advance\brl@pgf_filldef@curry\@ne%
+    \expandafter\brl@pgf_plot_filldef_count%
+  \fi%
+}
+
+
+\def\brl@pgf_plot_filldef_pattern#1{%
+  %
+  %
+  %
+  \advance\brl@pgf_filldef@curry\m@ne%
+  \brl@pgf_filldef@currx\z@%
+  \brl@pgf_filldef@dotnum\z@%
+  \brl@pgf_filldef@prevx\z@%
+  \def\brl@pgf_filldef@prevsize{0}%
+  \edef\brl@pgf_filldef@defname{brl@pgf_fill@pattern_\brl@pgf_filldef@pattern_name _\the\brl@pgf_filldef@curry _}% for fixed pattern and fixed y
+  % 
+  \brl@pgf_plot_filldef_pattern_loop#1\brl@end%
+  \ifnum\brl@pgf_filldef@curry>\z@%
+    \expandafter\brl@pgf_plot_filldef_pattern%
+  \fi%
+}
+
+
+
+% 0001100010
+%
+% _0 \advance 3 \let\brl@pgf_fill@dostepx _1
+% _1 \advance 1 \let\brl@pgf_fill@dostepx _2
+% _2 \advance 4 \let\brl@pgf_fill@dostepx _3
+% _3 \advance 5 \let\brl@pgf_fill@dostepx _1
+%
+% 0000100000
+% _0 \advance 4 \let\brl@pgf_fill@dostepx _1
+% _1 \advance 10
+%
+% 1000000000
+% _0 \let\brl@pgf_fill@dostepx _1
+% _1 \advance 10
+%
+% 0000000000
+% _0 \advance 10000
+
+
+
+\def\brl@pgf_plot_filldef_pattern_loop#1{%
+  \def\brl@pgf_filldef@currsize{#1}%
+  \ifx\brl@pgf_filldef@currsize\brl@@end%
+    %
+    % end
+    \expandafter\brl@pgf_plot_filldef_pattern_end%
+    % 
+  \else%
+    %
+    % loop
+    %
+    \ifnum\brl@pgf_filldef@currsize>\z@%
+      %
+      %
+%      \ifnum\brl@pgf_filldef@dotnum=\z@%
+      \ifcase\brl@pgf_filldef@dotnum%
+        \edef\brl@pgf_filldef@firstx{\the\brl@pgf_filldef@currx}%
+        \let\brl@pgf_filldef@firstsize\brl@pgf_filldef@currsize%
+      \fi%
+      % 
+      \edef\brl@tmp{\the\numexpr\brl@pgf_filldef@currx-\brl@pgf_filldef@prevx\relax}%
+      \expandafter\xdef\csname\brl@pgf_filldef@defname\the\brl@pgf_filldef@dotnum\endcsname{%
+        %
+        \unless\ifnum\brl@pgf_filldef@currsize=\brl@pgf_filldef@prevsize% the same size
+          \def\noexpand\brl@pgf@pointsize{\brl@pgf_filldef@currsize}%
+          % 
+        \fi%
+        \ifnum\brl@tmp>\z@% this happens when the pattern is 1.... 
+          \advance\brl@pgf_fill@x\brl@tmp\relax%
+        \fi%
+        \let\noexpand\brl@pgf_fill@dostepx%
+        \expandafter\noexpand\csname\brl@pgf_filldef@defname\the\numexpr\brl@pgf_filldef@dotnum+1\relax\endcsname%
+      }%
+      %
+      %
+      \let\brl@pgf_filldef@prevsize\brl@pgf_filldef@currsize%
+      % 
+      \brl@pgf_filldef@prevx\brl@pgf_filldef@currx%
+      \advance\brl@pgf_filldef@dotnum\@ne%
+    \fi%
+    %
+    %
+    \advance\brl@pgf_filldef@currx\brl@pgf_filldef@minstepx\relax%
+    % 
+    \ifnum\brl@pgf_filldef@maxx<\brl@pgf_filldef@currx%
+      \edef\brl@pgf_filldef@maxx{\the\brl@pgf_filldef@currx}%
+    \fi%
+    %
+    %
+    %
+    \expandafter\brl@pgf_plot_filldef_pattern_loop%
+  \fi%
+}
+
+
+\def\brl@pgf_plot_filldef_pattern_end{%
+  %
+  \ifcase\brl@pgf_filldef@dotnum%
+    % 
+    \expandafter\gdef\csname\brl@pgf_filldef@defname 0\endcsname{\brl@pgf_fill@x\@M}%
+  \or%
+    \expandafter\xdef\csname\brl@pgf_filldef@defname 1\endcsname{\advance\brl@pgf_fill@x\brl@pgf_filldef@maxx\relax}%
+  \else%
+    %
+    %
+    \expandafter\xdef\csname\brl@pgf_filldef@defname\the\brl@pgf_filldef@dotnum\endcsname{%
+      %
+      \unless\ifnum\brl@pgf_filldef@prevsize=\brl@pgf_filldef@firstsize% the same size
+        \def\noexpand\brl@pgf@pointsize{\brl@pgf_filldef@firstsize}%
+        % 
+      \fi%
+      \advance\brl@pgf_fill@x%
+      \the\numexpr\brl@pgf_filldef@maxx-\brl@pgf_filldef@prevx+\brl@pgf_filldef@firstx\relax\relax%
+      \let\noexpand\brl@pgf_fill@dostepx\expandafter\noexpand\csname\brl@pgf_filldef@defname 1\endcsname%
+    }% add loop
+  \fi%
+} 
+
+
+
+
+\def\brl@pgf_color#1{%
+  {%
+    \def\brl@tmp{#1}%
+    % 
+    \ifx\brl@tmp\empty%
+      \def\brl@tmp{black}%
+    \fi%
+    \brl@orig@color{\brl@tmp}% gives \XC@current@color -> \xcolor@ {}{rgb 1 0 0}{rgb}{1,0,0}
+    %
+    \edef\brl@tmp{\expandafter\brl@pgf_filldef_getcolor\XC@current@color}%
+    % 
+    \ifcsname brl@pgf_fill@pattern_\brl@tmp\endcsname%
+      \csname brl@pgf_fill@pattern_\brl@tmp\endcsname%
+    \else%
+      \ifcsname brl@pgf_filldef_save@\brl@tmp\endcsname% user definition
+        \csname brl@pgf_filldef_save@\brl@tmp\endcsname% exec user definition
+      \else%
+        \expandafter\brl@pgf_gray\brl@tmp\brl@end%
+        % 
+        \ifcsname brl@pgf_fill@pattern_\the\count@\endcsname%
+          \csname brl@pgf_fill@pattern_\the\count@\endcsname%
+        \else%
+          \csname brl@pgf_filldef_save@\the\count@\endcsname% exec predefinition
+        \fi%
+      \fi%
+    \fi%
+  }%
+}
+
+
+
+\def\brl@pgf_gray#1_{%
+  \csname brl@pgf_model_#1_\endcsname%
+}
+
+\def\brl@pgf_init{% init for plot
+  \brl@pgf@clipalltoks{}%
+  \brl@pgf@pathtoks{}%
+  \global\brl@pgf@invoketoks{}%
+}
+
+
+%%
+%% matrix
+%%
+%%
+\def\brl@pgf_plot_matrix_init{%
+  \let\brl@pgf@matrix@endcell_sub\brl@pgf@matrix@endcell_plot%
+  \let\brl@pgf@matrix@step@column_sub\brl@pgf@matrix@step@column_plot%
+  \let\brl@pgf_matrix_sub\brl@pgf_matrix_plot%
+}
+
+
+\def\brl@pgf@matrix@step@column_plot{%
+  \let\pgfsys@invoke\brl@pgfsys@invoke_matrix%
+  \global\brl@pgf@invokemattoks{}%
+}
+
+
+\def\brl@pgf@matrix@endcell_plot{%
+  \expandafter\xdef\csname brl@pgf@matrix_elem_\the\pgfmatrixcurrentrow _\the\pgfmatrixcurrentcolumn\endcsname{\the\brl@pgf@invokemattoks}%
+}
+
+
+\def\brl@pgf_matrix_plot{%
+  \edef\brl@tmp{{\brl@pgf_beginscope%
+      \brl@pgf_transformcm%
+      {1.0}{0.0}%
+      {0.0}{1.0}%
+      {\the\@tempdimb}{\the\@tempdima}%
+      \csname brl@pgf@matrix_elem_\the\@tempcnta _\the\@tempcntb\endcsname%
+      \brl@pgf_endscope}}%
+  \expandafter\pgfsysprotocol@literal\brl@tmp%
+}%  
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% normalized normal vector
+%
+% input : \pgf@x, \pgf@y
+% output : \brl@pgf@normal_x, \brl@pgf@normal_y
+% \@tempdimb : sqrt[1+(b/a)^2]
+% \@tempdimc : |a|
+% \@tempdimb * \@tempdimc : sqrt[a^2+b^2]
+%
+\def\brl@pgf_normalize{% sqrt[1+x^2]
+  \ifdim\pgf@x<\z@%
+    \def\brl@pgf@xsign{-}%
+  \else%
+    \let\brl@pgf@xsign\empty%
+  \fi%
+  \ifdim\pgf@y<\z@%
+    \def\brl@pgf@ysign{-}%
+  \else%
+    \let\brl@pgf@ysign\empty%
+  \fi%
+  \ifdim\brl@pgf@xsign\pgf@x>\brl@pgf@ysign\pgf@y% sqrt[a^2+b^2]=|a|sqrt[1+(b/a)^2]
+    \@tempdimc\brl@pgf@xsign\pgf@x% |a|
+    \@tempdima\dimexpr\pgf@y*\p@/\@tempdimc\relax% b/|a|
+    \brl@pgf@xd\brl@pgf@xsign\brl@pgf@pointsize@d\p@% c sgn a
+    \brl@pgf@yd\brl@pgf@pointsize@d\@tempdima% c b/|a|
+    \brl@pgf_normalize_sqrt%
+    \edef\brl@pgf@normal_x{\the\numexpr-\brl@pgf@yd/\@tempdimb\relax}%
+    \edef\brl@pgf@normal_y{\the\numexpr\brl@pgf@xd/\@tempdimb\relax}%
+  \else%
+    %
+    \ifdim\brl@pgf@ysign\pgf@y<0.01\p@% regard the vector as 0.
+      \def\brl@pgf@normal_x{\z@}%
+      \def\brl@pgf@normal_y{\z@}%
+      \@tempdimb\p@%
+      \@tempdimc\p@%
+    \else%
+      \@tempdimc\brl@pgf@ysign\pgf@y%
+      \@tempdima\dimexpr\pgf@x*\p@/\@tempdimc\relax%
+      \brl@pgf@xd\brl@pgf@pointsize@d\@tempdima%
+      \brl@pgf@yd\brl@pgf@ysign\brl@pgf@pointsize@d\p@%
+      \brl@pgf_normalize_sqrt%
+      \edef\brl@pgf@normal_x{\the\numexpr-\brl@pgf@yd/\@tempdimb\relax}%
+      \edef\brl@pgf@normal_y{\the\numexpr\brl@pgf@xd/\@tempdimb\relax}%
+    \fi%
+  \fi%
+}
+
+
+\def\brl@pgf_normalize_novec{% sqrt[1+x^2]
+  \ifdim\pgf@x<\z@%
+    \def\brl@pgf@xsign{-}%
+  \else%
+    \let\brl@pgf@xsign\empty%
+  \fi%
+  \ifdim\pgf@y<\z@%
+    \def\brl@pgf@ysign{-}%
+  \else%
+    \let\brl@pgf@ysign\empty%
+  \fi%
+  \ifdim\brl@pgf@xsign\pgf@x>\brl@pgf@ysign\pgf@y% sqrt[a^2+b^2]=|a|sqrt[1+(b/a)^2]
+    \@tempdimc\brl@pgf@xsign\pgf@x%
+    \@tempdima\dimexpr\pgf@y*\p@/\pgf@x\relax%
+    \brl@pgf_normalize_sqrt%
+    \@tempdimb\expandafter\brl@@strip@pt\the\@tempdimc\@tempdimb%
+  \else%
+    \ifdim\brl@pgf@ysign\pgf@y<0.01\p@% regard the vector as 0.
+      \@tempdimb\p@%
+    \else%
+      \@tempdimc\brl@pgf@ysign\pgf@y%
+      \@tempdima\dimexpr\pgf@x*\p@/\pgf@y\relax%
+      \brl@pgf_normalize_sqrt%
+      \@tempdimb\expandafter\brl@@strip@pt\the\@tempdimc\@tempdimb%
+    \fi%
+  \fi%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% sqrt[1+x^2] for 0 <= x <= 1
+%
+% f[x_, a_] := (x + a / x) / 2;
+% determine c so that the error of
+% |f[1 + c x/2, 1 + x] / sqrt[1 + x] - 1| <= M for 0 <= x <= 1
+% is minimized.
+% M = 0.000052516
+%
+% numerical analysis implies c = 0.8575631489125308
+% 1/c = 1.1660948832375695
+% (c-2)/c = -1.332189766475139
+% f[1 + c x/2, 1 + x] = (1/c) + 1/4 (2 + c x) + (c - 2)/(c (2 + c x)) 
+%
+
+\def\brl@pgf_normalize_sqrt{% sqrt[1 + x^2]
+  \@tempdima\expandafter\brl@@strip@pt\the\@tempdima\@tempdima% x^2
+  \@tempdima0.857563\@tempdima%
+  \advance\@tempdima\tw@\p@% 2 + c x^2
+  \@tempdimb\dimexpr1.16609\p@+0.25\@tempdima-1.33219\p@*\p@/\@tempdima\relax%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% 1/sqrt[1+x^2] for 0 <= x <= 1
+%
+% f[x_, a_] := (x + 1 /(a x)) / 2;
+% determine c so that the error of
+% |f[1 - c x/2, 1 + x] sqrt[1 + x] - 1| <= M for 0 <= x <= 1
+% is minimized.
+% M = 0.0005495844099567826
+%
+% numerical analysis implies c = 0.6319020829018348
+% f[1 + c x/2, 1 + x] = 1/4 (2 - c x) + 1/(1 + x) (2 - c x)) 
+%
+
+% \def\brl@pgf_normalize_invsqrt{% sqrt[1 + x^2]
+%   \@tempdima\expandafter\brl@@strip@pt\the\@tempdima\@tempdima% x^2
+%   \@tempdimb\@tempdima%
+%   \@tempdima-0.631902\@tempdima%
+%   \advance\@tempdima\tw@\p@% 2 - c x^2
+%   \advance\@tempdimb\p@% 1 + c x^2
+%   \@tempdimb\dimexpr0.25\@tempdima\p@*\p@/\@tempdima\relax%
+% }
+
+
+
+
+
+% f[x_, a_] := (x + a / x) / 2;
+% determine c so that the error of
+% |f[1 + c x/2, 1 + x] - sqrt[1 + x]|
+% is minimized.
+%
+% numerical analysis implies c = 0.8555572815447349
+% 1/c = 1.1688288108476728
+% (c-2)/c = -1.3376576216953455
+% f[1 + c x/2, 1 + x] = (1/c) + 1/4 (2 + c x) + (c - 2)/(c (2 + c x)) 
+%
+
+
+
+
+\ifbrl@option@pindisplay%
+  \input{jmbraille/codes/brl_pgfsys_pindisplay.tex}
+\else%
+  \input{jmbraille/codes/brl_pgfsys_draw.tex}  
+  \input{jmbraille/codes/brl_pgfsys_plotter.tex}
+\fi%
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

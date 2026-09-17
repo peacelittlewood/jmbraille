@@ -1,0 +1,515 @@
+% Time-stamp: <2026-09-13 22:48:29 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%
+%
+%   patches
+%
+% for old latex
+\ifdefined\PackageNote\else%
+\def\PackageNote#1#2{%
+   \GenericWarning{%
+      (#1) \@spaces\@spaces\@spaces
+   }{%
+      Package #1 Info: #2%
+   }%
+}
+\fi%
+
+%%   \enddocument
+%%   AddToHook is preferable... or not needed because all streams are closed automatically.
+% \ifbrl@option@cache%
+%   \def\brl@tmp#1\@@end{\def\enddocument{#1%
+%       \immediate\closeout\brl@text@file%
+%       \immediate\closeout\brl@mecab@logfile\@@end}}
+% \else%
+%   \def\brl@tmp#1\@@end{\def\enddocument{#1%
+%       \immediate\closeout\brl@mecab@logfile\@@end}}
+% \fi%
+% \expandafter\brl@tmp\enddocument
+
+
+% 2015 \par is primitive
+% \toks@\expandafter{\brl@orig@par}
+% \protected\edef\par{\the\toks@%
+%   \noexpand\brl@document@indenttrue%
+% }%
+
+%\show\par
+
+
+
+
+\def\par{\brl@orig@par\global\brl@document@indenttrue}%
+
+
+%%
+%% \output
+%%
+
+\output{\setbox\z@\box\@cclv}%
+
+
+%% The \write command is inserted in \box255 in LaTeX.
+%% Here \box255 is discarded, and hence \write is preserved in \brl@print@outbox and executed in \brl@print_shipoutcmd.
+%%
+% \def\@unexpandable@protect{\noexpand\protect\noexpand}
+%
+\newbox\brl@print@outbox
+\long\def\protected@write#1#2#3{%
+  \begingroup%
+    \let\thepage\relax%
+    #2%
+    \let\protect\@unexpandable@protect%
+    \edef\brl@tmp{\global\setbox\brl@print@outbox\vbox{\unvbox\brl@print@outbox\write#1{#3}}}%
+    % 
+    \brl@tmp%
+    %
+  \endgroup%
+}
+
+
+
+%% 
+%% picture
+%%
+% \ifdefined\@imakepicbox%
+%   \long\def\@imakepicbox(#1,#2)[#3]#4{%
+%   \@defaultunitsset%
+%   \@tempdimc{#2}%
+%   \unitlength%
+%   \brl@document#4\brl@document@endtext%
+%   \brl@print{0}{0}{\brl@text@toks}{\brl@bse@width}%
+%   \global\setbox\brl@pgf@nodeboxa\vbox to\@tempdimc{%
+%     \let\mb@b\vss%
+%     \let\mb@l\hss%
+%     \let\mb@r\hss%
+%     \let\mb@t\vss%
+%     \@tfor\reserved@a :=#3\do{%
+%       \if s\reserved@a%
+%         \let\mb@l\relax%
+%         \let\mb@r\relax%
+%       \else%
+%         \expandafter\let\csname mb@\reserved@a\endcsname\relax%
+%       \fi%
+%     }%
+%     \mb@t\@defaultunitsset\@tempdimc{#1}%
+% %    \unitlength\hb@xt@\@tempdimc{\mb@l\brl@document#4\brl@end\mb@r}%
+%     \unitlength\hb@xt@\@tempdimc{\mb@l aa \mb@r}%
+%     \mb@b\kern\z@%
+%   }%
+% }
+% \fi
+
+%% tikz
+%%
+%% in tikz, node {....} is dealt as
+%% {\tikz@do@fig ....}     (see tikz.code.tex)
+%% thus tikz@do@fig -> tikz@do@fig\brl@document
+%% gives desired result.
+%% 
+%% \tikz@nodepart@continue
+%%
+\ifdefined\tikz@do@fig%
+  %
+  %
+\toks@\expandafter{\tikz@do@fig}%
+\edef\tikz@do@fig{% append boxname and \document_tikz
+  \the\toks@%
+  \unexpanded{\gdef\brl@pgf@boxname{text}%
+    \brl@document_tikz}%
+}%
+
+\toks@\expandafter{\tikz@nodepart@continue}%
+\edef\tikz@nodepart@continue{% append boxname and \document_tikz
+  \the\toks@%
+  \unexpanded{\global\let\brl@pgf@boxname\tikz@nodepart@name%
+  \brl@document_tikz}}%
+
+
+\toks@\expandafter{\pgf@end@matrix}%
+\edef\pgf@end@matrix{\the\toks@%
+  % patch
+  % 
+  % \pgf@x and \pgf@y are the shift of the origin.
+  \unexpanded{%
+    \ifx\pgf@matrix@node@list\pgfutil@empty% if there is no named node,
+      \pgf@matrix@compute@origin% we still need to calculate the origin even in this case.
+    \fi%
+    % 
+    \@tempcnta\@ne%
+    \brl@pgf_matrix_y% draw all nodes.
+  }%
+}%
+
+\def\brl@pgf_matrix_y{%
+  \@tempdima\csname pgf@matrix@miny\the\@tempcnta\endcsname%
+  \advance\@tempdima\pgf@y%
+  %
+  \@tempcntb\@ne%
+  \brl@pgf_matrix_x%
+  \advance\@tempcnta\@ne%
+  \ifnum\@tempcnta>\pgfmatrixcurrentrow%
+  \else%
+    \expandafter\brl@pgf_matrix_y%
+  \fi%
+}
+
+\def\brl@pgf_matrix_x{%
+  \@tempdimb\csname pgf@matrix@minx\the\@tempcntb\endcsname\relax%
+  \advance\@tempdimb\pgf@x%
+  %
+  %
+  \brl@pgf_matrix_sub% draw or plot
+  %
+  %
+  \advance\@tempcntb\@ne%
+  \ifnum\@tempcntb>\pgf@matrix@numberofcolumns%
+  \else%
+    \expandafter\brl@pgf_matrix_x%
+  \fi%
+}%  
+
+
+
+\let\brl@pgfmatrix\pgfmatrix
+\def\pgfmatrix#1#2#3#4#5#6{%
+  \brl@pgfmatrix{#1}{#2}{#3}{#4}{#5}{#6%
+    % 
+    % patch
+    % 
+    \ifbrl@figure@plot%
+      \brl@pgf_plot_matrix_init%
+    \else%
+      \brl@pgf_draw_matrix_init%
+    \fi%
+  }%
+}
+
+
+\toks@\expandafter{\pgf@matrix@endcell}%
+\edef\pgf@matrix@endcell{\the\toks@%
+  \noexpand\brl@pgf@matrix@endcell_sub}%
+
+
+
+\toks@\expandafter{\pgf@matrix@step@column}%
+\edef\pgf@matrix@step@column{\the\toks@%
+  \noexpand\brl@pgf@matrix@step@column_sub%
+}%
+%
+
+\tikzset{matrix of math nodes/.style={%
+    matrix of nodes,
+    nodes={%
+      execute at begin node=\let\brl@document_tikz\brl@document_tikz_math,% in matrix, nodes are for math.
+      execute at end node=%
+    },%
+  }}%
+
+% 
+% \usetikzlibrary{arrows.meta}%
+% 
+
+\usetikzlibrary{arrows.meta}
+\let\pgf@ar@code@stealth\relax
+\let\pgf@ar@code@latex\relax
+\pgfkeys{
+  stealth /.tip         = {Stealth},
+  latex /.tip           = {Latex}
+}%
+
+%%   change the size of the tip of an arrow
+  
+\def\pgfarrowslinewidthdependent#1#2#3{%
+  \pgf@x#1%
+  \pgf@x\brl@figure@arrowscale\pgf@x% this line is patched.
+  \ifdim\pgfinnerlinewidth>0pt%
+    \pgf@arrows@inner@line@width@dep{#2}{#3}%
+  \else%
+    \advance\pgf@x by#2\pgflinewidth%
+  \fi%
+}
+
+
+\def\brl@plot@pgfutil@minipage[#1]#2{%
+  \setbox\z@\hbox to #2\bgroup%
+}
+\def\brl@plot@pgfutil@endminipage{%
+  \egroup%
+  \ht\z@\brl@print@minipageht\relax%
+  \dp\z@\brl@print@minipagedp\relax%
+  \box\z@%
+}
+
+
+% change text options, so that the texts are located correctly and etc.
+% make \brl@draw@textcmd, which shifts the position and other commands.
+%
+
+% \def\brl@draw@textcmd_shift{%
+%   \hrule\@depth\z@\@width\z@%
+% }
+
+% \let\brl@draw@textcmd\empty % default empty.
+
+% \def\brl@draw@textcmd{\brl@draw@textcmd_shift}%
+
+% \tikzoption{text width}{%
+%   \def\brl@draw@textcmd{\brl@draw@textcmd_shift}%
+%   \def\tikz@text@width{#1}%
+% }
+
+% \tikzoption{text}{\def\tikz@textcolor{#1}}%
+% \tikzoption{font}{\def\tikz@textfont{#1}}%
+% \tikzoption{node font}{\def\tikz@node@textfont{#1}}%
+% \tikzoption{text opacity}{\def\tikz@textopacity{#1}}%
+% \tikzoption{text width}{\def\tikz@text@width{#1}}%
+% \tikzoption{text height}{\def\tikz@text@height{#1}}%
+% \tikzoption{text depth}{\def\tikz@text@depth{#1}}%
+% \tikzoption{text ragged}[]%
+% {\def\tikz@text@action{\pgfutil@raggedright\rightskip0pt plus2em \spaceskip.3333em \xspaceskip.5em\relax}}%
+% \tikzoption{text badly ragged}[]{\def\tikz@text@action{\pgfutil@raggedright\relax}}%
+% \tikzoption{text ragged left}[]%
+% {\def\tikz@text@action{\pgfutil@raggedleft\leftskip0pt plus2em \spaceskip.3333em \xspaceskip.5em\relax}}%
+% \tikzoption{text badly ragged left}[]{\def\tikz@text@action{\pgfutil@raggedleft\relax}}%
+% \tikzoption{text justified}[]{\def\tikz@text@action{\leftskip0pt\rightskip0pt\relax}}%
+% \tikzoption{text centered}[]{\def\tikz@text@action{%
+%   \leftskip0pt plus2em%
+%   \rightskip0pt plus2em%
+%   \spaceskip.3333em \xspaceskip.5em%
+%   \parfillskip=0pt%
+%   \iftikz@warn@for@narrow@centered\else\hbadness10000\fi%
+%   \let\\=\@centercr% for latex
+%   \relax}}%
+% \tikzoption{text badly centered}[]%
+% {\def\tikz@text@action{%
+%   \let\\=\@centercr% for latex
+%   \parfillskip=0pt%
+%   \rightskip\pgfutil@flushglue%
+%   \leftskip\pgfutil@flushglue\relax}}%
+
+
+
+% %% bug in pgfsys.code.tex
+% \def\pgfsys@end@idscope{% bug : comment mark % is dropped.
+%       \endgroup%
+%     \ifx\pgfsys@beg@save\relax%
+%       \ifx\pgfsys@end@save\relax%
+%       \else%
+%         \pgfsys@call@end%
+%       \fi%
+%     \else%
+%       \pgfsys@call@end%
+%     \fi%
+%   \endgroup%
+% }
+
+
+\fi% \ifdefined\tikz@do@fig
+
+% \pgfkeys{
+%   LaTeX /.tip         = {Latex},
+%   Triangle /.tip      = {Stealth[inset=+0pt, angle=+60:+2.7pt +3.6]},
+%   Rectangle /.tip     = {Square[length=+3pt +4.5,width'=+0pt +.5]},
+%   Ellipse /.tip       = {Circle[length=+3.3pt +4.95, width'=+0pt +0.5]},
+%   Diamond /.tip       = {Kite[inset'=+0pt .5]},
+%   Turned Square /.tip = {Kite[length=+3pt 4,width'= +0pt 1,inset'= +0pt 0.5]},
+%   To /.tip            = {Computer Modern Rightarrow},
+%   Bar /.tip           = {Tee Barb[length=+0pt]},
+%   Bracket /.tip       = {Tee Barb[inset'=+0pt +1,length=+0.75pt +1]},
+%   Parenthesis /.tip   = {Arc Barb[arc=+120,length=+1.725pt +2.3]}
+% }%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% includegraphics for XeLaTeX
+%
+% The behavior of scale feature seems buggy.
+% Thus it is replaced by that for dvipdfmx.
+
+\ifdefined\directlua%
+\else%
+  \ifdefined\kanjiskip%
+  \else% Xelatex
+\def\Ginclude@pdf#1{%
+  \Gin@log{<#1>}%
+  \bgroup
+  \def\@tempa{!}%
+    \special{pdf:epdf\GPT@space
+      \ifx\Gin@page\@empty\else page\GPT@space\Gin@page\GPT@space\fi
+      \ifx\Gin@pagebox\@empty\else pagebox\GPT@space\Gin@pagebox\GPT@space\fi
+      bbox\GPT@space\Gin@llx\GPT@space\Gin@lly\GPT@space\Gin@urx\GPT@space\Gin@ury\GPT@space
+      clip\GPT@space\ifGin@clip 1\else 0\fi\GPT@space
+      \ifx\Gin@scalex\@tempa\else width\GPT@space\the\Gin@req@width\GPT@space\fi
+      \ifx\Gin@scaley\@tempa\else height\GPT@space\the\Gin@req@height\GPT@space\fi
+      (#1)%
+    }%
+  \egroup}
+\fi%
+\fi%
+
+%% \fnsymbol
+
+% \def\@fnsymbol#1{%
+%    \ifcase#1\or \TextOrMath\textasteriskcentered *\or
+%    \TextOrMath \textdagger \dagger\or
+%    \TextOrMath \textdaggerdbl \ddagger \or
+%    \TextOrMath \textsection  \mathsection\or
+%    \TextOrMath \textparagraph \mathparagraph\or
+%    \TextOrMath \textbardbl \|\or
+%    \TextOrMath {\textasteriskcentered\textasteriskcentered}{**}\or
+%    \TextOrMath {\textdagger\textdagger}{\dagger\dagger}\or
+%    \TextOrMath {\textdaggerdbl\textdaggerdbl}{\ddagger\ddagger}\else
+%    \@ctrerr \fi
+% }%
+
+
+% sign \x00a7 45-234 § section
+% sign \x00b6 45-1234 ¶ pilcrow
+% sign \x2020 4-6-1456 †   dagger
+% sign \x2021 4-6-12456 ‡   double dagger
+
+%% for ueb
+
+\def\@fnsymbol#1{%
+  \ifcase#1\or%
+    *\or%
+    \string\\x2020\or%
+    \string\\x2021\or%
+    \string\\x00a7\or%
+    \string\\x00b6\or%
+    \string\\x2016\or%
+    \string\\xe028**\string\\xe029\or%
+    \string\\xe028\string\\x2020\string\\x2020\string\\xe029\or%
+    \string\\xe028\string\\x2021\string\\x2021\string\\xe029\else%
+    \@ctrerr%
+  \fi%
+}%
+
+
+
+
+%% \DeclareMathOperator
+
+
+\def\DeclareMathOperator{%
+  \@ifnextchar*{\brl@patch_dmo}{\brl@patch_dmo*}% * does not mean any thing in the context of braille.
+}
+
+
+\def\brl@patch_dmo*#1#2{%
+  \AtBeginDocument{\brl@patch_dmo_do{#1}{#2}}%
+}
+
+\def\brl@patch@@mathcmd{\brl@math_cmd}
+\def\brl@patch@@letterrK{letterrK}
+\def\brl@patch@@letterrL{letterrL}
+
+
+\def\brl@patch_dmo_ajsub_first#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@patch@@mathcmd\brl@tmp%
+    \expandafter\brl@patch_dmo_ajsub_first_%
+  \else%
+    \expandafter\brl@patch_dmo_ajsub_first__%
+  \fi%
+}
+
+\def\brl@patch_dmo_ajsub_first_#1#2\brl@end{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@patch@@letterrK% aj
+    \xdef\brl@patch@role{funcaj}%
+  \else%
+    \ifx\brl@tmp\brl@patch@@letterrL% kz
+      \xdef\brl@patch@role{funckz}%
+    \else
+      \xdef\brl@patch@role{op}%
+    \fi%
+  \fi%
+}
+
+\def\brl@patch_dmo_ajsub_first__#1\brl@end{%
+  \xdef\brl@patch@role{op}%
+}
+
+
+
+\def\brl@patch_dmo_do#1#2{%
+  %
+  \brl@def_cmdonly{#1}%
+  %
+  \brl@char_getnewkey%
+  %
+  % 
+  {%
+    {%
+      \let\brl@document_math_checkalldigit\@gobble%
+      \brl@document@mathtoks{}%
+      \brl@document_math\rm#2\brl@document_math@end%
+      %\showthe\brl@document@mathtoks
+      \expandafter\brl@patch_dmo_ajsub_first\the\brl@document@mathtoks\brl@end%
+      \expandafter\brl@math_parse\expandafter{\the\brl@document@mathtoks}%
+ %     \xdef\brl@tmp{\the\brl@math@toks}%
+    }%
+    %
+    % 
+    \brl@math@toks\expandafter{\brl@math@subtoks}%
+    %
+    % 
+    \brl@char@charnum\z@%
+    \let\brl@do\brl@do_count%
+    \the\brl@math@toks%
+    %
+    \edef\brl@tmp{\ifnum\brl@char@charnum>\z@\advance\brl@char@charnum\the\brl@char@charnum\relax\fi}%
+    \global\expandafter\let\csname brl@char@count_\brl@char@key\endcsname\brl@tmp%
+    % 
+    \brl@char@spacefalse%
+    \let\brl@do\brl@do_space%
+    \the\brl@math@toks%
+    %
+    \edef\brl@tmp{\ifbrl@char@space\noexpand\brl@char@spacetrue\fi}%
+    \global\expandafter\let\csname brl@char@space_\brl@char@key\endcsname\brl@tmp%
+    %
+    \brl@char@toks{}%
+    \let\brl@do\brl@do_code%
+    \let\brl@bc\brl@bc_patch%
+    \let\brl@ebc\brl@ebc_patch%
+    \the\brl@math@toks%
+    % 
+    \edef\brl@tmp{\the\brl@char@toks}%
+    \global\expandafter\let\csname brl@char@code_\brl@char@key\endcsname\brl@tmp%
+    \global\expandafter\let\csname brl@char@draw_\brl@char@key\endcsname\brl@tmp%
+    %
+    %
+    \edef\brl@tmp{%
+      {\brl@char_textstack{ユーザー定義}{\let\noexpand\brl@do\noexpand\brl@do_mean\the\brl@math@toks}}%
+    }%
+    \global\expandafter\let\csname brl@char@mean_\brl@char@key\endcsname\brl@tmp%
+    % \show\brl@tmp
+    %
+  }%
+  %
+  %
+  \protected\expandafter\edef\csname brl@code_math_\string#1\endcsname{\noexpand\brl@do{\brl@char@key}}%
+  \expandafter\edef\csname brl@char@load_\brl@char@key\endcsname{%
+    \csname brl@code_math_\string#1\endcsname}%
+  %% mean
+  % 
+  %
+  \brl@document_math_cmddef{\brl@patch@role}{#1}{\string#1}%
+  %
+  % 
+}
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

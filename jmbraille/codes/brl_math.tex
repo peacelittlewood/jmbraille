@@ -1,0 +1,2875 @@
+% Time-stamp: <2026-09-15 16:29:52 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@math
+%%
+
+\def\brl@math_appendbracetoks#1{\brl@math@bracetoks\expandafter{\the\brl@math@bracetoks#1}}
+\newtoks\brl@math@bracetoks%
+
+%
+% label
+%
+\def\brl@math_appenddirecttoks#1{\brl@math@directtoks\expandafter{\the\brl@math@directtoks#1}}
+\newtoks\brl@math@directtoks%
+
+
+\def\brl@math_appendlinetoks#1{\brl@math@linetoks\expandafter{\the\brl@math@linetoks#1}}
+\newtoks\brl@math@linetoks%
+
+
+\newtoks\brl@math@toks%
+
+
+\newcount\brl@math@elenum% the number of elements. if >1, required parentheses. This is not needed to be exact: 1 or more.
+
+\newcount\brl@math@posnum
+
+% subscript, supscript level. e.g. \{...^{...(... -> level 1
+% which determines \char@spacetrue or false
+\newcount\brl@math@sslevel% 
+
+% bracket level. ( \{ \} etc.) e.g. \{...^{...(... -> level 1
+\newcount\brl@math@bracketlevel%
+
+% break level. e.g. \{...^{...(... -> level 3
+\newcount\brl@math@breaklevel%
+
+
+
+
+
+
+% if >0, inside parentheses. e.g. \{...^{...(... -> level 1
+% This is used in
+% (1) the symbol of \text in (...\text{...}...) is different from that in \text{...}
+
+\newif\ifbrl@math@altcolon
+\newif\ifbrl@math@currblock
+\newcount\brl@math@currbreak
+\newcount\brl@math@currspace
+
+
+%
+% output: \brl@math@toks
+%         \brl@math@elenum
+%         if = 1 : \brl@math@element
+%
+% 2_{i} : letteraj
+% X^{2}a : prevdigit
+% X^{\rm ABC}a : letteraz
+% X^{\{...\}} : otherwise
+%
+
+%
+% \brl@math_appendbracetoks
+%
+% {label}{over}{begpos}{endpos}
+
+
+
+\ifbrl@option@mathlog%
+
+\newwrite\brl@math@logfile
+
+\immediate\openout\brl@math@logfile\jobname.mlg\relax%
+\def\brl@math_log_seg{%
+  \immediate\write\brl@math@logfile{\brl@@logseg}%
+}%
+\def\brl@math_log_longseg{%
+  \immediate\write\brl@math@logfile{\brl@@logseg\brl@@logseg}%
+}%
+
+\def\brl@math_log_input{%
+  \immediate\write\brl@math@logfile{input : [\the\brl@math@posnum]{\brl@math@id}{\brl@math@dat}}%
+}
+
+\def\brl@math_log_break{%
+  \immediate\write\brl@math@logfile{break : [\the\brl@math@posnum]{\the\numexpr\brl@math@breaklevel*\brl@char@break_base+\brl@math@currbreak\relax}{\the\brl@math@currspace}}%
+}
+      
+\def\brl@math_log_output{%
+  \immediate\write\brl@math@logfile{output: [\the\brl@math@posnum]{\csname brl@math@id_\the\brl@math@posnum\endcsname}{\brl@math@brl}{\csname brl@math@elenum_\the\brl@math@posnum\endcsname}[\ifcsname brl@math@subid_\the\brl@math@posnum\endcsname\csname brl@math@subid_\the\brl@math@posnum\endcsname\fi]}%
+}
+
+\else
+  \let\brl@math_log_seg\empty%
+  \let\brl@math_log_longseg\empty%
+  \let\brl@math_log_input\empty%
+  \let\brl@math_log_break\empty
+  \let\brl@math_log_output\empty%
+\fi
+
+
+\def\brl@math@@digit{digit}
+\def\brl@math@@letteraz{letteraz}
+\def\brl@math@@null{null}
+\def\brl@math@@space{space}
+\def\brl@math@@start{start}
+\def\brl@math@@dots{dots}
+\def\brl@math@@end{end}
+\def\brl@math@@empty{empty}
+\def\brl@math@@emptydelim{emptydelim}
+\def\brl@math@@intertext{intertext}
+\def\brl@math@@block{block}
+
+
+%
+% composite chars
+%
+\def\brl@code_math_vdots{\brl@char@block{0}{2}{1}{\brl@char@space@true}{}{{l}{1}{\brl@code_math_vdotsc}{l}{1}{\brl@code_math_vdotsc}}}
+\def\brl@code_math_ddots{\brl@char@block{0}{2}{3}{\brl@char@space@true}{}{{l}{3}{\brl@code_math_ddotsu}{l}{3}{\brl@code_math_ddotsd}}}
+
+\def\brl@math#1{%
+  \brl@math_parse{#1}%
+  \brl@math@toks\expandafter{\brl@math@subtoks}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% input : contents, breaklevel
+%
+% output : \brl@math@subtoks
+%          \brl@math@subid = first = last if elenum = 1 otherwise null
+%          \brl@math@subfirstid
+%          \brl@math@sublastid
+
+\def\brl@math_parse#1{%
+  {%
+    % \def\brl@tmp{#1}\show\brl@tmp
+    %
+    % the following level may be broken in math_exec
+    % due to the input if the pair () etc. does not match.
+    %
+    \edef\brl@math@origbracketlevel{\the\brl@math@bracketlevel}%
+    \edef\brl@math@origbreaklevel{\the\brl@math@breaklevel}%
+    % 
+    % preproc init
+    %
+    \brl@math@posnum\z@%
+    \brl@math@bracetoks{}%
+    \brl@math@directtoks{}%
+    %
+    % preproc (pass 1) construct queues
+    %                  table of underbrace, overbrace
+    %                  env
+    % sslevel (breaklevel) may be changed but restored in ^ and _ (except underbrace and overbrace)
+    %
+    \brl@math_preproc#1\brl@end%
+    \edef\brl@math@posmax{\the\brl@math@posnum}%
+    %
+    % parse init
+    %
+    \brl@math@posnum\z@%
+    \brl@math@elenum\z@% to count the elenum of #1
+    % 
+    % parse (pass 2) construct brailles
+    %
+    % bracketlevel, breaklevel may be changed to count the number of elements:
+    % text@parenlevel may be changed in () used in \text
+    % bracketlevel may be changed in\{\} etc. to restore element numbers (see exec_open)
+    %
+    % breaklevel is used to determine textmode or mathmode.
+    % 
+    \brl@math_exec%
+    %
+    % makebrace (pass 3) construct underbrace, overbrace
+    % makedelim (pass 4) construct left, middle, right
+    %
+    % sslevel and breaklevel are set to be 0 but restored in _{...} or ^{...}
+    % 
+    % 
+    \brl@math_makebrace%
+    \brl@math_makedelim%
+    %
+    % postproc init
+    %
+    \brl@math@posnum\z@%
+    \brl@math@toks{}%
+    %
+    \brl@math@currblockfalse%
+    \brl@math@currbreak\brl@char@break_first% start with break_first
+    \brl@math@currspace\z@%
+    \def\brl@math@currmode{m}%
+    %
+    \brl@math@bracketlevel\brl@math@origbracketlevel\relax%
+    \brl@math@breaklevel\brl@math@origbreaklevel\relax%
+    %
+    % postproc (pass 5) insert break
+    %                   construct left, right, middle
+    %
+    %
+    \brl@math_log_seg%
+    % 
+    \brl@math_postproc%
+    %
+    % firstchar
+    \brl@math_get@id{0}{\brl@tmp}%
+    \global\let\brl@math@subfirstid\brl@tmp%
+    % lastchar
+    \brl@math_get@fullid{\the\numexpr\brl@math@posmax+\m@ne\relax}{\brl@tmp}%
+    % \ifcsname brl@math_subid@\brl@tmp\endcsname%
+    %   \brl@math_get@subid{\the\numexpr\brl@math@posmax+\m@ne\relax}{\brl@tmp}%
+    % \fi%
+    \global\let\brl@math@sublastid\brl@tmp%
+    %
+    \ifnum\brl@math@elenum=\@ne%
+      \global\let\brl@math@subid\brl@math@sublastid%
+    \else%
+      \gdef\brl@math@subid{null}%
+    \fi%
+    %
+    \edef\brl@tmp{\the\brl@math@directtoks}% append label
+    \ifx\brl@tmp\empty%
+    \else%
+      \edef\brl@tmp{\expandafter\brl@char@cmd_direct\expandafter{\the\brl@math@directtoks}}%
+    \fi%
+    %
+    \xdef\brl@math@subtoks{\the\brl@math@toks\brl@tmp}%
+    \brl@math_log_longseg%
+    %
+  }%
+}
+
+%
+% ambiguambious id, which may come at the last equation and subid
+%
+\@namedef{brl@math_subid@empty}{}
+\@namedef{brl@math_subid@emptydot}{}
+\@namedef{brl@math_subid@sup}{}
+\@namedef{brl@math_subid@sub}{}
+\@namedef{brl@math_subid@sqrts}{}
+\@namedef{brl@math_subid@sqrtm}{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% preproc
+%
+\protected\def\brl@math_preproc#1{%
+  \ifcsname brl@math_dospecial_\string#1\endcsname%
+    \csname brl@math_dospecial_\string#1\expandafter\endcsname%
+  \else%
+    \brl@math_set@iddat{\the\brl@math@posnum}{\string#1}{\string#1}%
+    % \brl@math_set@iddat{\the\brl@math@posnum}{\string#1}{\csname brl@code_math_\string#1\endcsname}%
+    \edef\brl@tmp{{\the\brl@math@posnum}{\string#1}}%\show\brl@tmp
+    \advance\brl@math@posnum\@ne%
+    \expandafter\brl@math_preproc%
+  \fi%
+}
+
+\def\brl@math_set@id#1#2{%
+  \expandafter\edef\csname brl@math@id_#1\endcsname{#2}%
+}
+
+\def\brl@math_set@subid#1#2{%
+  \expandafter\edef\csname brl@math@subid_#1\endcsname{#2}%
+}
+
+
+\def\brl@math_set@dat#1#2{%
+  \expandafter\edef\csname brl@math@dat_#1\endcsname{#2}%
+}
+
+\def\brl@math_set@iddat#1#2#3{%
+  \expandafter\edef\csname brl@math@id_#1\endcsname{#2}%
+  \expandafter\edef\csname brl@math@dat_#1\endcsname{#3}%
+}
+
+\def\brl@math_set@elenum#1#2{%
+  \expandafter\edef\csname brl@math@elenum_#1\endcsname{#2}%
+}
+
+% notice : \advance\elenum must precede
+%  -1   0 1
+% start X Y
+%
+\def\brl@math_set@brl#1#2{%
+  \expandafter\edef\csname brl@math@brl_#1\endcsname{#2}%
+  \expandafter\edef\csname brl@math@elenum_#1\endcsname{\the\brl@math@elenum}%
+}
+
+\def\brl@math_get@brl#1#2{%
+  \edef#2{\csname brl@math@brl_#1\endcsname}%
+}
+
+\def\brl@math_get@brls#1#2#3{%
+  \@tempcnta#1\relax%
+  \@tempcntb#2\relax%
+  {%
+    \aftergroup\edef%
+    \aftergroup#3%
+    \aftergroup{%
+      \brl@math_get@brls_%
+    \aftergroup}%
+  }%
+  \brl@math_get@brls__%
+}
+
+\def\brl@math_get@brls_{%
+  \expandafter\aftergroup\csname brl@math@brl_\the\@tempcnta\endcsname%
+  \advance\@tempcnta\@ne%
+  \ifnum\@tempcnta<\@tempcntb%
+    \expandafter\brl@math_get@brls_%
+  \fi%  
+}
+
+\def\brl@math_get@brls__{%
+  \expandafter\let\csname brl@math@brl_\the\@tempcnta\endcsname\empty%
+  \advance\@tempcnta\@ne%
+  \ifnum\@tempcnta<\@tempcntb%
+    \expandafter\brl@math_get@brls__%
+  \fi%  
+}
+
+
+\def\brl@math_set@prebrl#1#2{%
+  \expandafter\edef\csname brl@math@brl_#1\endcsname{#2\csname brl@math@brl_#1\endcsname}%
+}
+
+\def\brl@math_set@probrl#1#2{%
+  \expandafter\edef\csname brl@math@brl_#1\endcsname{\csname brl@math@brl_#1\endcsname#2}%
+}
+
+
+\def\brl@math_get@id#1#2{%
+  \ifnum\brl@math@posmax>#1\relax%
+    \edef#2{\csname brl@math@id_#1\endcsname}%
+  \else%
+    \def#2{end}%
+  \fi%
+}
+
+\def\brl@math_get@subid#1#2{%
+  \ifnum\brl@math@posmax>#1\relax%
+    \edef#2{\csname brl@math@subid_#1\endcsname}%
+  \else%
+    \def#2{end}%
+  \fi%
+}
+
+\def\brl@math_get@fullid#1#2{%
+  \ifnum\brl@math@posmax>#1\relax%
+    \edef#2{\csname brl@math@id_#1\endcsname}%
+    \ifcsname brl@math_subid@#2\endcsname%
+      \edef#2{\csname brl@math@subid_#1\endcsname}%
+    \fi%
+  \else%
+    \def#2{end}%
+  \fi%
+}
+
+
+
+\def\brl@math_get@dat#1#2{%
+  \ifnum\brl@math@posmax>#1\relax%
+    \edef#2{\csname brl@math@dat_#1\endcsname}%
+  \else%
+    \def#2{end}%
+  \fi%
+}
+
+% \def\brl@math_get@iddat#1#2#3{%
+%   \ifnum\brl@math@posmax>#1\relax%
+%     \edef#2{\csname brl@math@id_#1\endcsname}%
+%     \edef#3{\csname brl@math@dat_#1\endcsname}%
+%   \else%
+%     \def#2{end}%
+%     \def#3{end}%
+%   \fi%
+% }
+
+\def\brl@math_get@elenum#1#2{%
+  \ifnum\brl@math@posmax>#1\relax%
+    #2\csname brl@math@elenum_#1\endcsname\relax%
+  \else%
+    #2\m@ne%
+  \fi%
+}
+
+\def\brl@math_set@htdp#1#2#3{%
+  \expandafter\edef\csname brl@math@ht_#1\endcsname{#2}%
+  \expandafter\edef\csname brl@math@dp_#1\endcsname{#3}%
+}
+
+\def\brl@math_get@htdp#1#2#3{%
+  \edef#2{\csname brl@math@ht_#1\endcsname}%
+  \edef#3{\csname brl@math@dp_#1\endcsname}%
+}
+
+
+%
+%
+\@namedef{brl@math@id_-1}{start}
+\@namedef{brl@math@subid_-1}{start}
+\@namedef{brl@math@dat_-1}{start}
+\@namedef{brl@math@elenum_-1}{\m@ne}
+\@namedef{brl@math@elenum_b_-1}{\brl@math@elenum}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% dospecials
+%
+\@namedef{brl@math_dospecial_\string\brl@end}{}
+
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_sup}#1{%
+  \advance\brl@math@sslevel\@ne%
+  \advance\brl@math@breaklevel\@ne%
+  \brl@math_parse{#1}%
+  \advance\brl@math@breaklevel\m@ne%
+  \advance\brl@math@sslevel\m@ne%
+  %
+  \brl@math_set@iddat{\the\brl@math@posnum}{sup}{{\brl@math@subtoks}{\brl@math@subid}}%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+\@namedef{brl@math_dospecial_^}#1{%
+  {%
+    \aftergroup\edef%
+    \aftergroup\brl@tmp%
+    \aftergroup{%      
+      \brl@math_dospecial_sup_prime#1\brl@end%
+    \aftergroup}%
+  }% -> \edef\brl@tmp{''''\brl@tmpother} etc.
+  % \show\brl@tmp
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+\def\brl@math_dospecial_sup_prime#1{%
+  \ifcsname brl@math_dospecial_sup_prime@\string#1\endcsname%
+    \csname brl@math_dospecial_sup_prime@\string#1\expandafter\endcsname%
+  \else%
+    \def\brl@tmp{#1}%
+    \expandafter\brl@math_dospecial_sup_finish%
+  \fi%
+}
+
+\def\brl@math_dospecial_sup_finish#1\brl@end{%
+  \aftergroup\brl@tmpother%
+  \xdef\brl@tmpother{\brl@math_cmd_sup{\brl@tmp#1}}%
+}
+
+\@namedef{brl@math_dospecial_sup_prime@\string\brl@end}{%
+  % all are prime
+}
+
+\@namedef{brl@math_dospecial_sup_prime@\string\brl@math_cmd_prime}{%
+  \aftergroup'%
+  \brl@math_dospecial_sup_prime%
+}
+
+
+\@namedef{brl@math_dospecial__}#1{%
+  \advance\brl@math@sslevel\@ne%
+  \advance\brl@math@breaklevel\@ne%
+  \brl@math_parse{#1}%
+  \advance\brl@math@breaklevel\m@ne%
+  \advance\brl@math@sslevel\m@ne%
+  %
+  \brl@math_set@iddat{\the\brl@math@posnum}{sub}{{\brl@math@subtoks}{\brl@math@subid}}%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+
+
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_sqrtm}#1#2{%
+  \edef\brl@tmp{\brl@math_cmd{empty}{}#1\brl@math_cmd{sqrtm}{{\the\numexpr\brl@math@posnum+\@ne\relax}{#2}}}% skip empty
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+
+% dot is either orrinay accent or repetend
+%
+% \rm A\dot{B} -> .A.B
+% \rm 6\dot{a} -> 6.a
+% \rm AA\dot{a} -> AA.a
+%
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_dot}#1{%
+  \edef\brl@tmp{\brl@math_cmd{emptydot}{}#1\brl@math_cmd{dot}{\the\numexpr\brl@math@posnum+\@ne\relax}}% skip empty
+%  \edef\brl@tmp{\brl@math_cmd{emptydot}{}#1\brl@math_cmd{dot}{\the\brl@math@posnum}}% skip empty
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+
+%
+% ordinary accent
+%
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_accent}#1#2{%
+  \edef\brl@tmp{\brl@math_cmd{empty}{}#2\brl@math_cmd{accent}{{\the\numexpr\brl@math@posnum+\@ne\relax}{#1}}}% skip empty
+  % \edef\brl@tmp{\brl@math_cmd{empty}{}#2\brl@math_cmd{accent}{{\the\brl@math@posnum}{#1}}}% skip empty
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% overbrace, underbrace
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_brace}#1#2{%
+  \edef\brl@tmp{#1\brl@math_cmd_endbrace{{}{#2}{\the\brl@math@posnum}}}%
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_endbrace}#1{%
+  \edef\brl@tmp{{#1{\the\brl@math@posnum}}}%
+  \expandafter\brl@math_appendbracetoks\brl@tmp%
+  \brl@math_preproc%
+}
+
+%
+% overbrace
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_overbracesup}#1^#2{%
+  \edef\brl@tmp{#1\brl@math_cmd_endbrace{{#2}{over}{\the\brl@math@posnum}}}%
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+%
+% underbrace
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_underbracesub}#1_#2{%
+  \edef\brl@tmp{#1\brl@math_cmd_endbrace{{#2}{under}{\the\brl@math@posnum}}}%
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\@namedef{brl@math_dospecial_\string\brl@math_cmd}#1#2{%
+  \brl@math_set@iddat{\the\brl@math@posnum}{#1}{#2}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_label}#1#2{%
+  \brl@math_appenddirecttoks{\brl@char@cmd_label{#1}{#2}}%
+  \brl@math_preproc%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \begin{...} 
+%%
+%% split, matrix, cases
+%%
+
+\@namedef{brl@math_dospecial_\string\brl@math_cmd_env}#1{%
+  \csname brl@math_env_#1\endcsname%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% subarray
+%%
+\@namedef{brl@math_env_subarray}#1{%
+  {%
+    \brl@math_subarray_parse#1\brl@end%
+    \xdef\brl@tmp{\the\brl@math@toks}%
+  }%
+  \expandafter\brl@math_preproc\brl@tmp%
+}
+
+
+\def\brl@math_subarray_parse#1#2{% #1 is option
+  \brl@math@toks{#2}%
+  \brl@math_subarray_parse_loop%
+}
+
+\def\brl@math_subarray_parse_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@math_appenddirecttoks{,#1}%
+    \expandafter\brl@math_subarray_parse_loop%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% split
+%%
+%% the font of the begining is set here.
+%%
+%%
+% this is called immediately after \begin{equation}. Thus the flags are all reset.
+\def\brl@math_env_split#1{%
+  {%
+    \brl@math@linetoks{}%
+    \brl@math_split_parse#1\brl@end%
+  }%
+  %
+  \brl@math_set@iddat{\the\brl@math@posnum}{split}{\brl@tmp}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+
+
+\def\brl@math_split_parse#1{%
+  %
+  \def\brl@math@makebreak_set{\brl@math@makebreak_break}%
+  \brl@math_parse{#1}%
+  \let\brl@math@lasttoks\brl@math@subtoks%
+  \brl@math_split_parse_loop%
+}
+
+\def\brl@math_split_parse_loop#1{%
+  %
+  \def\brl@tmp{#1}% label
+  \ifx\brl@tmp\brl@@end%
+    %
+    \xdef\brl@tmp{\the\brl@math@linetoks\brl@math@lasttoks}%
+    %
+  \else%
+    %
+    % \brl@math
+    % 
+    \brl@math_parse{#1}%
+    % 
+    % \brl@math@toks
+    %
+    \ifx\brl@math@subfirstid\brl@math@@arrow%
+      \edef\brl@math@lasttoks{\brl@math@lasttoks\brl@code_math_space}% if the char of the newline is arrow, append space at the end of the last line.
+      \edef\brl@math@subtoks{\expandafter\brl@@gobblefive\brl@math@subtoks}% delete first space
+    \fi%
+    % 
+    %
+    \edef\brl@tmp{{\brl@math@lasttoks\brl@char@breakable{m}{\brl@char@break_break}{0}}}% may
+    \expandafter\brl@math_appendlinetoks\brl@tmp%
+    %
+    \let\brl@math@lasttoks\brl@math@subtoks%
+    \expandafter\brl@math_split_parse_loop%
+  \fi%
+}
+
+
+
+%% input:
+%% matrix elements
+%%
+%% output:
+%% \brl@char@block{height}{depth}{width}{space flag}{hline rows}{{...}...{...}}
+%%
+\def\brl@math_env_pmatrix{%
+  \brl@math_matrix{parenopen}{parenclose}%
+}
+\def\brl@math_env_bmatrix{%
+  \brl@math_matrix{lbrack}{rbrack}%
+}
+\def\brl@math_env_Bmatrix{%
+  \brl@math_matrix{parenopen}{parenclose}%
+}
+\def\brl@math_env_vmatrix{%
+  \brl@math_matrix{lvert}{rvert}%
+}
+\def\brl@math_env_Vmatrix{%
+  \brl@math_matrix{lVert}{rVert}%
+}
+\def\brl@math_env_matrix{%
+  \brl@math_matrix..%
+}
+
+%% data format
+%% {... & ... & ... }{... & ... & ... }
+%%
+\def\brl@math_matrix#1#2#3{%
+  %
+  %
+  {%
+    \def\brl@array_prep_rowcol_element{\brl@array_prep_rowcol_element_math}%
+    %
+    \def\brl@array_cons_elements_appendsp{\brl@array_cons_elements_appendsp_math}%
+    \def\brl@array_arr_elements_replace{\brl@array_arr_elements_replace_math}%
+    \def\brl@code_array_blank{\brl@code_math_blank}%
+    \def\brl@code_array_hfill{\brl@code_math_hfill}%
+    \def\brl@code_array_space{\brl@code_math_space}%
+    \def\brl@array_makespace{\brl@format_makemspace}%
+    %
+    \brl@array_prep_rowcol#3\brl@end%
+    %
+    \brl@array_cons_elements%
+    \brl@array_cons_rules%
+    \brl@array_set_maxcharnum%
+    \brl@array_arr_elements%
+    \brl@array_set_heightdepth%
+    \brl@array_hrules%
+    \brl@array_cons_rowcol%
+    \brl@array_cons_mele%
+    \brl@array_cons_hltoks%
+    %
+    \let\brl@array_paren@height\brl@array@totalheight%
+    \let\brl@array_paren@depth\brl@array@totaldepth%
+    % 
+    \brl@array_paren{#1}{\the\brl@array@hlltoks}%
+    % 
+    \edef\brl@array_paren@delimleft{\brl@array_paren@delim}%
+    %
+    \brl@array_paren{#2}{\the\brl@array@hlrtoks}%
+    \edef\brl@array_paren@delimright{\brl@array_paren@delim}%
+    \xdef\brl@tmp{\brl@array_paren@delimleft\brl@char@block{\brl@array@totalheight}{\brl@array@totaldepth}{\brl@array@width}{\ifbrl@array@space\brl@char@space@true\fi\brl@array@bvskip\brl@array@avskip}{{\the\brl@array@hlltoks}{\the\brl@array@hlrtoks}}{\the\brl@array@toks}\brl@array_paren@delimright}%
+    % 
+    \xdef\brl@tmpheight{\brl@array@totalheight}%
+    \xdef\brl@tmpdepth{\brl@array@totaldepth}%
+  }%
+  %
+  \brl@math_set@iddat{\the\brl@math@posnum}{block}{\brl@tmp}%
+  \brl@math_set@htdp{\the\brl@math@posnum}{\brl@tmpheight}{\brl@tmpdepth}%
+  % \showthe\brl@math@posnum
+  % \show\brl@tmpheight
+  % \show\brl@tmpdepth
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+
+%% data format
+%% {ccc}{... & ... & ... }{... & ... & ... }
+%%
+\def\brl@math_env_array#1{%
+  %
+  %
+  {%
+    \def\brl@array_prep_rowcol_element{\brl@array_prep_rowcol_element_math}%
+    %
+    \def\brl@array_cons_elements_appendsp{\brl@array_cons_elements_appendsp_math}%
+    \def\brl@array_arr_elements_replace{\brl@array_arr_elements_replace_math}%
+    \def\brl@code_array_blank{\brl@code_math_blank}%
+    \def\brl@code_array_hfill{\brl@code_math_hfill}%
+    \def\brl@code_array_space{\brl@code_math_space}%
+    \def\brl@array_makespace{\brl@format_makemspace}%
+    %
+    \brl@array_format_prep_rowcol#1\brl@end%
+    %
+    \expandafter\brl@array_format\brl@array_format@format\brl@end%
+    %
+    \brl@array_cons_elements%
+    \brl@array_cons_rules%
+    \brl@array_set_maxcharnum%
+    \brl@array_arr_elements%
+    \brl@array_set_heightdepth%
+    \brl@array_hrules%
+    \brl@array_cons_rowcol%
+    \brl@array_cons_mele%
+    \brl@array_cons_hltoks%
+    %
+    \xdef\brl@tmp{\brl@char@block{\brl@array@totalheight}{\brl@array@totaldepth}{\brl@array@width}{\ifbrl@array@space\brl@char@space@true\fi\brl@array@bvskip\brl@array@avskip}{{\the\brl@array@hlltoks}{\the\brl@array@hlrtoks}}{\the\brl@array@toks}}%
+    %
+    \xdef\brl@tmpheight{\brl@array@totalheight}%
+    \xdef\brl@tmpdepth{\brl@array@totaldepth}%
+  }%
+  \brl@math_set@iddat{\the\brl@math@posnum}{block}{\brl@tmp}%
+  \brl@math_set@htdp{\the\brl@math@posnum}{\brl@tmpheight}{\brl@tmpdepth}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+
+
+%% 
+%% cases
+%%
+
+
+\newcount\brl@math@casesnum
+
+
+\@namedef{brl@math_env_cases*}{\brl@math_env_cases}%
+\@namedef{brl@math_env_dcases*}{\brl@math_env_cases}%
+\@namedef{brl@math_env_rcases*}{\brl@math_env_cases}%
+\@namedef{brl@math_env_drcases*}{\brl@math_env_cases}%
+\def\brl@math_env_dcases{\brl@math_env_cases}%
+\def\brl@math_env_rcases{\brl@math_env_cases}%
+\def\brl@math_env_drcases{\brl@math_env_cases}%
+
+
+\def\brl@math_env_cases#1{%
+  %
+  {%
+    \brl@math@linetoks{}%
+    \brl@math@casesnum\z@%
+    \brl@math_cases_parse#1\brl@end%%
+    %
+    %
+    %
+    \brl@format@totaldepth\brl@math_cases@depth\relax%
+    \brl@format@totalheight\brl@math_cases@height\relax%
+    \brl@format@allmaxcharnum\brl@math_cases@maxcharnum\relax%
+    %
+    %
+    \brl@format_rectangle{l}{\brl@math@linetoks}%
+    %
+    %
+    \let\brl@array_paren@height\brl@math_cases@height%
+    \let\brl@array_paren@depth\brl@math_cases@depth%
+    \brl@array_paren{lbrace}{}%
+    %
+    %
+    %
+    \xdef\brl@tmp{\brl@array_paren@delim\brl@char@block{\brl@math_cases@height}{\brl@math_cases@depth}{\the\brl@format@allmaxcharnum}{\ifbrl@format@space\brl@char@space@true\fi\brl@math_cases@bvskip\brl@math_cases@avskip}{}{\the\brl@format@recttoks}}%
+    %
+    \xdef\brl@tmpheight{\brl@math_cases@height}%
+    \xdef\brl@tmpdepth{\brl@math_cases@depth}%
+  }%
+  %
+  %
+  \brl@math_set@iddat{\the\brl@math@posnum}{block}{\brl@tmp}%
+  \brl@math_set@htdp{\the\brl@math@posnum}{\brl@tmpheight}{\brl@tmpdepth}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+%% input:
+%% matrix elements
+%%
+%% output: \brl@math@toks
+%%
+
+\def\brl@math_cases_parse#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \brl@math_set@htdp{\the\brl@math@posnum}{\brl@tmpheight}{\brl@tmpdepth}%
+  \else%
+    \advance\brl@math@casesnum\@ne%
+    \brl@math_cases_parse_element#1&&\brl@end%
+    \expandafter\brl@math_cases_parse%
+  \fi%
+}
+
+
+\def\brl@math_cases_parse_element#1&#2&#3\brl@end{% discard #3
+  {%
+    %
+    \brl@math@sslevel\z@%
+    % 
+    \brl@math@breaklevel\z@%
+    \brl@math_parse{#1}%
+    \let\brl@math@lasttoks\brl@math@subtoks%
+    \def\brl@tmp{#2}%
+    \ifx\brl@tmp\empty%
+    \else%
+      \brl@math_parse{#2}%
+      \edef\brl@math@lasttoks{\brl@math@lasttoks\brl@code_math_space\brl@math@subtoks}%
+    \fi%
+    %
+    %
+    \brl@math@toks\expandafter{\brl@math@lasttoks}%
+    % 
+    \brl@format{2}{-2}{\brl@math@toks}{\the\numexpr\brl@bse@width-4\relax}%
+    \xdef\brl@tmp{{\the\brl@format@alltoks}}% formatted toks
+    \xdef\brl@tmpdepth{\the\brl@format@totaldepth}%
+    \xdef\brl@tmpheight{\the\brl@format@totalheight}%
+    \xdef\brl@tmpcharnum{\the\brl@format@allmaxcharnum}%
+    \xdef\brl@tmpbvskip{\brl@format@bvskip}%
+    \xdef\brl@tmpavskip{\brl@format@avskip}%
+  }%
+  \ifnum\brl@math@casesnum=\@ne%
+    \let\brl@math_cases@height\brl@tmpheight% determined here
+    \let\brl@math_cases@depth\brl@tmpdepth%
+    \let\brl@math_cases@maxcharnum\brl@tmpcharnum%
+    \let\brl@math_cases@bvskip\brl@tmpbvskip% determined here
+    \let\brl@math_cases@avskip\brl@tmpavskip%
+  \else%
+    %
+    %
+    \let\brl@tmpvskip\empty%
+    \brl@tmpbvskip%
+    \ifbrl@char@bvskip% current bvskiptrue
+      \def\brl@tmpvskip{+\@ne}%
+      \brl@math_appendlinetoks{{1}{0}{}}%
+    \else%
+      \brl@math_cases@avskip% previous avskiptrue
+      \ifbrl@char@avskip%
+        \def\brl@tmpvskip{+\@ne}%
+        \brl@math_appendlinetoks{{1}{0}{}}%
+      \fi%
+    \fi%
+    %
+    \let\brl@math_cases@avskip\brl@tmpavskip%
+    %
+    %
+    \edef\brl@math_cases@depth{\the\numexpr\brl@math_cases@depth+\brl@tmpdepth-\brl@tmpheight\brl@tmpvskip\relax}%
+    \ifnum\brl@math_cases@maxcharnum<\brl@tmpcharnum\relax%
+      \let\brl@math_cases@maxcharnum\brl@tmpcharnum%
+    \fi%
+  \fi%
+  \expandafter\brl@math_appendlinetoks\brl@tmp%
+}
+
+
+%% 
+%% aligned
+%%
+
+
+\newcount\brl@math@alignednum
+
+
+\def\brl@math_env_aligned#1{%
+  {%
+    \brl@math@linetoks{}%
+    \brl@math@alignednum\z@%
+    \brl@math_aligned_parse#1\brl@end%%
+    %
+    %
+    %
+    \brl@format@totaldepth\brl@math_aligned@depth\relax%
+    \brl@format@totalheight\brl@math_aligned@height\relax%
+    \brl@format@allmaxcharnum\brl@math_aligned@maxcharnum\relax%
+    %
+    %
+    \brl@format_rectangle{l}{\brl@math@toks}%
+    % 
+    \xdef\brl@tmp{\brl@char@block{\brl@math_aligned@height}{\brl@math_aligned@depth}{\the\brl@format@allmaxcharnum}{\ifbrl@format@space\brl@char@space@true\fi\brl@math_aligned@bvskip\brl@math_aligned@avskip}{}{\the\brl@format@recttoks}}%
+    %
+    \xdef\brl@tmpheight{\brl@math_aligned@height}%
+    \xdef\brl@tmpdepth{\brl@math_aligned@depth}%
+  }%
+  \brl@math_set@iddat{\the\brl@math@posnum}{block}{\brl@tmp}%
+  \brl@math_set@htdp{\the\brl@math@posnum}{\brl@tmpheight}{\brl@tmpdepth}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_preproc%
+}
+
+%% input:
+%% matrix elements
+%%
+%% output: \brl@math@toks
+%%
+
+\def\brl@math_aligned_parse#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    %
+    \advance\brl@math@alignednum\@ne%
+    \brl@math_aligned_parse_element{#1}%
+    \expandafter\brl@math_aligned_parse%
+  \fi%
+}
+
+
+\def\brl@math_aligned_parse_element#1{% discard #3
+  {%
+    \brl@math@sslevel\z@%
+    % 
+    \brl@math@breaklevel\z@%
+    \brl@math{#1}%
+    %
+    \brl@format{2}{-2}{\brl@math@toks}{\the\numexpr\brl@bse@width-4\relax}%
+    \xdef\brl@tmp{{\the\brl@format@alltoks}}% formatted toks
+    \xdef\brl@tmpdepth{\the\brl@format@totaldepth}%
+    \xdef\brl@tmpheight{\the\brl@format@totalheight}%
+    \xdef\brl@tmpcharnum{\the\brl@format@allmaxcharnum}%
+    \xdef\brl@tmpbvskip{\brl@format@bvskip}%
+    \xdef\brl@tmpavskip{\brl@format@avskip}%
+  }%
+  \ifnum\brl@math@alignednum=\@ne%
+    \let\brl@math_aligned@height\brl@tmpheight%
+    \let\brl@math_aligned@depth\brl@tmpdepth%
+    \let\brl@math_aligned@maxcharnum\brl@tmpcharnum%
+    \let\brl@math_aligned@bvskip\brl@tmpbvskip%
+    \let\brl@math_aligned@avskip\brl@tmpavskip%
+  \else%
+    %
+    %
+    \let\brl@tmpvskip\empty%
+    \brl@tmpbvskip%
+    \ifbrl@char@bvskip% current bvskiptrue
+      \def\brl@tmpvskip{+\@ne}%
+      \brl@math_appendlinetoks{{1}{0}{}}%
+    \else%
+      \brl@math_aligned@avskip% previous avskiptrue
+      \ifbrl@char@avskip%
+        \def\brl@tmpvskip{+\@ne}%
+        \brl@math_appendlinetoks{{1}{0}{}}%
+      \fi%
+    \fi%
+    %
+    \let\brl@math_aligned@avskip\brl@tmpavskip%
+    %
+    %
+    \edef\brl@math_aligned@depth{\the\numexpr\brl@math_aligned@depth+\brl@tmpdepth-\brl@tmpheight\brl@tmpvskip\relax}%
+    \ifnum\brl@math_aligned@maxcharnum<\brl@tmpcharnum\relax%
+      \let\brl@math_aligned@maxcharnum\brl@tmpcharnum%
+    \fi%
+  \fi%
+  \expandafter\brl@math_appendlinetoks\brl@tmp%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% math_exec
+%
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% posnum  -1   0 1 2 3 4 5  6 7 8  9
+%        start X Y ( Z ) \{ Y X \} W
+% elenum   0   1 2 3 4 5 6  7 8 6  7
+%
+
+\def\brl@math_exec{%
+  \brl@math_get@id{\the\brl@math@posnum}{\brl@math@id}%
+  % \showthe\brl@math@posnum
+  \brl@math_get@dat{\the\brl@math@posnum}{\brl@math@dat}%
+  % \show\brl@math@id
+  % \show\brl@math@dat
+  \brl@math_log_input%
+  %
+  \ifcsname brl@math_exec_\brl@math@id\endcsname%
+    \csname brl@math_exec_\brl@math@id\expandafter\endcsname%
+  \else%
+    \advance\brl@math@elenum\@ne%
+    %
+    \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+    %\brl@math_set@brl{\the\brl@math@posnum}{\brl@math@dat}%
+    \advance\brl@math@posnum\@ne%
+    \expandafter\brl@math_exec% the end is obtaind in get_id
+  \fi%
+}
+
+
+\let\brl@math_exec_end\relax%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% digits, \dot, period
+%%
+
+
+%
+% 6{}6 -> 6.6
+% 6{}a -> 6.a
+% \rm AA{}a -> AA.a
+% \rm A{}A -> .A.A
+%
+
+% 
+% id : empty or emptydot
+%
+% change id
+%
+\def\brl@math_exec_empty{% 
+  \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+  \brl@math_set@subid{\the\brl@math@posnum}{\brl@math@previd}% subid
+  %
+  \brl@math_set@brl{\the\brl@math@posnum}{}% no element
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+%
+% dot behaves as empty in ordinary context while it behaves as repetend in the digit context.
+%
+\let\brl@math_exec_emptydot\brl@math_exec_empty
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% num_loop
+%
+\brl@def{brl@math_num_.}\brl@end{%
+  \def\brl@math_exec_digit{%
+    %
+    \def#1{\brl@math_num_period}% makes . a part of a number
+    % 
+    %
+    \advance\brl@math@elenum\@ne%
+    \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\expandafter\@secondoftwo\brl@math@dat _numbersign\endcsname\csname brl@code_math_\expandafter\@firstoftwo\brl@math@dat\endcsname}%
+    % \brl@math_set@id{\the\brl@math@posnum}{digit}%
+    %
+    \advance\brl@math@posnum\@ne%
+    \brl@math_num_loop%
+  }%
+}
+
+\brl@def{brl@math_num_.}\brl@end{%
+  \def\brl@math_num_loop{%
+    \brl@math_get@id{\the\brl@math@posnum}{\brl@math@id}%
+    % \showthe\brl@math@posnum
+    % \show\brl@math@id
+    \ifcsname brl@math_num_\brl@math@id\endcsname%
+      \brl@math_get@dat{\the\brl@math@posnum}{\brl@math@dat}%
+      \csname brl@math_num_\brl@math@id\expandafter\endcsname% num
+    \else% end
+      \let\brl@math_num_dot\@undefined% makes dot not a part of a number
+      \let#1\@undefined% makes . not a part of a number
+      %
+      \expandafter\brl@math_exec% exit \math_num
+    \fi%
+  }
+}
+
+\def\brl@math_num_digit{%
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\expandafter\@firstoftwo\brl@math@dat\endcsname}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_num_loop%
+}%
+
+
+%
+% symbols reconginzed as digits after period.
+%
+\def\brl@math_num@digit{}
+\def\brl@math_num@emptydot{}
+
+
+\brl@def{brl@code_math_.}{brl@math_num_.}\brl@end{%
+  \def\brl@math_num_period{%
+    \let#2\@undefined% makes . not a part of a number
+    %
+    \brl@math_get@id{\the\numexpr\brl@math@posnum+\@ne\relax}{\brl@math@nextid}%
+    \ifcsname brl@math_num@\brl@math@nextid\endcsname%
+      %
+      \def\brl@math_num_emptydot{\brl@math_num_emptydot_num}% makes dot a part of number
+      \def\brl@math_num_dot{\brl@math_num_dot_first}% makes dot a part of number
+      %
+      \brl@math_set@brl{\the\brl@math@posnum}{#1}%
+      \advance\brl@math@posnum\@ne%
+      \expandafter\brl@math_num_loop% after period
+    \else% period
+      % 
+      % ordinary period is treated by the default treatment.
+      %
+      \let\brl@math_num_emptydot\@undefined% makes dot not a part of a number
+      \let\brl@math_num_dot\@undefined% makes dot not a part of a number
+      %
+      \expandafter\brl@math_exec%
+    \fi%
+    %
+    % 
+  }
+}
+
+% after period
+%
+% ignore and keep in num_loop
+%
+\def\brl@math_num_emptydot_num{% 
+  \brl@math_set@brl{\the\brl@math@posnum}{}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_num_loop%
+}%
+
+%
+% change id
+%
+\def\brl@math_num_dot_first{%
+  % \show\brl@math@dat
+  % \showthe\numexpr\brl@math@posnum+\m@ne\relax%
+  \ifnum\brl@math@dat=\numexpr\brl@math@posnum+\m@ne\relax%
+    \brl@math_get@id{\brl@math@dat}{\brl@math@id}%
+    % \show\brl@math@id
+    \ifx\brl@math@id\brl@math@@digit%
+      \def\brl@math_num_dot{\brl@math_num_dot_second}% makes dot a part of number
+      \brl@math_set@prebrl{\brl@math@dat}{\brl@code_math_repetend}%
+      \brl@math_set@id{\the\brl@math@posnum}{digit}%
+      \brl@math_set@brl{\the\brl@math@posnum}{}% no element
+      \advance\brl@math@posnum\@ne%
+      \def\brl@math_next{\brl@math_num_loop}%
+    \else%
+      \let\brl@math_num_emptydot\@undefined% makes dot not a part of a number
+      \let\brl@math_num_dot\@undefined% makes dot not a part of a number
+      \brl@math@posnum\brl@math@dat\relax% pos and elenum is reset
+      \brl@math_get@elenum{\brl@math@dat}{\brl@math@elenum}%
+      \def\brl@math_next{\brl@math_exec}%
+    \fi%
+  \else%
+    \let\brl@math_num_emptydot\@undefined% makes dot not a part of a number
+    \let\brl@math_num_dot\@undefined% makes dot not a part of a number
+    \brl@math@posnum\brl@math@dat\relax% pos and elenum is reset
+    \brl@math_get@elenum{\brl@math@dat}{\brl@math@elenum}%
+    \def\brl@math_next{\brl@math_exec}%
+  \fi%
+  \brl@math_next%
+}
+
+
+%
+% change id
+%
+\def\brl@math_num_dot_second{% \dot{XXXX} may happen
+  %
+  %
+  \let\brl@math_num_emptydot\@undefined% makes dot not a part of a number
+  \let\brl@math_num_dot\@undefined% makes dot not a part of a number
+  \ifnum\brl@math@dat=\numexpr\brl@math@posnum+\m@ne\relax%
+    \brl@math_get@id{\brl@math@dat}{\brl@math@id}%
+    \ifx\brl@math@id\brl@math@@digit%
+      \brl@math_set@id{\the\brl@math@posnum}{digit}%
+      \brl@math_set@brl{\the\brl@math@posnum}{}% no element
+      \advance\brl@math@posnum\@ne%
+    \else%
+      \brl@math@posnum\brl@math@dat\relax% pos and elenum is reset
+      \brl@math_get@elenum{\brl@math@dat}{\brl@math@elenum}%
+    \fi%
+  \else%
+    \brl@math@posnum\brl@math@dat\relax% pos and elenum is reset
+    \brl@math_get@elenum{\brl@math@dat}{\brl@math@elenum}%
+  \fi%
+  \brl@math_exec%
+}
+
+\def\brl@math_delete_mod#1{%
+  \ifx#1\brl@code_math_stop%
+  \else%
+    \ifx#1\brl@code_math_letteraj%
+    \else%
+      #1%
+    \fi%
+  \fi%
+}
+
+
+
+
+
+%
+% the followings are set to be \relax while the definition.
+% so we need to reset them.
+%
+\expandafter\let\csname brl@math_num_.\endcsname\@undefined
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% accent
+%
+%
+% posnum  -1   0 1 2 3 4 5  6 7 8  9
+%        start X Y ( Z ) \{ Y X \} W
+% elenum   0   1 2 3 4 5 6  7 8 6  7
+%
+%
+% #1 : start pos
+% #2 : char@accent
+%
+% \dot{\tilde{A}} = empty empty  A tilde  dot
+%                               #1 posnum         (*)
+%                          #1             posnum  (**)
+\def\brl@math_exec_accent_do#1#2{%
+  \brl@math_get@elenum{#1}{\count@}%
+  % \showthe\brl@math@elenum
+  % \showthe\count@
+  \brl@math_set@elenum{\the\numexpr#1+\m@ne\relax}{\the\count@}%  
+  \ifnum\numexpr\brl@math@elenum-\count@\relax=\z@%
+    \brl@math_set@brl{\the\brl@math@posnum}{#2}%
+  \else%
+    \brl@math_get@brl{#1}{\brl@math@brl}%\rm AA\dot{aa} -> AA.aa : delete .
+    %
+    \brl@math@elenum\count@%
+    \brl@math_set@brl{#1}{\brl@code_math_transopen\expandafter\brl@math_delete_mod\brl@math@brl\empty}% brl may be empty. see (**)
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_transclose#2}%
+  \fi%
+  \advance\brl@math@posnum\@ne%
+}
+
+\def\brl@math_exec_dot{%
+  \brl@math_exec_accent_do{\brl@math@dat}{\brl@code_math_dot}%
+  \brl@math_exec%
+}
+
+\def\brl@math_exec_accent{%
+  \edef\brl@tmp{{\expandafter\@firstoftwo\brl@math@dat}%
+    {\csname brl@code_math_\expandafter\@secondoftwo\brl@math@dat\endcsname}}%
+  \expandafter\brl@math_exec_accent_do\brl@tmp%
+  \brl@math_exec%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% letters
+%%
+%%
+%% fUKL, bUKL, cUKL, nU
+%% rK nK
+%% rL rL
+%% rU
+
+%
+% letternK or L or U normal
+% letterbL or U bold
+% lettercL or U cal
+% letterfL or U frak
+% letterrK or L or U roman
+%
+
+
+\def\brl@math_exec_defletter#1#2{%
+  \@namedef{brl@math_exec_letter#1#2}{%
+    % 
+    %
+    \advance\brl@math@elenum\@ne%
+    \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_#1_\brl@math@dat\endcsname}%
+    % 
+    \advance\brl@math@posnum\@ne%
+    \brl@math_exec%
+  }%
+}
+
+\brl@math_exec_defletter{f}{U}
+\brl@math_exec_defletter{f}{K}
+\brl@math_exec_defletter{f}{L}
+\brl@math_exec_defletter{b}{U}
+\brl@math_exec_defletter{b}{K}
+\brl@math_exec_defletter{b}{L}
+\brl@math_exec_defletter{c}{U}
+\brl@math_exec_defletter{c}{K}
+\brl@math_exec_defletter{c}{L}
+\brl@math_exec_defletter{n}{U}
+
+
+
+
+\def\brl@math_exec_defletterK#1{%
+  \@namedef{brl@math_exec_letter#1K}{%
+    \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+    \advance\brl@math@elenum\@ne%
+    \ifcsname brl@math_exec_letter#1K_\brl@math@previd\endcsname%
+      \csname brl@math_exec_letter#1K_\brl@math@previd\expandafter\endcsname%
+    \else%
+      \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_#1_\brl@math@dat\endcsname}%
+    \fi%
+    % 
+    \advance\brl@math@posnum\@ne%
+    \brl@math_exec%
+  }%
+  % 
+  \@namedef{brl@math_exec_letter#1K_digit}{%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_letteraj\csname brl@code_math_#1_\brl@math@dat\endcsname}%
+  }
+  % 
+  \@namedef{brl@math_exec_letter#1K_letteraz}{%  
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_stop\csname brl@code_math_#1_\brl@math@dat\endcsname}%
+  }%
+}%
+
+\brl@math_exec_defletterK{n}
+\brl@math_exec_defletterK{r}
+
+
+%
+% empty emptydot sup sub sqrts sqrtm
+%
+
+
+
+\def\brl@math_exec_defletterL#1{%
+  \@namedef{brl@math_exec_letter#1L}{%
+    %
+    % 
+    \brl@math_get@id{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+    \advance\brl@math@elenum\@ne%
+    \ifx\brl@math@previd\brl@math@@letteraz%
+      \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_stop\csname brl@code_math_#1_\brl@math@dat\endcsname}%
+    \else%
+      \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_#1_\brl@math@dat\endcsname}%
+    \fi%
+    % 
+    \advance\brl@math@posnum\@ne%
+    \brl@math_exec%
+  }%
+}%
+
+\brl@math_exec_defletterL{n}
+\brl@math_exec_defletterL{r}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% rm capital
+%%
+
+\newif\ifbrl@math@rmUfirst
+
+\def\brl@math_exec_letterrU{%
+  %
+  \advance\brl@math@elenum\@ne% ABC is considered as one element.
+  % 
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_r_\brl@math@dat\endcsname}%
+  %
+  \edef\brl@math@rmUpos{\the\brl@math@posnum}% first letter pos
+  \advance\brl@math@posnum\@ne%
+  \brl@math@rmUfirsttrue% the first upper letter
+  \brl@math_rmU_loop%
+}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% allowed : letterrU, accent, ', sup, sub
+%
+% ABC is considered to be one element
+%
+\def\brl@math_rmU_letterrU{%
+  %
+  \advance\brl@math@elenum\@ne% count but later, it is reset.
+  %
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_r_\brl@math@dat\endcsname}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math@rmUfirstfalse%
+  \brl@math_rmU_loop%
+}
+
+\def\brl@math_rmU_loop{%
+  \brl@math_get@id{\the\brl@math@posnum}{\brl@math@id}%
+  %
+  \ifcsname brl@math_rmU_\brl@math@id\endcsname%
+    \brl@math_get@dat{\the\brl@math@posnum}{\brl@math@dat}%
+    \csname brl@math_rmU_\brl@math@id\expandafter\endcsname%
+  \else% end
+    \expandafter\brl@math_rmU_finish% exit \math_rmU
+  \fi%
+}
+
+\def\brl@math_rmU_sup{%
+  \brl@math_exec_sup_do%
+  \brl@math_rmU_loop%
+}
+
+\def\brl@math_rmU_sub{%
+  \brl@math_exec_sub_do%
+  \brl@math_rmU_loop%
+}
+
+\brl@def{brl@code_math_'}\brl@end{%
+  \@namedef{brl@math_rmU_'}{%
+    \brl@math_set@brl{\the\brl@math@posnum}{#1}%
+    \advance\brl@math@posnum\@ne%
+    \brl@math_rmU_loop%
+  }
+}
+
+% A^{aaa}{}
+\def\brl@math_rmU_empty{%
+  \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+  \brl@math_set@subid{\the\brl@math@posnum}{\brl@math@previd}% subid
+  %
+  \brl@math_set@brl{\the\brl@math@posnum}{}% no element
+  \advance\brl@math@posnum\@ne%
+  \brl@math_rmU_loop%
+}
+%
+% dot behaves as empty in ordinary context while it behaves as repetend in the digit context.
+%
+\let\brl@math_rmU_emptydot\brl@math_rmU_empty
+
+
+\def\brl@math_rmU_dot{%
+  \brl@math_exec_accent_do{\brl@math@dat}{\brl@code_math_dot}%
+  \brl@math_rmU_loop%
+}
+
+\def\brl@math_rmU_accent{%
+  \edef\brl@tmp{{\expandafter\@firstoftwo\brl@math@dat}%
+    {\csname brl@code_math_\expandafter\@secondoftwo\brl@math@dat\endcsname}}%
+  \expandafter\brl@math_exec_accent_do\brl@tmp%
+  \brl@math_rmU_loop%
+}
+
+%
+% change id
+%
+\def\brl@math_rmU_finish{%
+  \ifbrl@math@rmUfirst% the first upper letter
+    \brl@math_set@prebrl{\brl@math@rmUpos}{\brl@code_math_capital}%
+  \else%
+    \brl@math_set@id{\the\numexpr\brl@math@posnum+\m@ne\relax}{letteraz}%
+    \brl@math_set@prebrl{\brl@math@rmUpos}{\brl@code_math_doublecapital}%
+    % 
+  \fi%
+  \brl@math_get@elenum{\brl@math@rmUpos}{\brl@math@elenum}% elenum is reset.
+  \brl@math_set@elenum{\the\numexpr\brl@math@posnum+\m@ne\relax}{\the\brl@math@elenum}% elenum is reset.
+  %
+  \brl@math_exec%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@math_exec_slash{%
+  % 
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat _slash\endcsname}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% (...)   counted as the same as the inside
+%% \{...\} counted as 1
+%% [...]   counted as 1
+%%
+%% ^{(n)} should be counted as one because (n) and n are distinct.
+%%
+%% ^1 ^{1} -> ^1
+%% ^{(1)} -> ^(1)
+%% ^{(a+b)} -> ^{(a+b)}
+%%
+%%
+
+\@namedef{brl@math_exec_(}{% do not count (
+  %
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_parenopen}%
+  %
+  \advance\brl@math@breaklevel\@ne%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+
+\@namedef{brl@math_exec_)}{% do not count )
+  % 
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_parenclose}%
+  % 
+  \advance\brl@math@breaklevel\m@ne%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+
+\def\brl@math_exec_open{%
+  %
+  \advance\brl@math@elenum\@ne%
+  \expandafter\edef\csname brl@math@elenum_b_\the\brl@math@bracketlevel\endcsname{\the\brl@math@elenum}%
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+  %
+  \advance\brl@math@breaklevel\@ne%
+  \advance\brl@math@bracketlevel\@ne%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+
+\def\brl@math_exec_close{%
+  %
+  \advance\brl@math@bracketlevel\m@ne%
+  \advance\brl@math@breaklevel\m@ne%
+  %
+  \brl@math@elenum\csname brl@math@elenum_b_\the\brl@math@bracketlevel\endcsname%
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+
+\let\brl@math_exec_left\brl@math_exec_open
+\let\brl@math_exec_right\brl@math_exec_close
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% sub and sup
+%
+%
+
+%
+% {}^{...} -> .^{...}
+% {}_{...} -> ._{...}
+%
+
+\def\brl@math_exec_sup{%
+  \brl@math_exec_sup_do%
+  \brl@math_exec%
+}
+
+%
+% change id
+%
+
+\def\brl@math_exec_sup_do{%
+  \advance\brl@math@elenum\@ne%
+  \edef\brl@math@subid{\expandafter\@secondoftwo\brl@math@dat}%
+  \ifx\brl@math@subid\brl@math@@null%
+    \edef\brl@math_exec_sux@content{%
+      \brl@code_math_supstart\brl@code_math_transopen%
+      \expandafter\@firstoftwo\brl@math@dat%
+      \brl@code_math_transclose%
+    }%
+  \else%
+    \edef\brl@math_exec_sux@content{%
+      \brl@code_math_supstart%
+      \expandafter\@firstoftwo\brl@math@dat%
+    }%
+  \fi%
+  \brl@math_set@subid{\the\brl@math@posnum}{\brl@math@subid}% subid 
+  %
+  % 
+  \brl@math_get@id{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+  %
+  \ifx\brl@math@previd\brl@math@@empty%
+    \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+    \ifx\brl@math@previd\brl@math@@start%
+      \let\brl@math_exec_sux@stop\empty%
+    \else%
+      \edef\brl@math_exec_sux@stop{\brl@code_math_stop}%
+    \fi%
+  \else
+    \let\brl@math_exec_sux@stop\empty%
+  \fi%
+  % 
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@math_exec_sux@stop\brl@math_exec_sux@content}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  % \brl@math_exec%
+}
+
+\def\brl@math_exec_sub{%
+  \brl@math_exec_sub_do%
+  \brl@math_exec%
+}
+
+%
+% change id
+%
+\def\brl@math_exec_sub_do{%
+  \advance\brl@math@elenum\@ne%
+  \edef\brl@math@subid{\expandafter\@secondoftwo\brl@math@dat}%
+  \brl@math_get@id{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+  \ifcsname brl@math_exec_sub_\brl@math@subid\endcsname%
+    \csname brl@math_exec_sub_\brl@math@subid\expandafter\endcsname%
+  \else% elenum = 1 and ordinary
+    %
+    \edef\brl@math_exec_sux@content{%
+      \brl@code_math_substart%
+      \expandafter\@firstoftwo\brl@math@dat%
+    }%
+  \fi%
+  \brl@math_set@subid{\the\brl@math@posnum}{\brl@math@subid}% subid
+  %
+  %
+  % \ifcsname brl@math_exec_sux@\brl@math@previd\endcsname%
+  %   \edef\brl@math_exec_sux@stop{\brl@code_math_stop}%
+  % \else
+  %   \let\brl@math_exec_sux@stop\empty%
+  % \fi%
+  \ifx\brl@math@previd\brl@math@@empty%
+    \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+    \ifx\brl@math@previd\brl@math@@start%
+      \let\brl@math_exec_sux@stop\empty%
+    \else%
+      \edef\brl@math_exec_sux@stop{\brl@code_math_stop}%
+    \fi%
+  \else
+    \let\brl@math_exec_sux@stop\empty%
+  \fi%
+  %
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@math_exec_sux@stop\brl@math_exec_sux@content}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  % \brl@math_exec%
+}
+
+\def\brl@math_exec_sub_null{% elenum >=2
+  \edef\brl@math_exec_sux@content{%
+    \brl@code_math_substart\brl@code_math_transopen%
+    \expandafter\@firstoftwo\brl@math@dat%
+    \brl@code_math_transclose%
+  }%
+}%
+
+\def\brl@math_exec_sub_letterrK{%
+  \ifx\brl@math@previd\brl@math@@digit%
+    \edef\brl@math_exec_sux@content{%
+      \brl@code_math_substart\brl@code_math_letteraj\expandafter\@firstoftwo\brl@math@dat%
+    }%
+  \else%
+    \edef\brl@math_exec_sux@content{%
+      \brl@code_math_substart\expandafter\@firstoftwo\brl@math@dat%
+    }%
+  \fi%
+}
+
+\let\brl@math_exec_sub_letternK\brl@math_exec_sub_letterrK
+\let\brl@math_exec_sub_funcaj\brl@math_exec_sub_letterrK
+
+
+
+
+%%
+%% 組み合わせ (combination) -> C\binom
+%% 重複組み合わせ (repeated combination) \Pi\binom
+%% 順列 (permutation) P\binom
+%% 重複順列 (repeated permutation) H\binom
+
+\def\brl@math_exec_binom{%
+  % 
+  \advance\brl@math@breaklevel\@ne%
+  %
+  \edef\brl@tmp{{\brl@math@dat}}%
+  \expandafter\brl@math_parse\brl@tmp%
+  %
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_transopen\brl@math@subtoks\brl@code_math_space}% space can not be at the first.
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_get@dat{\the\brl@math@posnum}{\brl@math@dat}%
+  \edef\brl@tmp{{\brl@math@dat}}%
+  \expandafter\brl@math_parse\brl@tmp%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@math@subtoks\brl@code_math_transclose}%
+  % 
+  \advance\brl@math@breaklevel\m@ne%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+%
+% treat endfrac together
+%
+\def\brl@math_exec_frac{%
+  % 
+  \advance\brl@math@breaklevel\@ne%
+  %
+  \edef\brl@tmp{{\brl@math@dat}}%
+  \expandafter\brl@math_parse\brl@tmp%
+  %
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_fracb\brl@math@subtoks}%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_get@dat{\the\brl@math@posnum}{\brl@math@dat}%
+  \edef\brl@tmp{{\brl@math@dat}}%
+  \expandafter\brl@math_parse\brl@tmp%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_fracm\brl@math@subtoks\brl@code_math_frace}%
+  % 
+  \advance\brl@math@breaklevel\m@ne%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+% notice: two elements
+%
+% change id
+%
+\def\brl@math_exec_sqrts{%
+  % 
+  \advance\brl@math@breaklevel\@ne%
+  \edef\brl@tmp{{\brl@math@dat}}%
+  \expandafter\brl@math_parse\brl@tmp%
+  \advance\brl@math@breaklevel\m@ne%
+  % 
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_sqrts\brl@math@subtoks}%
+  %
+  \advance\brl@math@elenum\tw@%
+  % \show\brl@math@subid\show\brl@math@@null%
+  \ifx\brl@math@subid\brl@math@@null%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_sqrts\brl@code_math_transopen\brl@math@subtoks\brl@code_math_transclose}%
+  \else%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_sqrts\brl@math@subtoks}%
+  \fi%
+  \brl@math_set@subid{\the\brl@math@posnum}{\brl@math@subid}% subid
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+
+
+% notice: two elements
+%
+%
+% change id
+%
+\def\brl@math_exec_sqrtm{%
+  % 
+  %
+  \edef\brl@tmp{\expandafter\@firstoftwo\brl@math@dat}%
+  % 
+  \brl@math_get@elenum{\brl@tmp}{\count@}%
+  
+  \ifnum\numexpr\brl@math@elenum-\count@\relax=\z@%
+    \let\brl@math@firsttoks\empty%
+  \else%
+    \brl@math_get@brl{\brl@tmp}{\brl@math@brl}%\rm AA[aa] -> AA.aa : delete .
+    %
+    \brl@math@elenum\count@%
+    \brl@math_set@brl{\brl@tmp}{\brl@code_math_transopen\expandafter\brl@math_delete_mod\brl@math@brl\empty}%
+    %
+    \def\brl@math@firsttoks{\brl@code_math_transclose}%
+  \fi%
+  % 
+  \advance\brl@math@breaklevel\@ne%
+  \edef\brl@tmp{{\expandafter\@secondoftwo\brl@math@dat}}%  
+  \expandafter\brl@math_parse\brl@tmp%
+  \advance\brl@math@breaklevel\m@ne%
+  %
+  \advance\brl@math@elenum\tw@% √ + X = 2
+  % 
+  %
+  \ifx\brl@math@subid\brl@math@@null%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@math@firsttoks\brl@code_math_sqrtm\brl@code_math_transopen\brl@math@subtoks\brl@code_math_transclose}%
+  \else%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@math@firsttoks\brl@code_math_sqrtm\brl@math@subtoks}%
+  \fi%
+  \brl@math_set@subid{\the\brl@math@posnum}{\brl@math@subid}% subid
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+\def\brl@math_exec_break{%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+
+
+\def\brl@math_exec_funcaj{%
+  \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+  \advance\brl@math@elenum\@ne%
+  \ifcsname brl@math_exec_funcaj_\brl@math@previd\endcsname%
+    \csname brl@math_exec_funcaj_\brl@math@previd\expandafter\endcsname%
+  \else%
+    \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+  \fi%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+%
+\def\brl@math_exec_funcaj_digit{%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_letteraj\csname brl@code_math_\brl@math@dat\endcsname}%
+}
+%
+\def\brl@math_exec_funcaj_letteraz{%  
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_stop\csname brl@code_math_\brl@math@dat\endcsname}%
+}%
+
+\def\brl@math_exec_funckz{%
+  % 
+  \brl@math_get@fullid{\the\numexpr\brl@math@posnum+\m@ne\relax}{\brl@math@previd}%
+  \advance\brl@math@elenum\@ne%
+  \ifx\brl@math@previd\brl@math@@letteraz%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_stop\csname brl@code_math_\brl@math@dat\endcsname}%
+  \else%
+    \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+  \fi%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+
+\def\brl@math_exec_func{%
+  % 
+  %
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+%
+
+%
+% space is invalidated
+%
+\def\brl@math_exec_space{%
+  % 
+  %
+  \brl@math_set@brl{\the\brl@math@posnum}{}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}%
+%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \text{...}.
+%%
+%%
+%%
+\newif\ifbrl@math_insidetext
+
+\brl@def{brl@code_text_（}{brl@code_text_⸨}{brl@code_text_）}{brl@code_text_⸩}\brl@end{%
+  \def\brl@math_exec_text{%
+    % 
+    %
+    \advance\brl@math@elenum\@ne% element count +1
+    % 
+    \advance\brl@text@parenlevel\@ne%
+    \advance\brl@math@breaklevel\@ne%
+    % 
+    \brl@math_insidetexttrue%
+    \expandafter\brl@text\expandafter{\brl@math@dat}%
+    \brl@math_insidetextfalse%
+    %
+    \ifnum\brl@text@parenlevel=\@ne%
+      \brl@math_set@brl{\the\brl@math@posnum}{#1\the\brl@text@toks#3}%
+    \else%
+      \brl@math_set@brl{\the\brl@math@posnum}{#2\the\brl@text@toks#4}%
+    \fi%
+    % 
+    \advance\brl@math@breaklevel\m@ne%    
+    \advance\brl@text@parenlevel\m@ne%
+    %
+    \advance\brl@math@posnum\@ne%
+    \brl@math_exec%
+  }
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \intertext{...}.
+%%
+%% this entry consists only of \intertext{...}.
+%%
+%% Thus we do not need to count elements.
+%%
+
+\def\brl@math_exec_intertext{%
+  % 
+  \expandafter\brl@text\expandafter{\brl@math@dat}%
+  \brl@math_set@brl{\the\brl@math@posnum}{\the\brl@text@toks}%
+  %
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec% finish
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% ,
+%%
+%% a,\ b -> two eqs, newline -> neweq
+%% a,\ \dots -> one eq and dots, newline -> mathmode
+%% (a,\ b) -> one eq, newline -> textmode (because it is clear that the mathmode is not finished)
+%%
+%% a, b -> one eq, newline -> mathmode
+%% a, \dots -> one eq and dots, newline -> mathmode
+%% (a, b) -> one eq, newline -> textmode (because it is clear that the mathmode is not finished)
+%%
+%% (note: a, -> "," is text in 点字委員会)
+%%
+
+%
+% change id
+%
+\brl@def{brl@code_math_,}\brl@end{%
+  \@namedef{brl@math_exec_,}{%
+    \advance\brl@math@elenum\@ne%
+    \brl@math_set@brl{\the\brl@math@posnum}{#1}%
+    %
+    \ifcase\brl@math@breaklevel% independent eqs.
+      \brl@math_get@id{\the\numexpr\brl@math@posnum+\@ne\relax}{\brl@math@nextid}%
+      \ifx\brl@math@nextid\brl@math@@space%
+        \brl@math_get@id{\the\numexpr\brl@math@posnum+\tw@\relax}{\brl@math@nextnextid}%
+        \ifx\brl@math@nextnextid\brl@math@@dots%
+        \else%
+          \brl@math_set@id{\the\brl@math@posnum}{neweq}%
+        \fi%
+      \fi%
+    \else%
+      \brl@math_set@id{\the\brl@math@posnum}{textcomma}%
+    \fi%
+    \advance\brl@math@posnum\@ne%
+    \brl@math_exec%
+  }
+}
+
+
+%
+% change id
+%
+\@namedef{brl@math_exec_.}{%
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_textperiod}%
+  \brl@math_set@id{\the\brl@math@posnum}{textperiod}%
+  % 
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+
+
+\@namedef{brl@math_exec_*}{%
+  % 
+  \advance\brl@math@elenum\@ne%
+  \ifcase\brl@math@sslevel%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_ast}%
+  \else%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_subast}%
+  \fi%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+
+%
+% change id
+%
+\@namedef{brl@math_exec_|}{%
+  % 
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_vert}%
+  \brl@math_get@id{\the\numexpr\brl@math@posnum+\@ne\relax}{\brl@math@nextid}%
+  \ifx\brl@math@nextid\brl@math@@space%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_mvdelim}%
+    \brl@math_set@id{\the\brl@math@posnum}{mvdelim}%
+  \else%
+    \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_vert}%
+    \brl@math_set@id{\the\brl@math@posnum}{bin}%
+  \fi%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+%
+% change id
+%
+\def\brl@math_exec_colon{%
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@code_math_colon}%
+  \brl@math_set@id{\the\brl@math@posnum}{neweq}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec% the end is obtaind in get_id
+}
+
+
+\def\brl@math_exec_asis{%
+  \advance\brl@math@elenum\@ne%
+  \brl@math_set@brl{\the\brl@math@posnum}{\brl@math@dat}%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_exec%
+}
+
+\let\brl@math_exec_split\brl@math_exec_asis
+\let\brl@math_exec_block\brl@math_exec_asis
+
+
+\def\brl@math_exec_ordblock{%
+  \advance\brl@math@elenum\@ne%
+  % 
+  \brl@math_set@brl{\the\brl@math@posnum}{\csname brl@code_math_\brl@math@dat\endcsname}%
+  \brl@math_set@htdp{\the\brl@math@posnum}{\z@}{\tw@}%
+  \advance\brl@math@posnum\@ne%
+  \expandafter\brl@math_exec% the end is obtaind in get_id
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% makebrace
+%
+% construct braces
+%
+% {label}{over or under}{begpos}{endpos}
+
+\def\brl@math_makebrace{%
+  %
+  \expandafter\brl@math_makebrace_loop\the\brl@math@bracetoks\brl@end\brl@end%
+}
+
+\def\brl@math_makebrace_loop#1#2{%
+  \def\brl@math_makebrace@label{#1}%
+  \ifx\brl@math_makebrace@label\brl@@end%
+    %
+  \else%
+    \csname brl@math_make_#2brace\expandafter\endcsname%
+  \fi%
+}
+
+%
+% change id
+%
+\def\brl@math_make_overbrace#1#2{%
+  \brl@math_get@brls{#1}{#2}{\brl@tmp}%
+  \toks@\expandafter{\brl@tmp}%
+  \brl@format{0}{0}{\toks@}{\the\numexpr\brl@bse@width-4\relax}%
+  \brl@format_rectangle{l}{\brl@format@alltoks}%
+  \ifnum\brl@format@allmaxcharnum=\@ne%
+    \def\brl@math@bracebrace{\brl@code_math_braceu}%
+  \else%
+    \brl@def_fill{\numexpr\brl@format@allmaxcharnum-\tw@}{\brl@math@leader}{\brl@code_math_bracem}%
+    \edef\brl@math@bracebrace{\brl@code_math_bracelu\brl@math@leader\brl@code_math_braceru}
+  \fi%% 
+  %
+  \advance\brl@format@totalheight\m@ne% brace
+  % 
+  \edef\brl@math@bracecharnum{\the\brl@format@allmaxcharnum}% content width
+  \edef\brl@math@braceheight{\the\brl@format@totalheight}% content height
+  \edef\brl@math@bracedepth{\the\brl@format@totaldepth}% content depth
+  \edef\brl@math@braceavskip{\brl@format@avskip}%
+  %
+  \edef\brl@math@bracecontent{{l}{\the\brl@format@allmaxcharnum}{\brl@math@bracebrace}\the\brl@format@recttoks}% brace + content 
+  % 
+  %
+  \ifx\brl@math_makebrace@label\empty%
+    \edef\brl@tmp{\brl@char@block{\brl@math@braceheight}{\brl@math@bracedepth}{\brl@math@bracecharnum}{\ifbrl@format@space\brl@char@space@true\fi\brl@char@bvskip@true\brl@math@braceavskip}{}{\brl@math@bracecontent}}%
+  \else%
+    {% label is independent eq.
+      \brl@math@sslevel\z@%
+      % 
+      \brl@math@breaklevel\z@%
+      \expandafter\brl@math\expandafter{\brl@math_makebrace@label}%
+      \brl@format{0}{0}{\brl@math@toks}{\the\numexpr\brl@bse@width-4\relax}%
+      \brl@format_rectangle{c}{\brl@format@alltoks}%
+      %
+      \xdef\brl@math@braceheight{\the\numexpr\brl@math@braceheight-\brl@format@totaldepth+\brl@format@totalheight\relax}%
+      \xdef\brl@tmp{\brl@char@block{\brl@math@braceheight}{\brl@math@bracedepth}{\brl@math@bracecharnum}{\ifbrl@format@space\brl@char@space@true\fi\brl@char@bvskip@true\brl@math@braceavskip}{}{\the\brl@format@recttoks\brl@math@bracecontent}}%
+    }%
+    % 
+  \fi%
+  \brl@math_set@brl{#1}{\brl@tmp}%
+  \brl@math_set@id{#1}{brace}%
+  \brl@math_set@htdp{#1}{\brl@math@braceheight}{\brl@math@bracedepth}
+  \brl@math_makebrace_loop%
+}
+
+
+\def\brl@math_make_underbrace#1#2{%
+  \brl@math_get@brls{#1}{#2}{\brl@tmp}%
+  \toks@\expandafter{\brl@tmp}%
+  \brl@format{0}{0}{\toks@}{\the\numexpr\brl@bse@width-4\relax}%
+  \brl@format_rectangle{l}{\brl@format@alltoks}%
+  \ifnum\brl@format@allmaxcharnum=\@ne%
+    \def\brl@math@bracebrace{\brl@code_math_braced}%
+  \else%
+    \brl@def_fill{\numexpr\brl@format@allmaxcharnum-\tw@}{\brl@math@leader}{\brl@code_math_bracem}%
+    \edef\brl@math@bracebrace{\brl@code_math_braceld\brl@math@leader\brl@code_math_bracerd}
+  \fi%% 
+  \brl@def_fill{\numexpr\brl@format@allmaxcharnum-\tw@}{\brl@math@leader}{\brl@code_math_bracem}%
+  %
+  \advance\brl@format@totaldepth\@ne% brace
+  % 
+  \edef\brl@math@bracecharnum{\the\brl@format@allmaxcharnum}% content width
+  \edef\brl@math@braceheight{\the\brl@format@totalheight}% content height
+  \edef\brl@math@bracedepth{\the\brl@format@totaldepth}% content depth
+  \edef\brl@math@bracebvskip{\brl@format@bvskip}%
+  %
+  \edef\brl@math@bracecontent{\the\brl@format@recttoks{l}{\the\brl@format@allmaxcharnum}{\brl@math@bracebrace}}% content + brace
+  % 
+  %
+  \ifx\brl@math_makebrace@label\empty%
+    \edef\brl@tmp{\brl@char@block{\brl@math@braceheight}{\brl@math@bracedepth}{\brl@math@bracecharnum}{\ifbrl@format@space\brl@char@space@true\fi\brl@math@bracebvskip\brl@char@avskip@true}{}{\brl@math@bracecontent}}%
+  \else%
+    {%
+      \brl@math@sslevel\z@%
+      %
+      \brl@math@breaklevel\z@%
+      \expandafter\brl@math\expandafter{\brl@math_makebrace@label}%
+      \brl@format{0}{0}{\brl@math@toks}{\the\numexpr\brl@bse@width-4\relax}%
+      \brl@format_rectangle{c}{\brl@format@alltoks}%
+      %
+      \xdef\brl@math@bracedepth{\the\numexpr\brl@format@totaldepth-\brl@format@totalheight+\brl@math@bracedepth\relax}%
+      \xdef\brl@tmp{\brl@char@block{\brl@math@braceheight}{\brl@math@bracedepth}{\brl@math@bracecharnum}{\ifbrl@format@space\brl@char@space@true\fi\brl@math@bracebvskip\brl@char@avskip@true}{}{\brl@math@bracecontent\the\brl@format@recttoks}}%
+      % 
+    }
+  \fi%
+  \brl@math_set@brl{#1}{\brl@tmp}%
+  \brl@math_set@id{#1}{brace}%
+  \brl@math_set@htdp{#1}{\brl@math@braceheight}{\brl@math@bracedepth}%
+  \brl@math_makebrace_loop%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% makedelim
+%
+% construct large delimiters
+%
+
+\newcount\brl@math@height
+\newcount\brl@math@depth
+\def\brl@math_makedelim{%
+  \brl@math@height\z@%
+  \brl@math@depth\@ne
+  \def\brl@math_delim@middlepos{\m@ne}%
+  \toks@{}% {leftpos}{middlepos}{rightpos}{height}{depth}
+  %
+  \brl@math@posnum\z@%
+  \brl@math_delim_loop%
+  %
+  %\showthe\toks@
+  \expandafter\brl@math_paren\the\toks@\brl@end%
+}
+
+\def\brl@math_delim_loop{%
+  \brl@math_get@brl{\the\brl@math@posnum}{\brl@math@brl}% skip
+  \ifx\brl@math@brl\empty%
+    \advance\brl@math@posnum\@ne%
+    \expandafter\brl@math_delim_loop%
+  \else%
+    \expandafter\brl@math_delim_loop_%
+  \fi%
+}
+
+\def\brl@math_delim_loop_{%  
+  \brl@math_get@id{\the\brl@math@posnum}{\brl@math@id}%
+  %
+  \ifcsname brl@math_delim_id@\brl@math@id\endcsname%
+    \csname brl@math_delim_id@\brl@math@id\expandafter\endcsname%
+  \else%
+    \advance\brl@math@posnum\@ne%
+    \expandafter\brl@math_delim_loop%
+  \fi%
+  % default (h,d) = (0,1)
+}
+
+\def\brl@math_delim_id@end{}
+
+\def\brl@math_delim_id@block{%
+  \brl@math_get@htdp{\the\brl@math@posnum}{\brl@math@ht}{\brl@math@dp}%
+  \brl@math_delim_compare%
+}
+
+\def\brl@math_delim_compare{%
+  \ifnum\brl@math@ht<\brl@math@height% notice : height <= 0
+    \brl@math@height\brl@math@ht\relax%
+  \fi%
+  \ifnum\brl@math@dp>\brl@math@depth%
+    \brl@math@depth\brl@math@dp\relax%
+  \fi%
+  \advance\brl@math@posnum\@ne%
+  \brl@math_delim_loop%
+}
+
+\let\brl@math_delim_id@brace\brl@math_delim_id@block%
+\let\brl@math_delim_id@ordblock\brl@math_delim_id@block%
+
+\def\brl@math_delim_id@left{%
+  %
+  \bgroup%
+    \brl@math@height\z@%
+    \brl@math@depth\@ne
+    \def\brl@math_delim@middlepos{\m@ne}%
+    %
+    \advance\brl@math@posnum\@ne%
+    \brl@math_delim_loop%
+}
+
+\def\brl@math_delim_id@middle{%
+    \edef\brl@math_delim@middlepos{\the\brl@math@posnum}%
+    \advance\brl@math@posnum\@ne%
+    \brl@math_delim_loop%  
+}
+
+\def\brl@math_delim_id@right{%
+    % 
+    \xdef\brl@tmpposnum{\the\brl@math@posnum}%
+    \xdef\brl@math@ht{\the\brl@math@height}%
+    \xdef\brl@math@dp{\the\brl@math@depth}%
+    \xdef\brl@tmpmiddlepos{\brl@math_delim@middlepos}%
+    \xdef\brl@tmp{\the\toks@}%
+  \egroup%
+  %
+  \edef\brl@tmp{\brl@tmp{\the\brl@math@posnum}{\brl@tmpmiddlepos}{\brl@tmpposnum}{\brl@math@ht}{\brl@math@dp}}%
+  \toks@\expandafter{\brl@tmp}%
+  %
+  \brl@math@posnum\brl@tmpposnum\relax%
+  \brl@math_delim_compare%
+}
+
+
+\def\brl@math_paren#1{%
+  \def\brl@math_paren@leftpos{#1}%
+  \ifx\brl@math_paren@leftpos\brl@@end%
+  \else%
+    \expandafter\brl@math_paren_loop%
+  \fi%
+}
+
+\def\brl@math_paren@zeroone{0/1}
+\def\brl@math_paren_loop#1#2#3#4{%
+  \def\brl@math_paren@middlepos{#1}%
+  \def\brl@math_paren@rightpos{#2}%
+  \def\brl@array_paren@height{#3}%
+  \def\brl@array_paren@depth{#4}%
+  \edef\brl@tmp{\brl@array_paren@height/\brl@array_paren@depth}%
+  \ifx\brl@tmp\brl@math_paren@zeroone% default
+  \else%
+    \expandafter\brl@math_paren_large%
+  \fi%
+  \brl@math_paren%
+}
+
+\def\brl@math_paren_large{%
+  \let\brl@math_paren@pos\brl@math_paren@leftpos%
+  \brl@math_paren_cons%
+  \let\brl@math_paren@pos\brl@math_paren@rightpos%
+  \brl@math_paren_cons%
+  \ifnum\brl@math_paren@middlepos=\m@ne%
+  \else%
+    \let\brl@math_paren@pos\brl@math_paren@middlepos%
+    \brl@math_paren_cons%
+  \fi%
+}
+
+\def\brl@math_paren_cons{%
+  \brl@math_get@dat{\brl@math_paren@pos}{\brl@math_paren@paren}% lvert etc.
+  \ifx\brl@math_paren@paren\brl@math@@emptydelim% empty delimiter
+    % \brl@math_set@id{\brl@math_paren@pos}{\brl@math}%
+    %\let\brl@array_paren@delim\empty% skip
+  \else%
+    \edef\brl@math_paren@lr{\csname brl@math_paren_hline@\brl@math_paren@paren\endcsname}% delimiter's left or right
+    \edef\brl@math_paren@nbdpos{\the\numexpr\brl@math_paren@pos+\csname brl@math_paren_hline_pm@\brl@math_paren@lr\endcsname\relax}
+    \brl@math_get@id{\brl@math_paren@nbdpos}{\brl@math_paren@id}%
+    \ifx\brl@math_paren@id\brl@math@@block%
+      \brl@math_get@brl{\brl@math_paren@nbdpos}{\brl@math_paren@dat}%
+      \expandafter\brl@math_paren_get_hlines\brl@math_paren@dat%
+    \else%
+      \let\brl@math_paren@lefthline\empty%
+      \let\brl@math_paren@righthline\empty%
+    \fi%
+    \brl@array_paren{\brl@math_paren@paren}{\csname brl@math_paren@\brl@math_paren@lr hline\endcsname}%
+    \brl@math_set@brl{\brl@math_paren@pos}{\brl@array_paren@delim}%
+  \fi%
+  %
+  %
+  %
+  %\show\brl@array_paren@delim
+}
+
+
+\def\brl@math_paren_get_hlines#1#2#3#4#5#6#7{% #1 = \block
+  \brl@math_paren_get_hlines_#6%
+}
+\def\brl@math_paren_get_hlines_#1#2{%
+  \def\brl@math_paren@lefthline{#1}%
+  \def\brl@math_paren@righthline{#2}%
+}
+
+\let\brl@math_paren@nonehline\empty
+\def\brl@math_paren_hline_pm@right{\m@ne}
+\def\brl@math_paren_hline_pm@none{\z@}
+\def\brl@math_paren_hline_pm@left{\@ne}
+\def\brl@math_paren_hline@parenopen{left}
+\def\brl@math_paren_hline@parenclose{right}
+\def\brl@math_paren_hline@lvert{left}
+\def\brl@math_paren_hline@rvert{right}
+\def\brl@math_paren_hline@lVert{left}
+\def\brl@math_paren_hline@rVert{right}
+\def\brl@math_paren_hline@lbrace{left}
+\def\brl@math_paren_hline@rbrace{right}
+\def\brl@math_paren_hline@lbrack{left}
+\def\brl@math_paren_hline@rbrack{right}
+\def\brl@math_paren_hline@langle{none}
+\def\brl@math_paren_hline@rangle{none}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\brl@math_pickfirst#1#2\brl@end{#1}
+
+\expandafter\let\csname brl@math_appendtoks@\string\brl@code_math_letteraj\endcsname\relax
+\expandafter\let\csname brl@math_appendtoks@\string\brl@code_math_stop\endcsname\relax
+
+\def\brl@math_appendtoks#1{%
+  \ifnum\brl@math@currbreak<\z@%
+    \edef\brl@tmp{\expandafter\brl@math_pickfirst#1X\brl@end}% #1 may be empty. Thus insert X.
+    \ifcsname brl@math_appendtoks@\expandafter\string\brl@tmp\endcsname%
+      \def\brl@math@currmode{M}% if the letteraj or stop comes the first of a line, delete it.
+    \fi%
+    %\showthe\brl@math@breaklevel
+    \edef\brl@tmp{{\the\brl@math@toks%
+        \brl@char@breakable%
+        {\brl@math@currmode}% t or m
+        {\the\numexpr\brl@math@breaklevel*\brl@char@break_base+\brl@math@currbreak\relax}%
+        {\the\brl@math@currspace}%
+        #1}}%
+%    \fi%
+    \brl@math_log_break%
+  \else% 0 (not set) or never
+    % \ifbrl@math@currblock% automatically `never' otherwise -2. before block, the least possibility of break
+    %   % \ifx\brl@math@currbreak\brl@char@break_never%
+    %   \edef\brl@tmp{{\the\brl@math@toks%
+    %       \brl@char@breakable{m}{\brl@char@break_almostnever}{\the\brl@math@currspace}#1}}% 9999 = 10000 -1 almostnever
+    % \else%
+    %   \edef\brl@tmp{{\the\brl@math@toks#1}}% default: no break
+    % \fi%
+%    \ifbrl@math@currblock% automatically `never' otherwise -2. before block, the least possibility of break
+      % \ifx\brl@math@currbreak\brl@char@break_never%
+    \edef\brl@tmp{{\the\brl@math@toks%
+        \ifbrl@math@currblock% automatically `never' otherwise -2. before block, the least possibility of break
+          \ifx\brl@math@currbreak\brl@char@break_never%
+            \brl@char@breakable{m}{\brl@char@break_almostnever}{\the\brl@math@currspace}%
+          \fi%
+        \fi%
+        #1}}% 9999 = 10000 -1 almostnever
+    % \else%
+    %   \edef\brl@tmp{{\the\brl@math@toks#1}}% default: no break
+    % \fi%
+  \fi%
+  \brl@math@toks\brl@tmp%
+}
+
+\def\brl@math_appendblock{%
+%  \ifx\brl@math@currbreak\brl@char@break_never%
+  \brl@math@currblocktrue%
+ % \fi%
+  \ifnum\brl@math@currbreak>\z@% already never
+    % 
+  \else%
+    \ifnum\brl@char@break_block<\brl@math@currbreak%
+      \brl@math@currbreak\brl@char@break_block\relax%
+    \fi%
+  \fi%
+  %
+}
+
+
+\def\brl@math_appendbreak#1#2#3{%
+  %
+  \edef\brl@tmp{{\the\brl@math@toks\brl@char@breakable{#1}{#2}{#3}}}%
+  \brl@math@toks\brl@tmp%
+}
+
+
+% brl = empty : emptydot, empty, overbrace, underbrace
+
+\def\brl@math_postproc{%
+  % \showthe\brl@math@posnum
+  % \show\brl@math@posmax
+  % \expandafter\show\csname brl@math@id_\the\brl@math@posnum\endcsname
+  %
+  \ifnum\brl@math@posmax>\brl@math@posnum%
+    \brl@math_get@brl{\the\brl@math@posnum}{\brl@math@brl}%
+    % \show\brl@math@brl
+    \ifx\brl@math@brl\empty% skip
+    \else%
+      \brl@math_get@id{\the\brl@math@posnum}{\brl@math@id}%
+      \ifcsname brl@math_break@b_\brl@math@id\endcsname%
+        \csname brl@math_break@b_\brl@math@id\endcsname%
+      \fi%
+      % 
+      \brl@math_appendtoks{\brl@math@brl}%
+      % 
+      \ifcsname brl@math_break@a_\brl@math@id\endcsname%
+        \csname brl@math_break@a_\brl@math@id\endcsname%
+      \else%
+        \brl@math_break_default%
+      \fi%
+    \fi%
+    % 
+    \brl@math_log_output%
+    % 
+    \advance\brl@math@posnum\@ne%
+    \expandafter\brl@math_postproc%
+  \fi%
+}
+
+\def\brl@math_break_calc#1#2#3{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \let\brl@math@currmode\brl@tmp%
+  \fi%
+  \ifnum\brl@math@currbreak>\z@% already never
+  \else%
+    \ifnum#2<\brl@math@currbreak%
+      \brl@math@currbreak#2\relax%
+    \fi%
+    \advance\brl@math@currspace#3\relax% omit fixspaces
+  \fi%
+}
+
+\def\brl@math_break_default{%
+  \brl@math@currblockfalse%
+  \def\brl@math@currmode{m}%
+  \brl@math@currbreak\z@% no break is set.
+  \brl@math@currspace\z@%
+}
+
+\def\brl@math_break_set#1#2#3{%
+  \brl@math@currblockfalse%
+  \def\brl@math@currmode{#1}%
+  \brl@math@currbreak#2\relax% no break is set.
+  \brl@math@currspace#3\relax%
+}
+
+\def\brl@math_break_neweq{%
+  \count@\brl@math@posnum%
+  \advance\count@\@ne%
+  \brl@math_break_neweq_loop%
+}
+
+\def\brl@math_break_neweq_loop{%
+  \brl@math_get@id{\the\count@}{\brl@math@id}%
+  \ifcsname brl@math_break_neweq@\brl@math@id\endcsname%
+    \csname brl@math_break_neweq@\brl@math@id\expandafter\endcsname%
+  \else%
+    \brl@math_set@prebrl{\the\count@}{\brl@code_math_equationsign}%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% break before, after
+% 
+
+
+\def\brl@math_break@b_open{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+\def\brl@math_break@a_open{\brl@math_break_set{m}{\brl@char@break_never}{\z@}\advance\brl@math@breaklevel\@ne}%
+
+\def\brl@math_break@b_close{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_close{\brl@math_break_set{m}{\brl@char@break_small}{\z@}\advance\brl@math@breaklevel\m@ne}%
+
+\def\brl@math_break@b_bin{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+\def\brl@math_break@a_bin{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_op{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+\def\brl@math_break@a_op{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_rel{%
+  \brl@math_break_calc{}{\brl@char@break_middle}{\z@}%
+  \ifcase\brl@math@sslevel%
+    \edef\brl@math@brl{\brl@char@space@true\brl@math@brl}%
+  \fi%
+}%
+\def\brl@math_break@a_rel{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_punct{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_punct{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}%
+
+\def\brl@math_break@b_break{%
+  \let\brl@math@brl\empty%
+  \brl@math_appendbreak{\brl@math@currmode}{\brl@char@break_break}{\z@}%
+}%
+
+\def\brl@math_break@a_break{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_block{\brl@math_appendblock}
+\def\brl@math_break@a_block{%
+  \brl@math@currblocktrue%
+  \def\brl@math@currmode{m}%
+  \brl@math@currbreak\brl@char@break_block\relax%
+  \brl@math@currspace\z@%
+}%
+
+
+
+\def\brl@math_break@b_sup{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_sup{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}%
+
+\def\brl@math_break@b_sub{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_sub{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}%
+
+\@namedef{brl@math_break@b_'}{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\@namedef{brl@math_break@a_'}{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}%
+
+
+\@namedef{brl@math_break@b_,}{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\@namedef{brl@math_break@a_,}{\brl@math_break_set{m}{\brl@char@break_small}{\@ne}}%
+
+\def\brl@math_break@b_textcomma{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_textcomma{\brl@math_break_set{t}{\brl@char@break_big}{\@ne}}
+
+%
+% , and colon
+%
+\def\brl@math_break@b_neweq{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_neweq{\brl@math_break_set{t}{\brl@char@break_big}{\@ne}\brl@math_break_neweq}% prepend new eq
+
+
+\def\brl@math_break_neweq@end{}% never happen because mecab treats this case.
+\def\brl@math_break_neweq@dots{}
+\def\brl@math_break_neweq@space{%
+  \advance\count@\@ne%
+  \brl@math_break_neweq_loop%
+}
+
+\def\brl@math_break@b_textperiod{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_textperiod{\brl@math_break_set{t}{\brl@char@break_big}{\tw@}\brl@math_break_neweq}%
+
+
+
+\def\brl@math_break@b_not{\brl@math_break_calc{}{\brl@char@break_middle}{\z@}}%
+\def\brl@math_break@a_not{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_text{\brl@math_break_calc{}{\brl@char@break_middle}{\z@}}%
+\def\brl@math_break@a_text{\brl@math_break_set{m}{\brl@char@break_middle}{\z@}}%
+
+
+
+\def\brl@math_break@b_funcaj{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+
+\def\brl@math_break@a_funcaj{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_funckz{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+
+\def\brl@math_break@a_funckz{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_func{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+
+\def\brl@math_break@a_func{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}%
+
+\def\brl@math_break@b_frac{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+
+\def\brl@math_break@a_frac{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}%
+
+%
+% arrow is necessarily followed by mainarrow.
+% Thus we have the sequence:
+% arrow breakable{.}{.}{.} mainarrow
+% If a newline happens, then gobble five. (see split_parse, align_parse)
+%
+\def\brl@math_break@b_arrow{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+\def\brl@math_break@a_arrow{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}
+
+\def\brl@math_break@a_mainarrow{\brl@math_break_set{m}{\brl@char@break_small}{\z@}}
+
+\def\brl@math_break@a_endarrow{\brl@math_break_set{m}{\brl@char@break_never}{\z@}}
+
+
+\def\brl@math_break@b_mainArrow{\brl@math_break_calc{t}{\brl@char@break_middle}{\@ne}}%
+\def\brl@math_break@a_mainArrow{\brl@math_break_set{t}{\brl@char@break_big}{\@ne}\brl@math_break_neweq}
+
+
+\def\brl@math_break@b_mvdelim{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+\def\brl@math_break@a_mvdelim{\brl@math_break_set{m}{\brl@char@break_small}{\@ne}}%
+
+
+\@namedef{brl@math_break@b_(}{\brl@math_break_calc{}{\brl@char@break_small}{\z@}}%
+
+\@namedef{brl@math_break@a_(}{\brl@math_break_set{m}{\brl@char@break_never}{\z@}\advance\brl@math@breaklevel\@ne}%
+
+\@namedef{brl@math_break@b_)}{\brl@math_break_calc{}{\brl@char@break_never}{\z@}}%
+
+\@namedef{brl@math_break@a_)}{\brl@math_break_set{m}{\brl@char@break_small}{\z@}\advance\brl@math@breaklevel\m@ne}%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% string to digits
+\def\brl@math_strtodigits#1{%
+  \toks@{}%
+  \expandafter\brl@math_strtodigits_loop#1\brl@end%
+}
+\def\brl@math_strtodigits_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \edef\brl@math@result{\the\toks@}%
+  \else%
+    % 
+    \toks@\expandafter{\the\toks@\brl@math_cmd{digit}{{#1}{n}}}%
+    \expandafter\brl@math_strtodigits_loop%
+  \fi%
+}
+
+%
+% string to letters
+%
+\def\brl@math_strtoletters#1{%
+  \toks@{}%
+  \expandafter\brl@math_strtoletters_loop#1\brl@end%
+}
+\def\brl@math_strtoletters_loop#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \edef\brl@math@result{\the\toks@}%
+  \else%
+    % 
+    \toks@\expandafter{\the\toks@\brl@math_cmd{letterr\csname brl@document_math_lett@#1\endcsname}{#1}}%
+    \expandafter\brl@math_strtoletters_loop%
+  \fi%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \begin{...} 
+%%
+%% align, gather
+%%
+%% #1 content
+%% #2 lastchar
+%% #3 label
+%%
+\def\brl@math@cont_neweq{\brl@code_text_space\brl@code_text_space\brl@code_math_equationsign}
+\def\brl@math@cont_sentence{\brl@code_text_space\brl@code_text_space}
+
+\def\brl@math@makebreak_break{\def\brl@tmp{\brl@char@breakable{\brl@math@currmode}{\brl@char@break_break}{0}}}%
+
+\def\brl@math@makebreak_lastbreak{\def\brl@tmp{\brl@char@breakable{}{\brl@char@break_lineend}{}}}
+
+
+
+\def\brl@math_align_parse#1#2#3{%
+  %
+  \def\brl@math@makebreak_set{\brl@math@makebreak_break}%
+  \def\brl@math@currmode{m}% default
+  \brl@math_parse{#1}%
+  \ifx\brl@math@subfirstid\brl@math@@intertext% the char of the newline is intertext
+    \let\brl@math@cont_before\brl@math@cont_sentence%
+  \else%
+    \let\brl@math@cont_before\brl@math@cont_neweq%
+  \fi%
+  \let\brl@math@lasttoks\brl@math@subtoks%
+  \def\brl@math@lastchar{#2}%
+  \def\brl@math@lastlabel{#3}%
+  \brl@math_align_parse_loop%
+}
+
+\def\brl@math_align_parse_loop#1#2#3{%
+  %
+  \def\brl@tmp{#3}% label
+  \ifx\brl@tmp\brl@@end%
+    %
+    \def\brl@math@makebreak_set{\brl@math@makebreak_lastbreak}%
+    \brl@math_makebreak% use \brl@math@cont_before
+    %
+    \xdef\brl@text@math{{\the\brl@text@toks}}% parse end
+    %
+  \else%
+    %
+    % \brl@math
+    % 
+    \brl@math_parse{#1}%
+    % 
+    % \brl@math@toks
+    %
+    \let\brl@math@cont_after\empty% default
+    \def\brl@math@nextmode{m}% default
+    % 
+    \ifcsname brl@math_align_parse@lastchar_\detokenize\expandafter{\brl@math@lastchar}\endcsname%
+      \def\brl@math@currmode{t}%
+      \let\brl@math@cont_after\brl@math@cont_neweq%
+    \fi%
+    \ifcsname brl@math_align_parse@subid_\brl@math@subfirstid\endcsname%
+      \csname brl@math_align_parse@subid_\brl@math@subfirstid\endcsname%
+    \fi%
+    %
+    \brl@math_makebreak% use \brl@math@cont_before
+    %
+    \let\brl@math@cont_before\brl@math@cont_after%
+    \let\brl@math@currmode\brl@math@nextmode%
+    \let\brl@math@lasttoks\brl@math@subtoks%
+    \def\brl@math@lastchar{#2}%
+    \def\brl@math@lastlabel{#3}%
+    \expandafter\brl@math_align_parse_loop%
+  \fi%
+}
+
+\def\brl@math_align_parse@subid_intertext{%
+  \let\brl@math@cont_after\brl@math@cont_sentence%
+  \def\brl@math@nextmode{t}%
+}
+
+\def\brl@math_align_parse@subid_arrow{%
+  \edef\brl@math@lasttoks{\brl@math@lasttoks\brl@code_math_space}% if the char of the newline is arrow, append space at the end of the last line.
+  \edef\brl@math@subtoks{\expandafter\brl@@gobblefive\brl@math@subtoks}% delete first space
+}%
+
+\@namedef{brl@math_align_parse@lastchar_,}{}% equation ends here.
+\@namedef{brl@math_align_parse@lastchar_.}{}% equation ends here.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% gather
+%
+\def\brl@math_gather_parse#1#2#3{%
+  %
+  \def\brl@math@makebreak_set{\brl@math@makebreak_break}%
+  \def\brl@math@currmode{t}%
+  \brl@math_parse{#1}%
+  \ifx\brl@math@subfirstid\brl@math@@intertext% the char of the newline is intertext
+    \let\brl@math@cont_before\brl@math@cont_sentence%
+  \else%
+    \let\brl@math@cont_before\brl@math@cont_neweq%
+  \fi%
+  \let\brl@math@lasttoks\brl@math@subtoks%
+  %
+  \def\brl@math@lastlabel{#3}%
+  \brl@math_gather_parse_loop%
+}
+
+\def\brl@math_gather_parse_loop#1#2#3{%
+  %
+  \def\brl@tmp{#3}% label
+  \ifx\brl@tmp\brl@@end%
+    %
+    \def\brl@math@makebreak_set{\brl@math@makebreak_lastbreak}%
+    \brl@math_makebreak% use \brl@math@cont_before
+    %
+    \xdef\brl@text@math{{\the\brl@text@toks}}% parse end
+    %
+  \else%
+    \brl@math_makebreak% use \brl@math@cont_before
+    %
+    % \brl@math
+    % 
+    \brl@math_parse{#1}%
+    % 
+    % \brl@math@toks
+    %
+    \ifx\brl@math@subfirstid\brl@math@@intertext% the char of the newline is intertext
+      \let\brl@math@cont_before\brl@math@cont_sentence%
+    \else%
+      \let\brl@math@cont_before\brl@math@cont_neweq%
+    \fi%
+    % 
+    \let\brl@math@lasttoks\brl@math@subtoks%
+    %
+    \def\brl@math@lastlabel{#3}%
+    \expandafter\brl@math_gather_parse_loop%
+  \fi%
+}
+
+
+%%
+%% input: \brl@text_math@currentlabel
+%%
+%%
+%%
+%%
+\def\brl@math_makebreak{%
+  \ifx\brl@math@lastlabel\empty%
+    %
+    %
+    \brl@math@makebreak_set%
+    % 
+    %
+  \else%
+    {% brace is needed because glue may be changed in \brl@text
+      \edef\brl@tmp{{\brl@math@lastlabel}}%
+      \expandafter\brl@text\brl@tmp%
+      %
+      \xdef\brl@tmp{\brl@char@breakable{{\brl@code_math_space\the\brl@text@toks}{\brl@code_math_leader_cdot}{1}{3}}{\brl@char@break_lineend}{}}%
+    }% 1space + (label)
+    % 
+    %
+  \fi%
+  % 
+  \edef\brl@tmp{{\brl@math@cont_before\brl@math@lasttoks\brl@tmp}}% may begin with two spaces.
+  % \show\brl@tmp
+  \expandafter\brl@text_appendtoks\brl@tmp%
+  % 
+  %
+}
+
+
+
+
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:
