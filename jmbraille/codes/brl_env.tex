@@ -1,0 +1,3010 @@
+% Time-stamp: <2026-09-13 14:40:37 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@env
+%%
+
+\let\brl@env@currentlastchars\empty%
+
+\newtoks\brl@env@toks
+\protected\long\def\brl@env_appendtoks#1{\brl@env@toks\expandafter{\the\brl@env@toks#1}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% override
+%% center
+%% flushright
+%% flushleft
+
+\def\brl@env_overridenull#1{%
+  \@namedef{end#1}{\global\brl@document@indentfalse}%
+  \@namedef{#1}{}%
+}
+
+
+%
+\brl@env_overridenull{center}
+\brl@env_overridenull{flushright}
+\brl@env_overridenull{flushleft}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% override
+%% figure
+
+
+\def\endfigure{%
+  \ifx\brl@env_figure@caption\empty%
+  \else%
+    \brl@document\if@english Fig.~\else 図\fi\thefigure: \brl@env_figure@caption\brl@document@end{0}{2}{\brl@bse@width}{}{}%
+  \fi%
+  \global\brl@document@indentfalse%
+}
+
+\def\figure{%
+  \@ifnextchar[%
+  {\brl@env_figure_}%
+  {\brl@env_figure_[]}%
+}
+
+\def\brl@env_figure_[#1]{%
+  \let\brl@env_figure@caption\empty%
+  \def\caption{\brl@env_figure_caption}%
+}
+
+\def\brl@env_figure_caption#1{%
+  \refstepcounter{figure}%
+  \addcontentsline{\ext@figure}{figure}%
+  {\protect\numberline{\thefigure}{\ignorespaces #1}}%
+  \def\brl@env_figure@caption{#1}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% override
+%% wrapfigure
+
+
+\def\endwrapfigure{\global\brl@document@indentfalse}
+
+\def\wrapfigure{%
+  \@ifnextchar[%
+  {\brl@env_wrapfigure_gobble}%
+  {\brl@env_wrapfigure_gobble_}%
+}
+
+\def\brl@env_wrapfigure_gobble[#1]#2{\brl@env_wrapfigure_}%
+\def\brl@env_wrapfigure_gobble_#1{\brl@env_wrapfigure_}%
+
+\def\brl@env_wrapfigure_{%
+  \@ifnextchar[%
+  {\brl@env_wrapfigure_gobble__}%
+  {\@gobble}%
+}
+
+\def\brl@env_wrapfigure_gobble__[#1]#2{}%
+
+
+%%
+%% picture 
+%%
+
+% \def\endpicture{\global\brl@document@indentfalse}
+% \def\picture{%
+%   \def\brl@env@envname{picture}%
+%   \def\brl@env_start{\brl@env_picture}%
+%   \brl@env_search%
+% }
+
+ 
+% \def\brl@env_picture{%
+%   % \def\brl@figure_append{%
+%   %   \expandafter\brl@figure_appendtoks\expandafter{\the\brl@env@toks}%
+%   % }%
+%   \brl@env_draw_init%
+%   \brl@env_draw_tmpl{picture}%
+%   \brl@orig@end{picture}%
+% }  
+
+
+
+%%
+%% verbatim
+%%
+
+\def\endverbatim{%
+  \expandafter\endbrl@env_verbatim@frame%
+  \global\brl@document@indentfalse%
+}
+\def\verbatim{%
+  \brl@env_verbatim@frame{\if@english source code\else ソースコード\fi}%
+  \brl@env@toks{}%
+  \bgroup%
+    \brl@env_activate_symbols%
+    %
+    \the\brl@env_verbatim@special% hook
+    \brl@env_verbatim_start%
+}
+
+\newtoks\brl@env_verbatim@special
+
+\def\brl@env_verbatim{%
+  \expandafter\brl@env_verbatim_loop\brl@tmp\brl@end\brl@info_cmd_par%
+  \end{verbatim}%\end{verbatim}%
+}
+
+\def\brl@env_verbatim_loop#1\brl@info_cmd_par{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@info{#1}%
+    \brl@info_appendtoks{\brl@code_info_infomode}% to avoid empty
+    \brl@print{0}{0}{\brl@info@toks}{\brl@bse@width}%
+    \expandafter%
+    \brl@env_verbatim_loop%
+  \fi%
+}
+
+
+
+%%
+%% verbatim*
+%%
+
+\@namedef{endverbatim*}{%
+  \expandafter\endbrl@env_verbatim@frame%
+  \global\brl@document@indentfalse%
+}
+\@namedef{verbatim*}{%
+  \brl@env_verbatim@frame{\if@english source code\else ソースコード\fi}%
+  \brl@env@toks{}%
+  \bgroup%
+    \brl@env_activate_symbols%
+    %
+    \def\ {\brl@info_cmd_altsp}%
+    \the\brl@env_verbatim@special% hook
+    \brl@env_verbatimstar_start%
+}
+
+
+\def\brl@env_verbatimstar{%
+  \expandafter\brl@env_verbatim_loop\brl@tmp\brl@end\brl@info_cmd_par%
+  \end{verbatim*}%\end{verbatim*}%
+}
+
+
+
+%
+% define active chars
+%
+
+\def\brl@env_activate_symbols{%
+    \catcode`\#=\active%
+    \catcode`\%=\active%
+    \catcode`\{=\active%
+    \catcode`\}=\active%
+    \catcode`\_=\active%
+    \catcode`\$=\active%
+    \catcode`\&=\active%
+    \catcode`\^=\active%
+    \catcode`\~=\active%
+    \catcode`\\=\active%
+    \catcode`\ =\active%
+    \catcode`\^^I=\active%
+    \catcode`\^^M=\active%
+    \brl@env_verbatim_acta%
+    \brl@env_verbatim_actb%
+    \brl@env_verbatim_actc%
+}
+
+
+{\catcode`\#=\active\catcode`\%=\active\catcode`\{=\active\catcode`\}=\active\catcode`\$=\active\catcode`\&=\active\catcode`\^=\active\catcode`\~=\active\catcode`\<=\@ne\catcode`\>=\tw@\catcode`\!=\z@\catcode`\ =\active\catcode`\\=\active!gdef!brl@env_verbatim_acta<!def#<!#>!def%<!%>!def{<!{>!def}<!}>!def$<!$>!def&<!&>!def^<!textasciicircum>!def~<!textasciitilde>!def\<!textbackslash>!def <! >>>
+  
+{\catcode`\!=\active\lccode`\!=`\_\lowercase{
+  \gdef\brl@env_verbatim_actb{\def!{\_}}}
+}
+
+{\catcode`\^^I=\active\catcode`\^^M=\active%
+  \gdef\brl@env_verbatim_actc{%
+    \def^^M{\brl@info_cmd_par}%
+    \def^^I{\ \ \ \ }%
+  }%
+}
+
+{%
+  \catcode`\{=\active\catcode`\}=\active%
+  \catcode`\<=\@ne\catcode`\>=\tw@%
+  \catcode`\^^M=\active%
+  \catcode`\!=\z@\catcode`\\=\active%
+  !long!gdef!brl@env_verbatim_start^^M#1\end{verbatim}<%\end{verbatim}
+      !xdef!brl@tmp<#1>%
+    !egroup%
+    !brl@env_verbatim%
+  >
+  !long!gdef!brl@env_verbatimstar_start^^M#1\end{verbatim*}<%\end{verbatim*}
+      !xdef!brl@tmp<#1>%
+    !egroup%
+    !brl@env_verbatimstar%
+  >
+>
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% \brl@figure
+%% common for all figure type env
+%%
+
+\newif\ifbrl@figure@landscape
+\newif\ifbrl@figure@spread
+\newif\ifbrl@figure@plot
+\newif\ifbrl@figure@plotrule
+\newif\ifbrl@figure@inside
+\newif\ifbrl@figure@ininside
+
+\newcount\brl@figure@figurenum
+\newcount\brl@figure@captionnum
+
+\newcount\brl@figure@floatpnum
+\newcount\brl@figure@floattnum
+
+\newtoks\brl@figure@special
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% override
+%% tikzpicture
+%% tabular
+%% picture
+%%
+
+%%   
+%% \brl@env_inplot_tabular ... endtabular with call_tabular
+%% append \global\brl@env_plot@picturebox to \plottoks (under \tabular, it is packed in \virtualcahr)
+%% and
+%% \brl@document_skipsp (continue)
+%%
+%% \brl@env_indraw_tmpl ... endtmpl with call_tizpicture, call_tabular
+%% output :
+%% append \brl@env_draw@pictureboxa to \brl@document@hboxa
+%% append \brl@env_draw@pictureboxb to \brl@document@hboxb
+%% \global\brl@document@emptyboxfalse
+%% and
+%% \brl@document_skipsp (continue)
+%%
+%% \brl@env_plot_tabular
+%% output: texted brailles.
+%%
+%% \brl@env_plot_tikzpicture
+%% output: edel, pdf
+%%
+%% \brl@env_draw_tmpl ... endtmpl with call_tizpicture, call_tabular
+%% insert 「ページ XX」
+%% init
+%% create output
+%% print output
+%%
+%%
+%% \brl@env_draw_call_XXX ... endXXX : wrapper of XXX for draw
+%% output :
+%% \global\brl@env_draw@pictureboxa : hbox
+%% \global\brl@env_draw@pictureboxb : hbox
+%%
+%% \brl@env_plot_call_XXX ... endXXX : wrapper of XXX for plot
+%% output :
+%% \global\brl@env_plot@picturebox : texted brailles = {\brl@char@block{...}}
+%% 
+
+\newbox\brl@env_draw@pictureboxa% hbox
+\newbox\brl@env_draw@pictureboxb% hbox
+
+\newbox\brl@env_draw@pageboxa% hbox
+\newbox\brl@env_draw@pageboxb% hbox
+
+
+\def\brl@env_insert_pageref{%
+  % 
+  \brl@document_dospecial_pageref{fig:brl@figure\the\brl@figure@figurenum}% output : \brl@tmp
+  % 
+  \edef\brl@tmp{{\brl@text_cmd_transopen ページ\brl@text_cmd_space\brl@tmp\brl@text_cmd_transclose}}%
+  %
+  % 
+  \expandafter\brl@text_direct\brl@tmp%
+  \brl@print{0}{2}{\brl@text@toks}{\brl@bse@width}%
+}
+
+
+\def\brl@env_draw_tmpl{%
+  %
+  \global\advance\brl@figure@figurenum\@ne%
+  %
+  \brl@env_insert_pageref%
+  % 
+  %\everypar{}%
+  %\let\brl@print_par\empty% does not do \par at the end of print, which was need
+  % 
+  % 
+  \let\brl@bc_braille_spread\empty% ignores brl@bse@width for bc and ebc
+  \let\brl@dbc\brl@dbc_tikz% ignores brl@bse@width for dbc
+  \let\brl@print_allsclines_start\brl@print_allsclines_draw_start% prints two types of brailles.
+  \let\brl@document_tikz\brl@document_draw_tikz%
+  % 
+  % 
+  % 
+  \let\color\brl@orig@color%
+  \let\colorbox\@secondoftwo%
+  \let\centering\brl@orig@centering%
+  \let\setlength\brl@orig@setlength%
+  \let\hspace\brl@orig@hspace%
+  \let\vspace\brl@orig@vspace%
+  \let\raisebox\brl@orig@raisebox%
+  % 
+  % 
+  % check before
+  % 
+  % if the figure is out of range in the previous compilation,
+  % use the recommended setting \ifbrl@figure@autosetting.
+  %
+  \brl@env_check_before%
+  % 
+  % 
+  %
+  \bgroup%
+  % 
+  %
+    %
+    \let\brl@figure@linewidthscale\brl@env_draw@linewidthscale% change linewidth
+    \def\brl@figure@arrowscale{1}% arrows scale 1
+    %
+    % 
+    \the\brl@figure@special%
+    %
+    % change font size
+    \brl@braille@fontsize\brl@figure@scaleinv\brl@braille@figurefontsize%
+    \brl@char@meanfontsize\brl@figure@scaleinv\brl@char@meanfontsize%
+    \brl@font@load%
+    % 
+    % 
+    \edef\brl@dbc@scale{\expandafter\brl@@strip@pt\the\dimexpr\brl@figure@scaleinv\dimexpr\brl@@ptparbp\p@\relax\relax}%
+    \brl@braille_setfontdimen%
+    %
+    \fontsize{\brl@braille@fontsize}{\z@}% it is needed to tell the fontsize to tikzpicture
+}
+
+
+\def\brl@env_draw_endtmpl{%
+  \egroup%
+  %
+  % result is stored in \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+  %
+  %
+  % page number
+  %
+  \brl@document\pageref{fig:brl@figure\the\brl@figure@figurenum}\brl@document@endtext%
+  \brl@print{26}{0}{\brl@text@toks}{\brl@bse@width}%
+  \setbox\brl@env_draw@pageboxa\box\brl@print@boxa% vbox
+  \setbox\brl@env_draw@pageboxb\box\brl@print@boxb% vbox
+  %
+  %
+  % for check
+  %
+  \brl@@scalebox{\brl@figure@scale}{\box\brl@env_draw@pictureboxa}%
+  % 
+  \setbox\brl@print@onepage\vbox{% \brl@print@onepage
+    %
+    \brl@orig@label{fig:brl@figure\the\brl@figure@figurenum}%
+    %
+    \setbox\z@\vbox{%
+      \unvbox\brl@env_draw@pageboxa%
+      \ifbrl@figure@landscape%
+        \hbox{\rotatebox{90}{\box\brl@@scalebox@box}}%
+      \else%
+        \box\brl@@scalebox@box%
+      \fi%
+    }%
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    \brl@@pdf_invoke{q}% needed for luatex
+    \box\z@%
+    \brl@@pdf_invoke{Q}% needed for luatex
+    %
+    %
+    \setbox\z@\vtop to\brl@figure@textheight{\hrule\@width\brl@figure@singlepage\@height\z@\@depth\z@\vss}%
+    \setbox\tw@\hbox{%
+      {\brl@orig@color{\brl@char@warncolor}\fboxsep\z@\brl@orig@fbox{\copy\z@}%
+        \ifbrl@figure@spread% is this figure spread ?
+          \brl@orig@fbox{\copy\z@}%
+        \fi%
+      }%
+    }%
+    \wd\tw@\z@%
+    \ht\tw@\z@%
+    \dp\tw@\z@%
+    \box\tw@% frame for check
+    %
+    \let\protect\noexpand% from the original \@outputpage
+    \unvbox\brl@print@outbox% exec label etc.
+  }% \box\brl@print@onepage
+  %
+  %
+  %
+  % check after
+  %
+  \brl@env_check_after%
+  % 
+  % 
+  \global\advance\brl@figure@floatpnum\@ne%
+  %
+  \ifcsname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \else%
+    \expandafter\newbox\csname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \fi%
+  %
+  \ifbrl@figure@landscape%
+    \@tempdima\brl@figure@alltopmargin\relax%
+    \@tempdimb\brl@figure@alloddsidemargin\relax%
+  \else%
+    \@tempdima\brl@figure@alloddsidemargin\relax%
+    \@tempdimb\brl@figure@alltopmargin\relax%
+  \fi%
+  % 
+  \global\setbox\csname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \vbox{%
+    \brl@orig@vskip\@tempdimb%
+    \hbox{%
+      \brl@orig@hskip\@tempdima%
+      %
+      \ifbrl@figure@landscape%
+        %
+        \brl@orig@hskip\brl@figure@textheight%
+        \rotatebox{-90}{\box\brl@print@onepage}%
+        % 
+        \brl@orig@hskip-\brl@braille@totalheight\relax%
+        \box\brl@env_grid@box% this may be void
+        %   
+      \else%
+        \vbox{%
+          \unvbox\brl@print@onepage%
+          %
+          \brl@orig@vskip\brl@braille@totalheight\relax%
+          \box\brl@env_grid@box% this may be void.
+        }%
+      \fi%
+    }%
+  }%
+  \ifbrl@figure@spread%
+    \ifbrl@figure@landscape%
+      \let\brl@tmp\brl@print@ldouble%
+    \else%
+      \let\brl@tmp\brl@print@pdouble%
+    \fi%
+  \else%
+    \ifbrl@figure@landscape%
+      \let\brl@tmp\brl@print@lsingle%
+    \else%
+      \let\brl@tmp\brl@print@psingle%
+    \fi%
+  \fi%
+  \global\expandafter\let\csname brl@figure@floatp_page\the\brl@figure@floatpnum\endcsname\brl@tmp%
+  % 
+  %
+  % for braille
+  %
+  %
+  %
+  %
+  \brl@@scalebox{\brl@figure@scale}{\box\brl@env_draw@pictureboxb}%
+  % 
+  \setbox\brl@print@onepage\vbox{% \brl@print@onepage
+    %
+    % 
+    \setbox\z@\vbox{%
+      \unvbox\brl@env_draw@pageboxb%
+      \ifbrl@figure@landscape%
+        \hbox{\rotatebox{90}{\copy\brl@@scalebox@box}}%
+      \else%
+        \copy\brl@@scalebox@box%
+      \fi%
+      % 
+    }%
+    % 
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    \brl@@pdf_bcontent%
+    \expandafter\brl@@pdf_invoke\brl@env_draw@content% {0 -700.113 473.356 700.113 re W n}%
+    \box\z@%
+    \brl@@pdf_econtent%
+  }% \box\brl@print@onepage
+  % 
+  \global\advance\brl@figure@floattnum\@ne%
+  %
+  \ifcsname brl@figure@floatt_\the\brl@figure@floattnum\endcsname%
+  \else%
+    \expandafter\newbox\csname brl@figure@floatt_\the\brl@figure@floattnum\endcsname%
+  \fi%
+  %
+  \global\setbox\csname brl@figure@floatt_\the\brl@figure@floattnum\endcsname%
+  \vbox{%
+    \brl@orig@vskip\brl@figure@alltopmargin%
+    \hbox{\brl@orig@hskip\brl@figure@alloddsidemargin\box\brl@print@onepage}%
+    % 
+  }%
+  %
+  \ifbrl@figure@spread% is this page spread ?
+    \global\advance\brl@figure@floattnum\@ne%
+    %
+    \setbox\brl@print@onepage\vbox{% \brl@print@onepage
+      % 
+      % 
+      % 1bp = 1/72 inch = 0.3528mm
+      %
+      \setbox\z@\vbox{%
+%
+        \hrule\@width\z@\@height\brl@braille@charheight\@depth\brl@braille@depth\relax%
+        \hbox{%\kern-473.356bp%\brl@figure@singlepage
+          \kern-\brl@figure@singlepage\relax%
+          \ifbrl@figure@landscape%
+            \rotatebox{90}{\box\brl@@scalebox@box}%
+          \else%
+            \box\brl@@scalebox@box%
+          \fi%
+        }%
+      }%
+      \wd\z@\z@%
+      \ht\z@\z@%
+      \dp\z@\z@%
+      \brl@@pdf_bcontent%
+      \expandafter\brl@@pdf_invoke\brl@env_draw@content% {0 -700.113 473.356 700.113 re W n}%
+      \box\z@%
+      \brl@@pdf_econtent%
+    }% \box\brl@print@onepage
+    %
+    \ifcsname brl@figure@floatt_\the\brl@figure@floattnum\endcsname%
+    \else%
+      \expandafter\newbox\csname brl@figure@floatt_\the\brl@figure@floattnum\endcsname%
+    \fi%
+    % 
+    \global\setbox\csname brl@figure@floatt_\the\brl@figure@floattnum\endcsname%
+    \vbox{%
+      \brl@orig@vskip\brl@figure@alltopmargin%
+      \hbox{\brl@orig@hskip\brl@figure@alloddsidemargin\box\brl@print@onepage}%
+      % 
+    }%
+  \fi%
+  %
+  % 
+  \expandafter\brl@document_appendmattoks\expandafter{\the\brl@text@mattoks}%
+  \global\brl@text@mattoks{}%
+  % 
+  \brl@document_footnote%
+  \global\brl@document@indentfalse%
+}
+
+%% check
+%%
+
+%% \brl@var@fig(num) :
+%% previous scale, previous orientation, previous pagewidth
+%% recommended scale, recommended orientation, recommended pagewidth
+%%
+%% orientation
+%% (p (portrait) or l (landscape))
+%%
+%% pagewidth:
+%% (s (single) or d (double))
+%%
+%% if this exists, previous scale is inappropreate.
+%%
+
+
+\newif\ifbrl@figure@autosetting
+\newif\ifbrl@env_check@rotated
+\newif\ifbrl@env_check@recommended
+
+%%
+%% origsetting : the setting in this article
+%% prevsetting : the setting in the previous article (the article may have been changed).
+%% recscale, recorient, recwidth : the setting calculated in the previous article.
+%%
+
+\def\brl@env_check_before{%
+  \let\brl@figure@origscale\brl@figure@scale%
+  \edef\brl@env_check@origsetting{% the setting defined in the current article
+    {\brl@figure@scale}%
+    {\ifbrl@figure@landscape l\else p\fi}%
+    {\ifbrl@figure@spread d\else s\fi}%
+  }%
+  \let\brl@env_check@prevsetting\empty%
+  \ifbrl@figure@autosetting%
+    \expandafter\brl@env_check_before_start%
+  \fi%
+}%
+
+\def\brl@env_check_before_start{%
+  \ifcsname brl@var@fig\the\brl@figure@figurenum\endcsname% if exists, the previous setting is not appropreate.
+    \edef\brl@env_check@setting{\csname brl@var@fig\the\brl@figure@figurenum\endcsname}%
+    %
+    \expandafter\brl@env_check_before_\brl@env_check@setting% renew prevsetting
+    \ifx\brl@env_check@prevsetting\brl@env_check@origsetting% compare the settings between the present article and the last article -> article is not renewed.
+      \PackageWarning{jmbraille}{The figure \the\brl@figure@figurenum\brl@@space may still be out of range. The recommended setting is applied}%
+      %
+      \BrailleSetFigureScale{\brl@env_check@recscale}%
+      %
+      \if l\brl@env_check@recorient%
+        \BrailleFigureLandscapeOn%
+      \else%
+        \BrailleFigureLandscapeOff%
+      \fi%
+      %
+      \if d\brl@env_check@recwidth%
+        \BrailleFigureSpreadOn%
+      \else%
+        \BrailleFigureSpreadOff%
+      \fi%
+    \fi%
+  \fi%
+}
+
+
+\def\brl@env_check_before_#1#2#3#4#5#6{%
+  \def\brl@env_check@prevsetting{{#1}{#2}{#3}}%
+  \def\brl@env_check@prevrecsetting{{#4}{#5}{#6}}%
+  \def\brl@env_check@recscale{#4}%
+  \def\brl@env_check@recorient{#5}%
+  \def\brl@env_check@recwidth{#6}%
+}
+
+
+% \dim
+% \z@ : width of picture
+% \@ne : height of picture
+% \tw@ : width of draw area
+% \thr@@ : height of draw area
+% 
+
+\def\brl@env_check_after_init{%
+  \edef\brl@env_check@ht{\the\dimexpr\brl@figure@scale\dimexpr\ht\brl@env_draw@pictureboxb+\dp\brl@env_draw@pictureboxb\relax+\dimexpr\brl@braille@charheight\relax\relax}%
+  \edef\brl@env_check@wd{\the\dimexpr\brl@figure@scale\wd\brl@env_draw@pictureboxb\relax}%
+  % 
+  \ifbrl@figure@landscape% rotate
+    \dimen\z@\brl@env_check@ht\relax% width
+    \dimen\@ne\brl@env_check@wd\relax% height
+  \else%
+    \dimen\z@\brl@env_check@wd\relax% width
+    \dimen\@ne\brl@env_check@ht\relax% height
+  \fi%
+  \ifbrl@figure@spread%
+    \dimen\tw@\brl@figure@doublepage%
+  \else%
+    \dimen\tw@\brl@figure@singlepage%
+  \fi%
+  \dimen\thr@@\dimexpr\brl@figure@textheight-\dimexpr\brl@braille@charheight\relax\relax% header
+}
+
+\def\brl@env_check_after{%
+  %
+  \brl@env_check_after_init%
+  % 
+  %
+  % \showthe\dimen\z@
+  % \showthe\dimen\@ne
+  % \showthe\dimen\tw@
+  % \showthe\dimen\thr@@
+  % 
+  % 
+  % \brl@env_check_rec% out of range
+  % \dim
+  % \z@ : width of picture
+  % \@ne : height of picture
+  % \tw@ : width of draw area
+  % \thr@@ : height of draw area
+  %
+  %
+  % if the original setting is OK -> finish.
+  %
+  % otherwise, calculate a recommendable setting :
+  % rotation if nessesary.
+  %   single : 
+  %   if ratio of shrink is not too small -> finish.
+  %     double :
+  %     shrink -> finish.
+  %
+  %
+  \brl@env_check@recommendedfalse%
+  % 
+  \brl@env_check_origsetting% check the original setting
+  %
+  \ifbrl@env_check@recommended% the original setting falied or the previous recommended setting was applied.
+  \else% need to modify
+    %
+    %   
+    \brl@env_check_rec_scale%
+    %
+    % calculate a recommendable setting based on the current setting.
+    %
+    \brl@env_check_rec_singlescale% scale in single page.
+    % 
+    \ifbrl@env_check@recommended%
+    \else%
+      \brl@env_check_rec_doublescale% scale in double page.
+    \fi%
+    % 
+    % 
+    \edef\brl@tmp{%
+      {\brl@env_check@recscale}%
+      {\brl@env_check@recorient}%
+      {\brl@env_check@recwidth}%
+    }%
+    % 
+    % 
+    \ifx\brl@tmp\brl@env_check@prevrecsetting% recommended setting is OK.
+      \PackageNote{jmbraille}{The recommended setting seems good}%
+    \else%
+      \ifbrl@figure@autosetting%
+        \PackageWarning{jmbraille}{The figure \the\brl@figure@figurenum\brl@@space is out of range. The recommended setting will be applied in the next time if it is not changed manually}%
+      \else%
+        \PackageWarning{jmbraille}{The figure \the\brl@figure@figurenum\brl@@space is out of range. Change the setting manually}%
+      \fi%
+    \fi%
+    \PackageNote{jmbraille}{The recommended setting is^^J%
+      \string\BrailleSetFigureScale{\brl@env_check@recscale}^^J%
+      \string\BrailleFigureLandscape\if l\brl@env_check@recorient On\else Off\fi^^J%
+      \string\BrailleFigureSpread\if d\brl@env_check@recwidth On\else Off\fi^^J}%
+    % 
+    %
+    \if@filesw%
+      \immediate\write\@auxout{%
+        \global\noexpand\@namedef{brl@var@fig\the\brl@figure@figurenum}{%
+          \brl@env_check@origsetting%
+          \brl@tmp%
+        }%
+      }%
+    \fi%
+  \fi%
+}
+%
+
+
+\def\brl@env_check_origsetting{%
+  \ifx\brl@env_check@prevsetting\empty% the original setting was applied.
+    \ifnum\dimen\z@<\dimen\tw@%
+      \ifnum\dimen\@ne<\dimen\thr@@%
+        \brl@env_check@recommendedtrue% the original setting is OK.
+      \fi%
+    \fi%
+  \fi%
+}
+
+\def\brl@env_check_rec_scale{%
+  % rotate if necessary
+  %
+  \edef\brl@env_check@hta{\the\dimexpr\brl@figure@scale\dimexpr\ht\brl@env_draw@pictureboxb+\dp\brl@env_draw@pictureboxb\relax\relax}%
+  \edef\brl@env_check@htb{-\the\dimexpr\brl@braille@charheight\relax}%
+  %
+  % 
+  \ifdim\brl@env_check@wd>\brl@env_check@hta\relax% wd>ht
+    \dimen\z@\brl@env_check@hta\relax% width
+    \dimen\@ne\brl@env_check@wd\relax% height
+    \brl@env_check@rotatedtrue%
+    \let\brl@env_check@htx\brl@env_check@htb%
+    \let\brl@env_check@hty\empty%
+  \else%
+    \dimen\z@\brl@env_check@wd\relax% width
+    \dimen\@ne\brl@env_check@hta\relax% height
+    \let\brl@env_check@hty\brl@env_check@htb%
+    \let\brl@env_check@htx\empty%
+    \brl@env_check@rotatedfalse%
+  \fi%
+  %
+}
+
+\def\brl@env_check_rec_singlescale{%
+  % \dimen\z@ = wd \dimen\@ne = ht, wd<ht
+  %
+  % \showthe\dimen\z@
+  % \showthe\dimen\@ne
+  % \showthe\dimexpr\brl@figure@singlepage\relax
+  % \showthe\dimen\thr@@
+  %
+  \edef\brl@env_check@ratiox{\the\dimexpr%
+    (\brl@figure@singlepage\brl@env_check@htx)*\p@/\dimen\z@\relax}%
+  \edef\brl@env_check@ratioy{\the\dimexpr%
+    (\dimen\thr@@\brl@env_check@hty)*\p@/\dimen\@ne\relax}%
+  \ifdim\brl@env_check@ratiox>\brl@env_check@ratioy\relax%
+    \let\brl@tmp\brl@env_check@ratioy%
+  \else%
+    \let\brl@tmp\brl@env_check@ratiox%
+  \fi%
+  %
+  %
+  %
+  \edef\brl@env_check@scale{\the\dimexpr\brl@figure@scale\dimexpr\brl@tmp\relax*\p@/(\dimexpr\brl@figure@origscale\p@\relax)\relax}% compare with the original scale
+  %
+  \ifdim\brl@env_check@scale>\brl@env_check@tolerance\p@\relax% 80 % -> tolerable
+    \brl@env_check@recommendedtrue%
+    %
+    \ifdim\brl@env_check@scale>\p@\relax% 100 %
+      \let\brl@env_check@recscale\brl@figure@origscale% not greater than the original
+    \else%
+      % 
+%      \edef\brl@env_check@recscale{\expandafter\brl@@strip@pt\the\dimexpr0.98\dimexpr\brl@figure@scale\dimexpr\brl@tmp\relax\relax\relax}% to avoid chattering, multiply 0.98
+      \edef\brl@env_check@recscale{\expandafter\brl@@strip@pt\the\dimexpr\brl@figure@scale\dimexpr\brl@tmp\relax\relax}%
+    \fi%
+    \def\brl@env_check@recwidth{s}%
+    \edef\brl@env_check@recorient{\ifbrl@env_check@rotated l\else p\fi}%
+  \fi%
+}
+
+
+\def\brl@env_check_rec_doublescale{%
+  %
+  % 
+  % \dimen\z@ = wd \dimen\@ne = ht, wd<ht
+  %
+  \edef\brl@env_check@ratiox{\the\dimexpr%
+    (\dimen\thr@@\brl@env_check@htx)*\p@/\dimen\z@\relax}%
+  \edef\brl@env_check@ratioy{\the\dimexpr%
+    (\brl@figure@doublepage\brl@env_check@hty)*\p@/\dimen\@ne\relax}%
+  \ifdim\brl@env_check@ratiox>\brl@env_check@ratioy\relax%
+    \let\brl@tmp\brl@env_check@ratioy%
+  \else%
+    \let\brl@tmp\brl@env_check@ratiox%
+  \fi%
+  %
+  \edef\brl@env_check@scale{\the\dimexpr\brl@figure@scale\dimexpr\brl@tmp\relax*\p@/(\dimexpr\brl@figure@origscale\p@\relax)\relax}% compare with the original scale
+  % 
+  % in the case single -> double, scale may be greater than the original.
+  \ifdim\brl@env_check@scale>\p@\relax% 100 %
+    \let\brl@env_check@recscale\brl@figure@origscale% not greater than the original
+  \else%
+    % 
+%    \edef\brl@env_check@recscale{\expandafter\brl@@strip@pt\the\dimexpr0.98\dimexpr\brl@figure@scale\dimexpr\brl@tmp\relax\relax\relax}% to avoid chattering, multiply 0.98
+    \edef\brl@env_check@recscale{\expandafter\brl@@strip@pt\the\dimexpr\brl@figure@scale\dimexpr\brl@tmp\relax\relax}%
+  \fi%
+  \def\brl@env_check@recwidth{d}%
+  \edef\brl@env_check@recorient{\ifbrl@env_check@rotated p\else l\fi}%
+  \ifdim\brl@env_check@scale>\brl@env_check@tolerance\p@\relax% 80 % -> tolerable
+  \else%
+    \PackageWarning{jmbraille}{The figure \the\brl@figure@figurenum\brl@@space is too big. Refine the figure.}%
+  \fi%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check for plot
+
+
+% 
+% \brl@pgf@minx, \brl@pgf@maxx
+% \brl@pgf@miny, \brl@pgf@maxy
+%
+
+\def\brl@env_check_after_init_plot{%
+  % \z@ : width of picture
+  % \@ne : height of picture
+  % \tw@ : width of draw area
+  % \thr@@ : height of draw area
+  %
+  %
+  % already rotated \ifbrl@figure@landscape
+  %
+  \edef\brl@env_check@ht{\the\dimexpr\numexpr\brl@pgf@maxy-\brl@pgf@miny+\brl@plot@brailleheight\relax\p@\relax}%
+  \edef\brl@env_check@wd{\the\dimexpr\numexpr\brl@pgf@maxx-\brl@pgf@minx+\brl@plot@leftsidemargin\relax\p@\relax}%
+  %
+  \dimen\z@\brl@env_check@wd\relax%
+  \dimen\@ne\brl@env_check@ht\relax%
+  %
+  \ifbrl@figure@spread%
+    \dimen\tw@\brl@plot@maxlinex_double\p@%
+  \else%
+    \dimen\tw@\brl@plot@maxlinex_single\p@%
+  \fi%
+  \dimen\thr@@\numexpr\brl@plot@maxliney-\brl@plot@brailleheight\relax\p@% header nonexpr
+}
+%
+
+\def\brl@env_check_rec_scale_plot{%
+  % rotate if necessary
+  %
+  \edef\brl@env_check@hta{\the\dimexpr\numexpr\brl@pgf@maxy-\brl@pgf@miny\relax\p@\relax}%
+  \edef\brl@env_check@htb{-\the\dimexpr\numexpr\brl@plot@brailleheight\relax\p@\relax}%
+  %
+  % 
+  % 
+  \ifdim\brl@env_check@wd>\brl@env_check@hta\relax% wd>ht
+    \dimen\z@\brl@env_check@hta\relax% width
+    \dimen\@ne\brl@env_check@wd\relax% height
+    \ifbrl@figure@landscape%
+      \brl@env_check@rotatedfalse%
+    \else%
+      \brl@env_check@rotatedtrue%
+    \fi%
+    \let\brl@env_check@htx\brl@env_check@htb%
+    \let\brl@env_check@hty\empty%
+  \else%
+    \dimen\z@\brl@env_check@wd\relax% width
+    \dimen\@ne\brl@env_check@hta\relax% height
+    \let\brl@env_check@hty\brl@env_check@htb%
+    \let\brl@env_check@htx\empty%
+    %
+    \ifbrl@figure@landscape%
+      \brl@env_check@rotatedtrue%
+    \else%
+      \brl@env_check@rotatedfalse%
+    \fi%
+  \fi%
+}%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% make grid
+%
+
+\newbox\brl@env_grid@box% hbox
+\newbox\brl@env_grid@vruleM% hbox
+\newbox\brl@env_grid@hruleM% hbox
+\newbox\brl@env_grid@vrulem% hbox
+\newbox\brl@env_grid@hrulem% hbox
+
+
+\def\brl@env_draw_grid_init{% within tikzpicture.
+  %
+  % 
+  \pgf@x\pgf@xx%
+  \pgf@y\pgf@yy%
+  % 
+  \brl@env_grid_init%
+}
+
+
+\def\brl@env_draw_grid{%
+  \pgf@picminx\brl@figure@scale\pgf@picminx%
+  \pgf@picminy\brl@figure@scale\pgf@picminy%
+  \pgf@picmaxx\brl@figure@scale\pgf@picmaxx%
+  \pgf@picmaxy\brl@figure@scale\pgf@picmaxy%
+  %
+  \brl@env_grid%
+}
+
+
+
+\def\brl@env_grid_init{%
+  %
+  % we assume \pgf@yx=\pgf@xy=0
+  % 
+  \pgf@x0.2\pgf@x% mod 5
+  \pgf@y0.2\pgf@y% mod 5
+  \xdef\brl@env_grid@unitx{\the\dimexpr\brl@figure@scale\pgf@x\relax}%
+  \xdef\brl@env_grid@unity{\the\dimexpr\brl@figure@scale\pgf@y\relax}%
+  \@tempdima\pgf@pt@aa\p@\relax%
+  \@tempdimb\pgf@pt@ab\p@\relax%
+  \@tempdimc\dimexpr\pgf@pt@bb\@tempdima-\pgf@pt@ba\@tempdimb\relax%
+  \xdef\brl@env_grid@detinv{\expandafter\brl@@strip@pt\the\dimexpr\p@*\p@/\@tempdimc\relax}%
+  \global\let\brl@env_grid@aa\pgf@pt@aa%
+  \global\let\brl@env_grid@ba\pgf@pt@ba%
+  \global\let\brl@env_grid@ab\pgf@pt@ab%
+  \global\let\brl@env_grid@bb\pgf@pt@bb%
+}
+
+\def\brl@env_grid_transform#1#2#3#4{%
+  #1\brl@env_grid@detinv\dimexpr\brl@env_grid@bb#3-\brl@env_grid@ab#4\relax%
+  #2\brl@env_grid@detinv\dimexpr-\brl@env_grid@ba#3+\brl@env_grid@aa#4\relax% 
+}
+
+
+\def\brl@env_grid_minmax#1#2#3#4#5#6{%
+  #1#3% min
+  #2#3% max
+  \ifdim#1>#4%
+    #1#4%
+  \fi%
+  \ifdim#2<#4%
+    #2#4%
+  \fi%
+  \ifdim#1>#5%
+    #1#5%
+  \fi%
+  \ifdim#2<#5%
+    #2#5%
+  \fi%
+  \ifdim#1>#6%
+    #1#6%
+  \fi%
+  \ifdim#2<#6%
+    #2#6%
+  \fi%
+}
+
+\def\brl@env_grid{%
+  %
+  \brl@env_grid_transform{\brl@pgf@xa}{\brl@pgf@ya}{\pgf@picmaxx}{\pgf@picmaxy}%
+  \brl@env_grid_transform{\brl@pgf@xb}{\brl@pgf@yb}{\pgf@picminx}{\pgf@picmaxy}%
+  \brl@env_grid_transform{\brl@pgf@xc}{\brl@pgf@yc}{\pgf@picmaxx}{\pgf@picminy}%
+  \brl@env_grid_transform{\brl@pgf@xd}{\brl@pgf@yd}{\pgf@picminx}{\pgf@picminy}%
+  \brl@env_grid_minmax{\brl@pgf@xe}{\brl@pgf@xf}{\brl@pgf@xa}{\brl@pgf@xb}{\brl@pgf@xc}{\brl@pgf@xd}%
+  \brl@env_grid_minmax{\brl@pgf@ye}{\brl@pgf@yf}{\brl@pgf@ya}{\brl@pgf@yb}{\brl@pgf@yc}{\brl@pgf@yd}%
+  %
+  %
+  \dimen\z@\dimexpr\brl@pgf@xf-\brl@pgf@xe\relax%
+  \dimen\@ne\dimexpr\brl@pgf@yf-\brl@pgf@ye\relax%
+  % 
+  \setbox\z@\hbox{\vrule\@width\dimen\z@\@height0.25\p@\@depth0.25\p@}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\brl@env_grid@hruleM\hbox{%
+    \brl@@pdf_invoke{q /brl_transparent_gridM gs}%
+    \copy\z@%
+    \brl@@pdf_invoke{Q}%
+  }%
+  \wd\brl@env_grid@hruleM\dimen\z@%
+  %
+  \setbox\brl@env_grid@hrulem\hbox{%
+    \brl@@pdf_invoke{q /brl_transparent_gridm gs}%
+    \box\z@%
+    \brl@@pdf_invoke{Q}%
+  }%
+  \setbox\z@\hbox to\z@{\hss\vrule\@width0.5\p@\@height\dimen\@ne\@depth\z@\hss}%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \setbox\brl@env_grid@vruleM\hbox{%
+    \brl@@pdf_invoke{q /brl_transparent_gridM gs}%
+    \copy\z@%
+    \brl@@pdf_invoke{Q}%
+  }%
+  \setbox\brl@env_grid@vrulem\hbox{%
+    \brl@@pdf_invoke{q /brl_transparent_gridm gs}%
+    \box\z@%
+    \brl@@pdf_invoke{Q}%
+  }%
+  \ht\brl@env_grid@vruleM\dimen\@ne%
+  \ht\brl@env_grid@vrulem\dimen\@ne%
+  % 
+  \setbox\z@\hbox{%
+    {%
+      \brl@orig@color{\brl@char@warncolor}%
+      % 
+      %
+      \vrule\@width\z@\@height\dimen\@ne\@depth\z@%
+      \raise-\brl@pgf@ye%
+      \vtop{%
+        \edef\brl@env_grid@max{\the\numexpr-\brl@pgf@ye/\dimexpr\brl@env_grid@unity\relax\relax}%
+        \count@\@ne%
+        \@tempcnta\@ne%
+        \@tempcntb\@ne%
+        \def\brl@env_grid_tickM{%
+          \brl@orig@vskip\brl@env_grid@unity%
+          \setbox\z@\hbox to\z@{\hss-\the\count@}%
+          \setbox\@ne\hbox to\z@{-\the\count@\hss}%
+          \setbox\tw@\hbox to\z@{\box\z@\copy\brl@env_grid@hruleM\box\@ne\hss}%
+          \ht\tw@\z@%
+          \dp\tw@\z@%
+          \box\tw@%
+        }%
+        \def\brl@env_grid_tickm{%
+          \brl@orig@vskip\brl@env_grid@unity%
+          \copy\brl@env_grid@hrulem%
+        }%
+        \brl@env_grid_loop%
+      }%
+      \raise-\brl@pgf@ye%
+      \vtop{%
+        \edef\brl@env_grid@max{\the\numexpr\brl@pgf@yf/\dimexpr\brl@env_grid@unity\relax\relax}%
+        \count@\z@%
+        \@tempcnta5\relax% mod 5
+        \@tempcntb\z@%
+        \def\brl@env_grid_tickM{%
+          \setbox\z@\hbox to\z@{\hss\the\count@}%
+          \setbox\@ne\hbox to\z@{\the\count@\hss}%
+          \setbox\tw@\hbox to\z@{\box\z@\copy\brl@env_grid@hruleM\box\@ne\hss}%
+          \ht\tw@\z@%
+          \dp\tw@\z@%
+          \box\tw@%
+          \brl@orig@vskip-\brl@env_grid@unity%
+        }%
+        \def\brl@env_grid_tickm{%
+          \copy\brl@env_grid@hrulem%
+          \brl@orig@vskip-\brl@env_grid@unity%
+        }%
+        \brl@env_grid_loop%
+      }%
+      \brl@orig@hskip-\brl@pgf@xe%
+      \@tempcntb\numexpr\brl@pgf@xe/\dimexpr\brl@env_grid@unitx\relax\relax%
+      \brl@orig@hskip\@tempcntb\dimexpr\brl@env_grid@unitx\relax%
+      \count@\@tempcntb%
+      % mod 5 : (<= 0) : 0...-4 -> 0, -5...-9 -> -1,
+      \divide\count@5\relax% mod 5
+      \@tempcnta\count@%
+      % \showthe\count@%
+      % 0...-4 -> 5...1, -5...-9 -> 5...1
+      \@tempcnta\numexpr\@tempcntb-\count@*5+5\relax%
+      \edef\brl@env_grid@max{\the\numexpr\brl@pgf@xf/\dimexpr\brl@env_grid@unitx\relax\relax}%
+      \def\brl@env_grid_tickM{%
+        \setbox\z@\hbox to \z@{\hss\the\count@\hss}%
+        \setbox\@ne\vbox to \z@{\copy\z@\vss}%
+        \ht\z@\z@%
+        \dp\z@\z@%
+        \ht\@ne\z@%
+        \dp\@ne\z@%
+        \setbox\tw@\vbox{\box\z@\copy\brl@env_grid@vruleM\box\@ne}%
+        \wd\tw@\z@%
+        \dp\tw@\z@%
+        \box\tw@%
+        \brl@orig@hskip\brl@env_grid@unitx%
+      }%
+      \def\brl@env_grid_tickm{%
+        \copy\brl@env_grid@vrulem%
+        \brl@orig@hskip\brl@env_grid@unitx%
+      }%
+      \brl@env_grid_loop%
+      %
+    }%
+  }%
+  %
+  \setbox\z@\hbox{%
+    \brl@@pdf_bcontent%
+    \brl@@pdf_invoke{\brl@env_grid@aa\brl@@space\brl@env_grid@ab\brl@@space%
+      \brl@env_grid@ba\brl@@space\brl@env_grid@bb\brl@@space%
+      0 0 cm}%
+    \hbox to \z@{\brl@orig@hskip\brl@pgf@xe\raise\brl@pgf@ye\box\z@\hss}% move the center to the origin.
+    \brl@@pdf_econtent%
+  }%
+  \setbox\z@\hbox{%
+    \ifbrl@figure@landscape%
+      \brl@orig@hskip-\pgf@picmaxx%
+    \else%
+      \brl@orig@hskip-\pgf@picminx%
+    \fi%
+      \lower\pgf@picmaxy%
+      \box\z@%
+    }%
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  \global\setbox\brl@env_grid@box\box\z@%
+  % 
+  %
+  % 
+  % 
+}
+
+\def\brl@env_grid_loop{%
+  \ifnum\brl@env_grid@max<\@tempcntb%
+  \else%
+    \ifnum5=\@tempcnta% mod 5
+      \@tempcnta\@ne%
+      \brl@env_grid_tickM%
+      \advance\count@\@ne%
+    \else%
+      \advance\@tempcnta\@ne%
+      \brl@env_grid_tickm%
+    \fi%
+    \advance\@tempcntb\@ne%
+    \expandafter\brl@env_grid_loop%
+  \fi%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% tikzpicture
+%
+\def\tikzpicture{%
+  \ifbrl@figure@inside%
+    \brl@figure@ininsidetrue%
+    \ifbrl@figure@plot% 
+      %
+      % In plot tabular, tikzpicture is embedded as if it were in the ordinary text.
+      % Only the difference is that the pageref should be added 
+      % as an entry of the tabular, which is realized as pageref_insert.
+      %
+      \let\brl@env_insert_pageref\empty% pageref is inserted later in inplot_endtikzpicture_end
+      \def\brl@pgf_filldef{\brl@pgf_plot_filldef}%
+      \def\brl@figure_next{%
+        \brl@env_inplot_tikzpicture%
+        \brl@env_plot_tikzpicture%
+      }%
+    \else%
+      \def\brl@pgf_filldef{\brl@pgf_draw_filldef}%
+      \def\brl@figure_next{%
+        \brl@env_indraw_tmpl%
+        \brl@env_draw_call_tikzpicture%
+      }%
+    \fi%
+  \else%
+    \brl@figure@insidetrue%
+    \ifbrl@figure@plot%
+      \def\brl@pgf_filldef{\brl@pgf_plot_filldef}%
+      \def\brl@figure_next{%
+        \brl@env_plot_tikzpicture%
+      }%
+    \else%
+      \def\brl@pgf_filldef{\brl@pgf_draw_filldef}%
+      \def\brl@figure_next{%
+        \brl@env_draw_tmpl%
+        \brl@env_draw_call_tikzpicture%
+      }%
+    \fi%
+  \fi%
+  \brl@figure_next%
+}  
+
+\def\endtikzpicture{%
+  \ifbrl@figure@ininside%
+    \ifbrl@figure@plot%
+      \def\brl@figure_next{%
+        \brl@env_plot_endtikzpicture%
+        \brl@env_inplot_endtikzpicture%
+      }%
+    \else%
+      \def\brl@figure_next{%
+        \brl@env_draw_call_endtikzpicture% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+        \brl@env_indraw_endtikzpicture%
+      }%
+    \fi%
+  \else%
+    \ifbrl@figure@plot%
+      \def\brl@figure_next{%
+        \brl@env_plot_endtikzpicture%
+      }%
+    \else%
+      \def\brl@figure_next{%
+        \brl@env_draw_call_endtikzpicture% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+        \brl@env_draw_endtmpl%
+      }%
+    \fi%
+  \fi%
+  \brl@figure_next%
+}
+
+
+% draw, both inside and ininside,
+% the following is used.
+%
+% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+%
+\def\brl@env_draw_call_tikzpicture{%
+  \global\setbox\brl@pgf@nodeboxa\hbox{}%
+  \global\setbox\brl@pgf@nodeboxb\hbox{}%
+  \setbox\z@\hbox\bgroup% \box\z@
+    % 
+    %
+    % 
+    % for the end procedure of this tikzpicture.
+    \let\brl@env_indraw_endcmd\brl@env_indraw_endcmd_tikz%
+    \let\brl@do_show_bg\brl@do_show_bg_transparent%
+    \let\set@color\brl@pgfsys@set@color% fill color to pattern. Note that letters are also changed. Thus this should be replaced when draw letters.
+    %
+    %
+    % 
+    \brl@orig@tikzpicture%
+}
+
+\def\brl@env_draw_call_endtikzpicture{%
+    \brl@env_draw_grid_init% make grid
+    \endbrl@orig@tikzpicture%
+  \egroup% \box\z@
+  % 
+  \wd\z@\z@%
+  \ht\z@\z@%
+  \dp\z@\z@%
+  %
+  %
+  % 
+  \global\setbox\brl@env_draw@pictureboxa\hbox{%
+    \copy\z@\pgfsys@typesetpicturebox\brl@pgf@nodeboxa}%
+  \global\setbox\brl@env_draw@pictureboxb\hbox{%
+    \box\z@\pgfsys@typesetpicturebox\brl@pgf@nodeboxb}%
+  %
+  \brl@env_draw_grid% make grid
+%
+}
+
+
+%
+% \brl@env_plot_tikzpicture
+% \brl@env_plot_endtikzpicture
+% are defined in the following.
+%
+\ifbrl@option@pindisplay%
+  \input{jmbraille/codes/brl_env_pindisplay.tex}  
+\else%
+  \input{jmbraille/codes/brl_env_plotter.tex}  
+\fi%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% tabular
+%
+\def\tabular{%
+  \@ifnextchar[{\brl@env_tabular_}{\brl@env_tabular_[]}%
+}
+
+\def\brl@env_tabular_[#1]{%
+  \ifbrl@figure@inside%
+    \brl@figure@ininsidetrue%
+    \ifbrl@figure@plot%
+      \def\brl@figure_next{%
+        \brl@env_inplot_tabular%
+        \brl@env_plot_call_tabular%
+      }%
+    \else%
+      \def\brl@figure_next{%
+        \brl@env_indraw_tmpl%
+        \brl@env_draw_call_tabular%
+      }%
+    \fi%
+  \else%
+    \brl@figure@insidetrue%
+    \ifbrl@figure@plot%
+      \def\brl@figure_next{%
+        \brl@env_plot_tabular%
+        \brl@env_plot_call_tabular%
+      }%
+    \else%
+      \global\brl@env_draw_tabular@boxnum\z@%
+      \def\brl@figure_next{%
+        \brl@env_draw_tmpl%
+        \brl@env_draw_call_tabular%
+      }%
+    \fi%
+  \fi%
+  \brl@figure_next%
+}
+
+\def\endtabular{%
+  \ifbrl@figure@ininside%
+    \ifbrl@figure@plot%
+      \def\brl@figure_next{%
+        \brl@env_plot_call_endtabular% output : \brl@env_plot@picturebox 
+        \brl@env_inplot_endtabular%
+      }%
+    \else%
+      \def\brl@figure_next{%
+        \brl@env_draw_call_endtabular% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+        \brl@env_indraw_endtabular%
+      }%
+    \fi%
+  \else%
+    \ifbrl@figure@plot%
+      \def\brl@figure_next{%
+        \brl@env_plot_call_endtabular% output : \brl@env_plot@picturebox
+        \brl@env_plot_endtabular%
+      }%
+    \else%
+      \def\brl@figure_next{%
+        \brl@env_draw_call_endtabular% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+        \brl@env_draw_endtmpl%
+      }%
+    \fi%
+  \fi%
+  \brl@figure_next%
+}
+
+\@namedef{tabular*}#1{%
+  \@ifnextchar[{\brl@env_tabular_}{\brl@env_tabular_[]}%
+}
+\expandafter\let\csname endtabular*\endcsname\endtabular
+
+
+
+\def\brl@env_plot_tabular{%
+  \brl@env_plot_tabular@frame{\if@english Table\else 表\fi}%
+}
+
+\def\brl@env_plot_endtabular{%
+  \brl@array@toks\brl@env_plot@picturebox%
+  \brl@print{0}{0}{\brl@array@toks}{\brl@bse@width}%
+  \endbrl@env_plot_tabular@frame%
+  %
+  \expandafter\brl@document_appendmattoks\expandafter{\the\brl@text@mattoks}%
+  \global\brl@text@mattoks{}%
+  % 
+  \brl@document_footnote%
+  \global\brl@document@indentfalse%
+}
+
+% in draw mode
+% \tikz \tabular
+%
+\def\brl@env_indraw_endcmd_tikz{%
+  \setbox\brl@document@hboxa\hbox{\unhbox\brl@document@hboxa\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\box\brl@env_draw@pictureboxa}}% hbox
+  \setbox\brl@document@hboxb\hbox{\unhbox\brl@document@hboxb\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\box\brl@env_draw@pictureboxb}}% hbox
+}
+
+% in draw mode
+% \tabular (\tikz or \tabular)
+%
+\def\brl@env_indraw_endcmd_tabular{%
+    \xdef\brl@tmpa{\brl@document@appendfont}%
+    \xdef\brl@tmpb{\brl@document@prependfont}%
+    \xdef\brl@tmpc{\brl@document@currappendfont}%
+    \xdef\brl@tmpd{\brl@document@currprependfont}%
+  \egroup%
+  \setbox\brl@document@hboxa\hbox{\unhbox\brl@document@hboxa\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\box\brl@env_draw@pictureboxa}}% hbox
+  \setbox\brl@document@hboxb\hbox{\unhbox\brl@document@hboxb\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\box\brl@env_draw@pictureboxb}}% hbox
+  \bgroup%
+    \let\brl@document@appendfont\brl@tmpa%
+    \let\brl@document@prependfont\brl@tmpb%
+    \let\brl@document@currappendfont\brl@tmpc%
+    \let\brl@document@currprependfont\brl@tmpd%
+}
+
+
+\def\brl@env_indraw_end#1{% continue after \end{tikzpicture} or \end{tabular}
+  \brl@orig@end{#1}%
+  \brl@env_indraw_endcmd%
+  \global\brl@document@emptyboxfalse%
+  \brl@document_skipsp%
+}
+
+\def\brl@env_indraw_tmpl{%
+  \let\end\brl@env_indraw_end%
+}
+
+% 
+% just before \end{tikzpicture} or \end{tabular}
+%
+\def\brl@env_indraw_endtikzpicture{% append grid box
+  \brl@@scalebox{\brl@figure@scaleinv}{\box\brl@env_grid@box}%
+  \dimen\z@\wd\brl@env_draw@pictureboxa%
+  \dimen\@ne\ht\brl@env_draw@pictureboxa%
+  \dimen\tw@\ht\brl@env_draw@pictureboxa%
+  \global\setbox\brl@env_draw@pictureboxa\hbox{\unhbox\brl@env_draw@pictureboxa%
+    \kern-\dimen\z@\raise\dimen\@ne\box\brl@@scalebox@box}% this may be void.
+  \global\wd\brl@env_draw@pictureboxa\dimen\z@%
+  \global\ht\brl@env_draw@pictureboxa\dimen\@ne%
+  \global\wd\brl@env_draw@pictureboxa\dimen\tw@%
+  %
+  % 
+  % result is stored in \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+  %
+  % to check, \shipout\copy\brl@env_draw@pictureboxa
+}
+
+
+\def\brl@env_indraw_endtabular{%
+  %
+  % 
+  % result is stored in \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+  %
+  % to check, \shipout\copy\brl@env_draw@pictureboxa
+}
+
+
+% in plot mode
+% \tikz \tabular
+%
+\def\brl@env_inplot_endcmd_tikz{%
+  \expandafter\brl@document_appendplottoks\brl@env_plot@picturebox%
+}
+
+% in plot mode
+% \tabular \tabular 
+%
+\def\brl@env_inplot_endcmd_tabular{%
+    \xdef\brl@tmpa{\brl@document@appendfont}%
+    \xdef\brl@tmpb{\brl@document@prependfont}%
+    \xdef\brl@tmpc{\brl@document@currappendfont}%
+    \xdef\brl@tmpd{\brl@document@currprependfont}%
+  \egroup%
+  \edef\brl@tmp{{\brl@text_cmd_virtualchar\brl@env_plot@picturebox}}%
+  \expandafter\brl@document_appendplottoks\brl@tmp%
+  \bgroup%
+    \let\brl@document@appendfont\brl@tmpa%
+    \let\brl@document@prependfont\brl@tmpb%
+    \let\brl@document@currappendfont\brl@tmpc%
+    \let\brl@document@currprependfont\brl@tmpd%
+}
+
+\def\brl@env_inplot_endtabular_end#1{% continue after \end{tabular}
+  \brl@orig@end{tabular}%
+  \brl@env_inplot_endcmd%
+  \brl@document_skipsp%
+}
+
+\def\brl@env_inplot_tabular{%
+  \let\end\brl@env_inplot_endtabular_end%
+}
+% 
+%
+
+% in plot mode
+% \tabular \tikz
+%
+\def\brl@env_inplot_endtikzpicture_end#1{% continue after \end{tikzpicture}
+    \brl@orig@end{tikzpicture}%
+    \brl@document_dospecial_pageref{fig:brl@figure\the\brl@figure@figurenum}% output : \brl@tmp
+    \xdef\brl@tmp{{\the\brl@document@plottoks\brl@text_cmd_transopen ページ\brl@text_cmd_space\brl@tmp\brl@text_cmd_transclose}}%
+    \xdef\brl@tmpa{\brl@document@appendfont}%
+    \xdef\brl@tmpb{\brl@document@prependfont}%
+    \xdef\brl@tmpc{\brl@document@currappendfont}%
+    \xdef\brl@tmpd{\brl@document@currprependfont}%
+  \egroup%
+  \brl@document@plottoks\brl@tmp%
+  \bgroup%
+    \let\brl@document@appendfont\brl@tmpa%
+    \let\brl@document@prependfont\brl@tmpb%
+    \let\brl@document@currappendfont\brl@tmpc%
+    \let\brl@document@currprependfont\brl@tmpd%
+    \brl@document_skipsp%
+}
+  
+\def\brl@env_inplot_tikzpicture{%
+  \let\end\brl@env_inplot_endtikzpicture_end%
+}
+
+% 
+% % just before \end{tikzpicture} or \end{tabular}
+%
+\def\brl@env_inplot_endtikzpicture{%
+%  
+%  
+}
+\def\brl@env_inplot_endtabular{%
+  % 
+  % result is stored in \brl@env_plot@picturebox%
+  %
+}
+
+
+
+%%
+%% once in tikzpicture or tabular, they should be replace by the env inplot.
+%%
+%% tikzpicture in tabular is NG.
+%% tikzpicture in tikzpicture is NG. (it is due to the nature of tikzpicture.)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@env_draw_tabular
+%
+% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+%
+%
+% 
+% aaa & bbb & ccc \\
+%
+% ->
+%
+% {\brl@env_draw_tabular_print{1}} & {\brl@env_draw_tabular_print{2}} & ... \cr
+%
+% \brl@env_draw_tabular_print{X} prints
+% \box\brl@env_draw_tabular@boxXa for pdf
+% \box\brl@env_draw_tabular@boxXb for print
+%
+
+%
+
+
+
+\newcount\brl@env_draw_tabular@boxnum
+\newbox\brl@env_draw_tabular@boxa
+\newbox\brl@env_draw_tabular@boxb
+
+\brl@def{brl@document_dospecial_\string\\}%
+{brl@document_dospecial_\string\multicolumn}%
+{brl@document_dospecial_\string&}%
+{brl@document_dospecial_\string\cr}%
+{brl@document_dospecial_\string\multirow}%
+{brl@document_dospecial_\string\cline}%
+{brl@document_dospecial_\string\hline}%
+\brl@end{%
+  \def\brl@env_draw_call_tabular##1{%
+    %
+    %
+    %
+    % for the end procedure of this tabular.
+    \let\brl@env_indraw_endcmd\brl@env_indraw_endcmd_tabular%
+    \let\set@color\brl@orig@set@color% color should be restored
+    %
+    % for each entry.
+    \let\brl@document_end\brl@document_end_draw_tabular% if \brl@document encounters \begin{tikzpicture or tabular}, then \brl@document should continue.
+    \let\brl@document_dospecial_csend\brl@env_draw_tabular@document_dospecial_csend% to do
+    \let#1\brl@env_draw_tabular@document_dospecial_bsbs%
+    \let#2\brl@env_draw_tabular@document_dospecial_multicolumn%
+    \let#3\brl@env_draw_tabular@document_dospecial_ampersand%
+    \let#4\brl@env_draw_tabular@document_dospecial_cr%
+    \let#5\brl@env_draw_tabular@document_dospecial_multirow%
+    \let#6\brl@env_draw_tabular@document_dospecial_cline%
+    \let#7\brl@env_draw_tabular@document_dospecial_hline%
+    %
+    %
+    % init
+    %
+    \setbox\brl@document@boxa\vbox{}%
+    \setbox\brl@document@boxb\vbox{}%
+    \setbox\brl@document@hboxa\hbox{}% hbox
+    \setbox\brl@document@hboxb\hbox{}% hbox
+    \global\brl@document@emptyboxtrue%
+    \brl@env@toks{{##1}}% option
+    \bgroup% <- each element is independent, i.e., {...} & {...}.
+      \brl@document_skipsp%
+  }
+}
+
+% output : \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+
+\def\brl@env_draw_call_endtabular{%
+  \edef\brl@env_tabcmd{%
+    %
+    % \brl@orig@hskip\brl@env_draw_tabular@leftsidemargin%
+    % \showthe\brl@env@toks%
+    % \showbox\csname brl@env_draw_tabular@box1a\endcsname
+    %
+    \noexpand\brl@orig@begin{brl@orig@tabular}%
+    \the\brl@env@toks%
+    \noexpand\brl@orig@end{brl@orig@tabular}%
+  }%
+  \global\setbox\brl@env_draw@pictureboxa\hbox{%
+    \def\brl@env_draw_tabular@boxab{a}%
+    \brl@env_tabcmd%
+  }%
+  \global\setbox\brl@env_draw@pictureboxb\hbox{%
+    \def\brl@env_draw_tabular@boxab{b}%
+    \brl@env_tabcmd%
+  }%
+  %
+}
+
+% input : \brl@document@toks and \brl@document@hboxa (tikz or tabular)
+% if both are empty, \brl@document@emptyboxtrue
+%
+% output: \brl@env@toks <- {\brl@env_draw_tabular_print{XXX}}
+%
+% notice : \egroup corresponding to \bgroup in \brl_document
+%
+\def\brl@env_draw_tabular_appendtoks{%
+  % \brl@document@prevtext must be empty
+  \brl@document_exec_text% prevtext must be empty.
+  %
+  %
+  % \print_allsclines_draw yields \print@box
+  %
+  \brl@print{0}{0}{\brl@text@toks}{\brl@bse@width}%
+  %
+  % append \print@box to \document@hbox
+  %
+  % 
+  %
+  % if \document@hbox is not empty, make \brl@env_draw_tabular@box
+  \ifbrl@document@emptybox%
+    %
+    \let\brl@tmp\empty%
+  \else%
+    %
+    % in picture, there are only hbox. Thus, \brl@document@box must be void.
+    %
+    \setbox\brl@document@hboxa\hbox{\unhbox\brl@document@hboxa\box\brl@print@boxa}% hbox
+    \setbox\brl@document@hboxb\hbox{\unhbox\brl@document@hboxb\box\brl@print@boxb}% hbox
+    \setbox\brl@document@boxa\vtop{\unvbox\brl@document@boxa\box\brl@document@hboxa}%
+    \setbox\brl@document@boxb\vtop{\unvbox\brl@document@boxb\box\brl@document@hboxb}%
+    % 
+    \global\advance\brl@env_draw_tabular@boxnum\@ne%
+    \edef\brl@tmp{brl@env_draw_tabular@box\the\brl@env_draw_tabular@boxnum}%
+    % 
+    \ifcsname\brl@tmp a\endcsname%
+    \else%
+      \expandafter\newbox\csname\brl@tmp a\endcsname%%
+      \expandafter\newbox\csname\brl@tmp b\endcsname%%
+    \fi%
+    % 
+    \global\setbox\csname\brl@tmp a\endcsname\box\brl@document@boxa%
+    \global\setbox\csname\brl@tmp b\endcsname\box\brl@document@boxb%
+    % 
+    % 
+    \global\brl@document@emptyboxtrue% The boxes are used. Thus reset the switch \brl@document@emptybox.
+    %
+    \edef\brl@tmp{\brl@env_appendtoks{{\brl@env_draw_tabular_print{\the\brl@env_draw_tabular@boxnum}}}}%
+    % \expandafter\brl@tmp%
+  \fi%
+  \expandafter%
+  \egroup% {...} <-
+  % all document@box, hbox are reset.
+  \brl@tmp% <- \append\tabular_print or empty
+}
+
+
+
+
+\def\brl@env_draw_tabular@document_dospecial_multicolumn#1#2#3{%
+  \egroup%
+  \brl@env_appendtoks{\multicolumn{#1}{#2}}%
+  \bgroup%
+  % {%
+  %   \brl@document#3\brl@document@enddoc%
+  %   \xdef\brl@tmp{{\the\brl@document@toks}}% documented
+  % }%
+  % %
+  % \brl@document@toks\brl@tmp%
+    \brl@document#3\brl@document@enddoc%
+    \brl@document_text_skipsp%#4% #4 is assumed to be &, \\, \cr, \end
+}
+
+\def\brl@env_draw_tabular@document_dospecial_multirow#1#2#3{%
+  \egroup%
+  \brl@env_appendtoks{\multirow{#1}{#2}}%
+  \bgroup%
+  % {%
+  %   \brl@document#3\brl@document@enddoc%
+  %   \xdef\brl@tmp{{\the\brl@document@toks}}% documented
+  % }%
+  % %
+  % \brl@document@toks\brl@tmp%
+    \brl@document#3\brl@document@enddoc%
+    \brl@document_text_skipsp%#4% #4 is assumed to be &, \\, \cr, \end
+}
+
+\def\brl@env_draw_tabular@document_dospecial_ampersand{% &
+  \brl@env_draw_tabular_appendtoks% \append and \egroup
+  \brl@env_appendtoks{&}%
+  \bgroup% <- \bgroup begins
+    \brl@document_skipsp%
+}
+
+\def\brl@env_draw_tabular@document_dospecial_bsbs{% \\
+  \brl@env_draw_tabular_appendtoks%
+  \brl@env_appendtoks{\cr}%
+  \@ifnextchar[{\brl@env_draw_tabular@gobble_opt}{\bgroup\brl@document_skipsp}%
+}
+
+\def\brl@env_draw_tabular@gobble_opt[#1]{\bgroup\brl@document_skipsp}
+
+\def\brl@env_draw_tabular@document_dospecial_cr{% \\
+  \brl@env_draw_tabular_appendtoks% \append and \egroup
+  \brl@env_appendtoks{\cr}%
+  \bgroup% <- \bgroup begins
+    \brl@document_skipsp%
+}
+
+
+\def\brl@env_draw_tabular@document_dospecial_cline#1{%
+  \egroup% {...} <-
+  \brl@env_appendtoks{\cline{#1}}%
+  \bgroup% <- \bgroup begins
+    \brl@document_skipsp%
+}
+
+\def\brl@env_draw_tabular@document_dospecial_hline{%
+  \egroup% {...} <-
+  \brl@env_appendtoks{\hline}%
+  \bgroup% <- \bgroup begins
+    \brl@document_skipsp%
+}
+
+\def\brl@env_draw_tabular@document_dospecial_csend{% \end{tabular}
+  \brl@env_draw_tabular_appendtoks% \append and \egroup
+  \brl@env_appendtoks{\crcr}%
+  %
+  \end%
+  %
+}
+
+%% input : 
+%% \brl@env_draw_tabular@boxab : a or b
+\protected\def\brl@env_draw_tabular_print#1{%
+  \box\csname brl@env_draw_tabular@box#1\brl@env_draw_tabular@boxab\endcsname%
+}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%
+%% \brl@env_plot_tabular
+%%
+%
+%
+% aaa & bbb & ccc \\
+%
+% ->
+%
+% {AAA & BBB & ... }
+%
+% AAA BBB : \texted
+
+
+
+\brl@def{brl@document_dospecial_\string\\}%
+{brl@document_dospecial_\string\multicolumn}%
+{brl@document_dospecial_\string&}%
+{brl@document_dospecial_\string\cr}%
+{brl@document_dospecial_\string\multirow}%
+{brl@document_dospecial_\string\cline}%
+{brl@document_dospecial_\string\hline}%
+\brl@end{%
+  \def\brl@env_plot_call_tabular##1{%
+    %
+    %
+    % for the end procedure of this tabular.
+    \let\brl@env_inplot_endcmd\brl@env_inplot_endcmd_tabular%
+    %
+    % for each entry.
+    \let\brl@document_end\brl@document_end_plot_tabular% if \brl@document encounters \begin{tikzpicture or tabular}, then \brl@document should continue.
+    \let\brl@document_dospecial_csend\brl@env_plot_tabular@document_dospecial_csend%
+    \let#1\brl@env_plot_tabular@document_dospecial_bsbs%
+    \let#2\brl@env_plot_tabular@document_dospecial_multicolumn%
+    \let#3\brl@env_plot_tabular@document_dospecial_ampersand%
+    \let#4\brl@env_plot_tabular@document_dospecial_cr%
+    \let#5\brl@env_plot_tabular@document_dospecial_multirow%
+    \let#6\brl@env_plot_tabular@document_dospecial_cline%
+    \let#7\brl@env_plot_tabular@document_dospecial_hline%
+    %
+    \ifbrl@figure@plotrule%
+      \brl@env@toks{{##1}}%
+    \else%
+      \brl@env@toks{}%
+      \brl@env_plot_tabular_deldelim##1\brl@end%
+    \fi%
+    %
+    \brl@document@plottoks{}%
+    \bgroup% <- each element is independent, i.e., {...} & {...}.
+    % \showthe\brl@document@toks
+    % \edef\brl@tmp{{\brl@document@appendfont|\brl@document@currappendfont}}%
+    %  \show\brl@tmp
+      \brl@document_skipsp%
+  }
+}
+
+\def\brl@env_plot_tabular_deldelim#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    \brl@env@toks\expandafter{\expandafter{\the\brl@env@toks}}%
+  \else%
+    \if|#1\else%
+      \brl@env_appendtoks{#1}%
+    \fi%
+    \expandafter\brl@env_plot_tabular_deldelim%
+  \fi%
+}
+
+
+\def\brl@env_plot_call_endtabular{%
+  %
+  {%
+    \def\brl@array_prep_rowcol_element{\brl@array_prep_rowcol_element_text}%
+    %
+    \def\brl@array_cons_elements_appendsp{\brl@array_cons_elements_appendsp_text}%
+    \def\brl@array_arr_elements_replace{\brl@array_arr_elements_replace_text}%
+    \def\brl@code_array_blank{\brl@code_text_blank}
+    \def\brl@code_array_hfill{\brl@code_text_hfill}%
+    \def\brl@code_array_space{\brl@code_text_space}%
+    \def\brl@array_makespace{\brl@format_maketspace}%
+    % 
+    \expandafter\brl@array_format_prep_rowcol\the\brl@env@toks\brl@end%
+    %
+    \expandafter\brl@array_format\brl@array_format@format\brl@end%
+    % 
+    \brl@array_cons_elements%
+    \brl@array_cons_rules%%
+    \brl@array_set_maxcharnum%
+    \brl@array_arr_elements%
+    \brl@array_set_heightdepth%
+    \brl@array_hrules%
+    \brl@array_cons_rowcol%
+    \brl@array_cons_mele%
+    \brl@array_cons_hltoks%
+    %
+    \xdef\brl@env_plot@picturebox{{\brl@char@block{\brl@array@totalheight}{\brl@array@totaldepth}{\brl@array@width}{\ifbrl@array@space\brl@char@space@true\fi\brl@array@bvskip\brl@array@avskip}{{\the\brl@array@hlltoks}{\the\brl@array@hlrtoks}}{\the\brl@array@toks}}}%
+    %
+    %
+  }%
+}
+
+% notice : \egroup corresponding to \bgroup in \brl@document
+
+\def\brl@env_plot_tabular_appendtoks{%
+  %
+  % \edef\brl@tmp{{\brl@document@appendfont|\brl@document@currappendfont}}\show\brl@tmp%
+  \brl@document_ifequal{\brl@document@prevtext\the\brl@document@toks}{\brl@document@appendfont\brl@document@currappendfont}{%
+    \xdef\brl@tmp{{\the\brl@document@plottoks}}%
+  }{%
+    \xdef\brl@tmp{{\the\brl@document@plottoks\brl@document@prevtext\the\brl@document@toks\brl@document@currprependfont\brl@document@prependfont}}%
+  }%
+  \egroup%
+  \brl@document@plottoks\brl@tmp%
+}
+
+\def\brl@env_plot_tabular@document_dospecial_ampersand{%
+  \brl@env_plot_tabular_appendtoks% \append and \egroup
+  \brl@document_appendplottoks{&}%
+  \bgroup% <- each element is independent, i.e., {...} & {...}.
+    \brl@document_skipsp%
+}
+
+\def\brl@env_plot_tabular@document_dospecial_bsbs{%
+  \brl@env_plot_tabular_appendtoks% \append and \egroup
+  % brl@tmp is {\the\brl@document@plottoks}
+  % 
+  %
+  \ifx\brl@tmp\brl@@empty% no element exists.
+  \else%
+    \expandafter\brl@env_appendtoks\expandafter{\brl@tmp}%
+  \fi%
+  \brl@document@plottoks{}%
+  \@ifnextchar[{\brl@env_plot_tabular@gobble_opt}{\bgroup\brl@document_skipsp}%
+}
+
+\def\brl@env_plot_tabular@gobble_opt[#1]{\bgroup\brl@document_skipsp}
+
+\def\brl@env_plot_tabular@document_dospecial_cr{%
+  \brl@env_plot_tabular_appendtoks% \append and \egroup
+  % brl@tmp is {\the\brl@document@plottoks}
+  %
+  %
+  \ifx\brl@tmp\brl@@empty% no element exists.
+  \else%
+    \expandafter\brl@env_appendtoks\expandafter{\brl@tmp}%
+  \fi%
+  \brl@document@plottoks{}%
+  \bgroup% <- each element is independent, i.e., {...} & {...}.
+    \brl@document_skipsp%
+}
+
+\def\brl@env_plot_tabular@document_dospecial_multicolumn#1#2#3{% to do
+  \egroup%
+  {%
+    \brl@document#3\brl@document@enddoc%
+    \ifbrl@figure@plotrule%
+      \def\brl@tmp{#2}%
+    \else
+      %
+      \let\brl@tmp\empty% delete delimiters
+    \fi%
+    \xdef\brl@tmp{{\brl@array_cmd_multicolumn{\the\numexpr#1-\@ne\relax}{\brl@tmp}{\the\brl@document@toks\brl@document@currprependfont\brl@document@prependfont}}}%
+  }%
+  %
+  \expandafter\brl@document_appendplottoks\brl@tmp%
+  \bgroup% <- each element is independent, i.e., {...} & {...}.
+    \brl@document_skipsp%
+}
+
+\def\brl@env_plot_tabular@document_dospecial_multirow#1#2#3{% ignore #1 #2
+  \PackageWarning{jmbraille}{\string\multirow is not support.}
+  \brl@document_skipsp#3%
+}
+
+
+\def\brl@env_plot_tabular@document_dospecial_hline{%
+  \egroup%
+  \ifbrl@figure@plotrule%
+    \brl@env_appendtoks{{\brl@array_cmd_hline}}%
+  \fi%
+  \brl@document@plottoks{}% discard \plottoks
+  \bgroup% <- each element is independent, i.e., {...} & {...}.
+    \brl@document_skipsp%
+}
+
+\def\brl@env_plot_tabular@document_dospecial_cline#1{%
+  \egroup%
+  \ifbrl@figure@plotrule%
+    \brl@env_appendtoks{{\brl@array_cmd_cline}}%
+    \brl@document@plottoks{{#1}}% reset all and set {#1}
+  \fi%
+  % 
+  \brl@futurelet\brl@tmp\brl@env_plot_tabular@document_dospecial_cline_%
+}
+
+
+\def\brl@env_plot_tabular@document_dospecial_cline_{%
+  \ifx\brl@tmp\cline%
+    \expandafter\brl@env_plot_tabular@document_dospecial_cline__%
+  \else%
+    \ifbrl@figure@plotrule%
+      \expandafter\brl@env_appendtoks\expandafter{\expandafter{\the\brl@document@plottoks}}%
+    \fi%
+    % 
+    % 
+    \brl@document@plottoks{}%
+    \bgroup% <- each element is independent, i.e., {...} & {...}.
+    \expandafter\brl@document_skipsp%
+  \fi%
+}%
+
+\def\brl@env_plot_tabular@document_dospecial_cline__#1#2{% #1 : \cline
+  \ifbrl@figure@plotrule%
+    \brl@document_appendplottoks{{#2}}%
+  \fi%
+  \brl@futurelet\brl@tmp\brl@env_plot_tabular@document_dospecial_cline_%
+}
+
+
+\def\brl@env_plot_tabular@document_dospecial_csend{%
+  \brl@env_plot_tabular_appendtoks% \append and \egroup
+  % brl@tmp is {\the\brl@document@plottoks}
+  % 
+  %
+  \ifx\brl@tmp\brl@@empty% no element exists.
+  \else%
+    \expandafter\brl@env_appendtoks\expandafter{\brl@tmp}%
+  \fi%
+  %
+  %
+  \end% tabular
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% graphics
+%
+
+\def\includegraphics{%
+  \@ifnextchar[{\brl@env_includegraphics}{\brl@env_includegraphics[]}%
+}
+
+
+\def\brl@env_includegraphics[#1]#2{%
+  \ifbrl@figure@inside%
+    \ifbrl@figure@plot%
+      \PackageError{jmbraille}{Sorry. In plot mode, includegraphics is not supported}{}%
+      \let\brl@figure_next\relax%
+    \else%
+      \def\brl@figure_next{%
+        {%
+          \brl@env_indraw_intmpl%
+          \brl@env_draw_call_includegraphics[#1]{#2}%
+          \brl@env_indraw_endintmpl%
+        }%
+      }%
+    \fi%
+  \else%
+    \ifbrl@figure@plot%
+      \PackageError{jmbraille}{Sorry. In plot mode, includegraphics is not supported}{}%
+      \let\brl@figure_next\relax%
+    \else%
+      \def\brl@figure_next{%
+        {%
+          \brl@env_draw_tmpl%
+          \brl@env_draw_call_includegraphics[#1]{#2}%
+          \brl@env_draw_endtmpl%
+        }%
+      }%
+    \fi%
+  \fi%
+  \brl@figure_next%
+}  
+
+\def\brl@env_indraw_intmpl{%
+  \bgroup%
+}
+% 
+%
+\def\brl@env_indraw_endintmpl{%
+  \egroup%
+  %
+  % 
+  % result is stored in \brl@env_draw@pictureboxa, \brl@env_draw@pictureboxb
+  %
+  \setbox\brl@document@hboxa\hbox{\unhbox\brl@document@hboxa\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\box\brl@env_draw@pictureboxa}}% hbox
+  \setbox\brl@document@hboxb\hbox{\unhbox\brl@document@hboxb\vtop{\hrule\@height\brl@braille@lineheight\@depth-\brl@braille@lineheight\box\brl@env_draw@pictureboxb}}% hbox
+  \global\brl@document@emptyboxfalse%
+  \brl@document_skipsp%
+}
+
+
+\def\brl@env_draw_call_includegraphics[#1]#2{%
+  %
+  \setbox\z@\hbox{%
+    \brl@orig@includegraphics[#1]{#2}%
+  }%
+  \global\setbox\brl@env_draw@pictureboxa\hbox{\unhcopy\z@}% : hbox
+  \global\setbox\brl@env_draw@pictureboxb\hbox{\unhbox\z@}% : hbox
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+
+\def\brl@env_newtheorem{%
+  \@ifnextchar*%
+  {\brl@env_newtheorem_nonum}%
+  {\brl@env_newtheorem_num}%
+}
+
+\def\brl@env_newtheorem_nonum#1#2#3{%
+  \@namedef{#2}{%
+    \@ifnextchar[%
+    {\@nameuse{brl@env_#2@withsub}}%
+    {\@nameuse{brl@env_#2@withoutsub}}%
+  }%
+  \@namedef{brl@env_#2@withsub}[##1]{%
+    \@namedef{brl@env_#2@sub}{(##1)}%
+    \@nameuse{brl@env_#2@}%
+  }%
+  \@namedef{brl@env_#2@withoutsub}{%
+    \@namedef{brl@env_#2@sub}{}%
+    \@nameuse{brl@env_#2@}%
+  }%
+  \@namedef{brl@env_#2@}{%
+    \brl@document#3\ \csname brl@env_#2@sub\endcsname\brl@document@end{6}{-2}{\brl@bse@width}{}{}%
+  }%
+  \@namedef{end#2}{\global\brl@document@indenttrue}%
+}%
+
+
+\def\brl@env_newtheorem_num#1{%
+  \@ifnextchar[%
+  {\brl@env_newtheorem_num_{#1}}%
+  {\brl@env_newtheorem_num__{#1}}%
+}
+\def\brl@env_newtheorem_num__#1#2{%
+  \newcounter{#1}%
+  \brl@env_newtheorem_num_#1[#1]{#2}%
+}
+
+
+\def\brl@env_newtheorem_num_#1[#2]#3{%
+  \@namedef{#1}{%
+    \@ifnextchar[%
+    {\@nameuse{brl@env_#1@withnote}}%
+    {\@nameuse{brl@env_#1@withoutnote}}%
+  }%
+  \@namedef{brl@env_#1@withnote}[##1]{%
+    \@namedef{brl@env_#1@note}{(##1)}%
+    \@nameuse{brl@env_#1@}%
+  }%
+  \@namedef{brl@env_#1@withoutnote}{%
+    \@namedef{brl@env_#1@note}{}%
+    \@nameuse{brl@env_#1@}%
+  }%
+  \@namedef{brl@env_#1@}{%
+    \stepcounter{#2}%
+    \edef\@currentlabel{\csname the#2\endcsname}%
+    \brl@document#3 \csname the#2\endcsname\ \csname brl@env_#1@note\endcsname\brl@document@end{6}{-2}{\brl@bse@width}{}{}%
+  }%
+  \@namedef{end#1}{\global\brl@document@indenttrue}%
+  \@ifnextchar[%
+  {\brl@env_newtheorem_numwithin#1}%
+  {}%
+}%
+\def\brl@env_newtheorem_numwithin#1[#2]{%
+  \numberwithin{#1}{#2}%
+}
+
+\let\newtheorem\brl@env_newtheorem
+
+
+%%
+%% itemize, description, enumerate
+%%
+
+\protected\def\brl@env@format_description_en{%
+  \edef\brl@document@leftmargin{\the\numexpr\brl@env@descriptiondepth*\tw@\relax}%
+  \def\brl@document@indent_default{-2}%
+}
+
+\protected\def\brl@env@format_enumerate_en{%
+  \edef\brl@document@leftmargin{\the\numexpr\brl@enumdepth*\tw@\relax}%
+  \def\brl@document@indent_default{-2}%
+}
+
+\protected\def\brl@env@format_itemize_en{%
+  \edef\brl@document@leftmargin{\the\numexpr\@itemdepth*\tw@\relax}%
+  \def\brl@document@indent_default{-2}%
+}
+
+
+\def\brl@env_itemize@item_en{\csname labelitem\romannumeral\@itemdepth\endcsname\brl@text_cmd_space}
+\def\brl@env_itemize@item_jp{\csname brl@env_itemize@\the\@itemdepth\endcsname\brl@text_cmd_space}%
+
+
+\def\enumerate{%
+  \ifnum\@enumdepth>\thr@@\@toodeep\else%
+    \advance\@enumdepth\@ne%
+    \edef\@enumctr{enum\romannumeral\@enumdepth}%
+%%
+    \expandafter\def\expandafter\@currentlabel\expandafter{\csname label\@enumctr\endcsname}%
+    % \show\labelenumi
+    \setcounter{\@enumctr}{0}%
+    \edef\item{\global\noexpand\brl@document@indenttrue%
+      \brl@env@format_itemize%
+      \noexpand\stepcounter{\@enumctr}%
+      \brl@document\noexpand\@currentlabel\brl@text_cmd_space}% space is needed
+  \fi%
+}
+
+% yet to be implemented
+%
+% itemize, enumerate, description may be treated within a paragraph.
+%
+\def\endenumerate{\global\brl@document@indentfalse}%
+
+\def\itemize{%
+%
+  \ifnum\@itemdepth>\thr@@\@toodeep\else%
+%
+    \advance\@itemdepth\@ne%
+    \let\item\brl@env_itemize_item%
+  \fi%
+}
+
+
+\@namedef{brl@env_itemize@1}{☆}
+\@namedef{brl@env_itemize@2}{※}
+\@namedef{brl@env_itemize@3}{★}
+\@namedef{brl@env_itemize@4}{＊}
+
+
+\def\brl@env_itemize_item{%
+  \global\brl@document@indenttrue%
+  \brl@env@format_itemize%
+  \@ifnextchar[{\brl@env_itemize_item_}{\brl@document\brl@env_itemize@item}%
+}
+
+\def\brl@env_itemize_item_[#1]{%
+  \brl@document#1\brl@text_cmd_space% space is needed
+}
+
+\def\enditemize{\global\brl@document@indentfalse}%
+
+\newcount\brl@env@descriptiondepth
+\brl@env@descriptiondepth\z@
+\def\description{%
+  \ifnum\brl@env@descriptiondepth>\tw@\@toodeep\else%
+    \advance\brl@env@descriptiondepth\@ne%
+    \edef\brl@env@descriptionctr{desc\romannumeral\brl@env@descriptiondepth}%
+    \edef\item[##1]{%
+      \global\noexpand\brl@document@indenttrue%
+      \brl@env@format_description%
+      \brl@document%
+      ##1\csname brl@text_cmd_\brl@env@descriptionctr\endcsname\brl@text_cmd_space%
+    }%
+  \fi%
+}
+
+\def\enddescription{\global\brl@document@indentfalse}%
+
+
+
+\def\thebibliography#1{%
+  \brl@document_par%
+  \brl@document\refname\brl@document@end{8}{-2}{\brl@bse@width}{}{}%
+}
+
+\def\endthebibliography{}%
+
+
+\def\bibitem{\@ifnextchar[\brl@env_bib_lbibitem\brl@env_bib_bibitem}
+
+\def\brl@env_bib_lbibitem[#1]#2{%
+  \global\brl@document@indenttrue%
+  \if@filesw%
+    {%
+      \let\protect\noexpand%
+      \immediate\write\@auxout{\string\bibcite{#2}{#1}}%
+    }%
+  \fi%
+  \brl@document%
+  \@biblabel{#1}\brl@text_cmd_space%
+}
+
+\def\brl@env_bib_bibitem#1{%
+  \global\brl@document@indenttrue%
+  \stepcounter{enumiv}%
+  \if@filesw\immediate\write\@auxout{\string\bibcite{#1}{\the\csname c@enumiv\endcsname}}\fi%
+  \brl@document%
+  \@biblabel{\@arabic\c@enumiv}\brl@text_cmd_space%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% override without arg
+%% #1 : environment name
+%% #2 : frame type \empty, o
+%% #3 : frame above
+%% #4 : frame below
+%% 
+\newtoks\brl@rule@toks
+
+
+\def\brl@env_overrideframe#1#2#3#4{%
+  \brl@def{brl@code_text_rule#2ld}{brl@code_text_rule#2rd}%
+  {brl@char@h#4fill}\brl@end{%
+    \@namedef{end#1}{%
+      \brl@rule@toks{%
+        ##1%
+        ##3%\brl@char@hdfill%
+        ##2%
+      }%
+      \brl@rule_show%
+      \global\brl@document@indentfalse%
+    }%
+  }%
+  \brl@def{brl@env_sub_#1}{brl@env_sub__#1}\brl@end{%
+    \@namedef{#1}{%
+      \@ifnextchar[{##1}{##2}%
+    }%
+    \def##1[####1]{%
+      \def\brl@env@option{####1}%
+      %
+      ##2%
+    }%
+  }%
+  \brl@def{brl@code_text_rule#2lu}{brl@code_text_rule#2ru}%
+  {brl@char@h#3fill}\brl@end{%
+    \@namedef{brl@env_sub__#1}{%
+      \brl@rule@toks{%
+        ##1%       \brl@code_text_ruleolu%
+        ##3%       \brl@char@hufill%
+        ##2%       \brl@code_text_ruleoru%
+      }%
+      \brl@rule_show%
+    }%
+  }%
+}
+
+
+\def\hrulefill{%
+  \brl@rule@toks{%
+    \brl@code_text_rulemm%
+    \brl@char@hmfill%
+    \brl@code_text_rulemm%
+  }%
+  \brl@rule_show%
+}
+
+\def\brl@rule_show{%
+  \brl@print{0}{0}{\brl@rule@toks}{\brl@bse@width}%
+}
+
+%% \brl@bse@width-2
+
+\brl@def_fill{\numexpr\brl@bse@width-\tw@}{\brl@char@hufill}{\brl@code_text_rulemu}%
+\brl@def_fill{\numexpr\brl@bse@width-\tw@}{\brl@char@hmfill}{\brl@code_text_rulemm}%
+\brl@def_fill{\numexpr\brl@bse@width-\tw@}{\brl@char@hdfill}{\brl@code_text_rulemd}%
+\brl@def_fill{\numexpr\brl@bse@width-\tw@}{\brl@char@huufill}{\brl@code_text_rulemuu}%
+\brl@def_fill{\numexpr\brl@bse@width-\tw@}{\brl@char@hddfill}{\brl@code_text_rulemdd}%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% override with arg
+%% #1 : environment name
+%% #2 : frame type \empty, o
+%% #3 : frame above
+%% #4 : frame below
+%% 
+\def\brl@env_overrideframearg#1#2#3#4{%
+  \brl@def{brl@code_text_rule#2ld}{brl@code_text_rule#2rd}%
+  {brl@char@h#4fill}\brl@end{%
+    \@namedef{end#1}{%
+      \brl@rule@toks{%
+        ##1%
+        ##3%\brl@char@hdfill%
+        ##2%
+      }%
+      \brl@rule_show%
+      \global\brl@document@indentfalse%
+    }%
+  }%
+  \brl@def{brl@env_sub_#1}{brl@env_sub__#1}\brl@end{%
+    \@namedef{#1}{%
+      \@ifnextchar[{##1}{##2}%
+    }%
+    \def##1[####1]{%
+      \def\brl@env@option{####1}%
+      % \show\brl@env@option
+      ##2%
+    }%
+  }%
+  \brl@def{brl@code_text_rule#2lu}{brl@code_text_rule#2ru}%
+  {brl@char@h#3fill}{brl@code_text_rulem#3}\brl@end{%
+    \@namedef{brl@env_sub__#1}####1{%
+      \brl@document####1\brl@document@endtext%
+      %
+      \brl@char_count{\the\brl@text@toks}%
+      \ifnum\brl@rectbox@titlewidth<\brl@char@charnum% too long
+        \brl@rule@toks{%
+          ##1%       \brl@code_text_ruleolu%
+          ##3%       \brl@char@hufill%
+          ##2%       \brl@code_text_ruleoru%
+        }%
+        \brl@rule_show%
+        \brl@print{6}{-2}{\brl@text@toks}{\brl@bse@width}%
+      \else%
+        % \ifnum\brl@char@charnum=\z@%
+        \ifcase\brl@char@charnum%
+          \brl@rule@toks{%
+            ##1%     \brl@code_text_ruleolu%
+            ##3%     \brl@char@hufill%
+            ##2%     \brl@code_text_ruleoru%
+          }%
+          \brl@rule_show%
+        \else%
+          \edef\brl@tmp{{%
+              ##1%   \brl@code_text_ruleolu%
+              ##4%   \brl@code_text_rulemu\brl@code_text_rulemu%
+              \brl@code_text_space%
+              \the\brl@text@toks%
+              % 
+              \brl@char@breakable{{##2}{##4}{1}{2}}{\brl@char@break_lineend}{}%  
+            }}%
+          \brl@text@toks\brl@tmp%
+          \brl@print{0}{0}{\brl@text@toks}{\brl@bse@width}%
+        \fi%
+      \fi%
+    }%
+  }%
+}
+
+
+\brl@env_overrideframearg{rectbox}{}{m}{m}
+\brl@env_overrideframearg{ovalbox}{o}{u}{d}
+
+
+%%
+%% ascmac
+%%
+\brl@env_overrideframearg{itembox}{o}{u}{d}
+\brl@env_overrideframe{shadebox}{b}{uu}{dd}
+\brl@env_overrideframe{screen}{o}{u}{d}
+
+%%
+%% beamer
+%%
+\brl@env_overrideframearg{block}{}{m}{m}
+\brl@env_overrideframearg{exampleblock}{o}{u}{d}
+\brl@env_overrideframearg{alertblock}{b}{uu}{dd}
+
+%%
+%% tabular
+%%
+
+\brl@env_overrideframearg{brl@env_plot_tabular@frame}{}{m}{m}
+
+%%
+%% verbatim
+%%
+
+\brl@env_overrideframearg{brl@env_verbatim@frame}{o}{u}{d}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% frame
+%%
+%% \begin{frame}<⟨overlay specification⟩>[<⟨default overlay specification⟩>][⟨options⟩]{⟨title⟩}{⟨subtitle⟩} ⟨environment contents⟩
+%%
+%% support only \begin{frame}[...]{⟨title⟩}{⟨subtitle⟩} ⟨environment contents⟩
+%%
+
+
+
+\newcount\brl@env_frame@num
+
+\def\brl@env@@frame{frame}
+\def\frame{%
+  \global\advance\brl@env_frame@num\@ne%
+  \expandafter\brl@text_direct\expandafter{\the\brl@env_frame@num}%
+  \edef\brl@env_frame@numtext{\the\brl@text@toks}%
+  \ifx\@currenvir\brl@env@@frame%
+    \expandafter\brl@env_frame_env%
+  \else
+    \expandafter\brl@env_frame_nonenv%
+  \fi%
+}
+
+
+\def\brl@env_frame_nonenv#1{%
+  \edef\brl@tmp{{\brl@code_text_textmode\brl@char@breakable{{\brl@code_text_space\brl@env_frame@numtext}{\brl@code_text_rulemm}{0}{3}}{\brl@char@break_lineend}{}}}%
+  \brl@rule@toks\brl@tmp%
+  \brl@rule_show%
+  #1%
+}%
+
+
+\def\brl@env_frame_env{%
+  \@ifnextchar[\brl@env_frame_withop{\brl@env_frame_withop[]}%
+}
+
+\def\brl@env_frame_withop[#1]{% ignore option
+  \@ifnextchar\bgroup\brl@env_frame_title\brl@env_frame_withouttitle%
+}
+
+
+\def\brl@env_frame_title#1{%
+  \def\brl@env_frame@title{#1}%
+  \@ifnextchar\bgroup\brl@env_frame_subtitle\brl@env_frame_withtitle%
+}
+
+\def\brl@env_frame_subtitle#1{%
+  \edef\brl@env_frame@title{\brl@env_frame@title\ (#1)}%
+  \brl@env_frame_withtitle%
+}
+
+\def\brl@env_frame_withtitle{%
+  \brl@document\brl@env_frame@title\brl@document@endtext%
+  %
+  \brl@char_count{\the\brl@text@toks}%
+  \ifnum\brl@frame@titlewidth<\brl@char@charnum% too long
+    \brl@env_frame_withouttitle%
+    \brl@print{6}{-2}{\brl@text@toks}{\brl@bse@width}%
+  \else%
+    \edef\brl@tmp{{%
+        \brl@code_text_rulemm%
+        \brl@code_text_rulemm\brl@code_text_rulemm%
+        \brl@code_text_space%
+        \the\brl@text@toks%
+        \brl@char@breakable{{\brl@code_text_space\brl@env_frame@numtext}{\brl@code_text_rulemm}{1}{3}}{\brl@char@break_lineend}{}%
+      }}%
+    \brl@rule@toks\brl@tmp%
+    \brl@rule_show%
+ % 
+  \fi%
+}%
+
+
+\def\brl@env_frame_withouttitle{%
+  \edef\brl@tmp{{\brl@code_text_textmode\brl@char@breakable{{\brl@code_text_space\brl@env_frame@numtext}{\brl@code_text_rulemm}{0}{3}}{\brl@char@break_lineend}{}}}%
+  \brl@rule@toks\brl@tmp%
+  \brl@rule_show%
+}%
+
+
+\def\endframe{}
+
+
+
+\def\frametitle#1{%
+  \brl@document#1\brl@document@end{6}{-2}{\brl@bse@width}{}{}%
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\let\@title\empty
+\let\@date\empty
+\let\@author\empty
+
+% \beamer@subtitle[#1]#2->\def \insertsubtitle {#2}\def \beamer@shortsubtitle {#1}.
+\let\insertsubtitle\empty
+\let\insertinstitute\empty
+\def\subtitle#1{\def\insertsubtitle{#1}}
+\def\institute#1{\def\insertinstitute{#1}}
+
+% > \beamer@institute=\long macro:
+% [#1]#2->\def \beamer@temp {#2}\ifx \beamer@temp \@empty \def \insertinstitute {
+% } \else \def \insertinstitute {\def \inst {\beamer@instinst }\def \and {\beamer
+% @andinst }#2}\fi \def \beamer@shortinstitute {#1}.
+
+\def\maketitle{%
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  %
+  \hrulefill%
+  {%
+    \@namedef{brl@document_dospecial_\string\\}{\brl@document_text}% ignore \\
+    \brl@document\@title\brl@document@end{8}{-2}{\brl@bse@width}{}{}%
+    \brl@document\@date\brl@document@end{10}{-2}{\brl@bse@width}{}{}%
+    \brl@document_par%
+    \brl@document\@author\brl@document@end{14}{-2}{\brl@bse@width}{}{}%
+  }%
+  \hrulefill%
+  \brl@document_par%
+}
+
+\def\titlepage{%
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  %
+  % 
+  {%
+    \@namedef{brl@document_dospecial_\string\\}{\brl@document_text}% ignore \\
+    \brl@document\@title\brl@document@end{8}{-2}{\brl@bse@width}{}{}%
+    \ifx\insertsubtitle\empty%
+    \else%
+      \brl@document\insertsubtitle\brl@document@end{6}{-2}{\brl@bse@width}{}{}%
+    \fi%
+    \brl@document\@author\brl@document@end{14}{-2}{\brl@bse@width}{}{}%
+    \ifx\insertinstitute\empty%
+    \else%
+      \brl@document\insertinstitute\brl@document@end{12}{-2}{\brl@bse@width}{}{}%
+    \fi%    
+    \brl@document_par%
+    \brl@document\@date\brl@document@end{10}{-2}{\brl@bse@width}{}{}%
+    \brl@document_par%
+  }%
+}
+
+
+%%
+%% #1: chapter
+%% #2: counter
+%% #3: indent
+
+
+\def\brl@env_secdef#1#2#3{%
+  \brl@def{brl@sec_#1*}{brl@sec_#1}{brl@sec_#1_}{brl@sec_#1__}\brl@end{%
+    \@namedef{#1}{%
+      \@ifnextchar*{##1}{##2}%
+    }%
+    \def##2{%
+      \@ifnextchar[{##3}{##4}%
+    }%
+    \def##3[####1]####2{%
+      \brl@document_par%
+      \stepcounter{#1}%
+      % \def\brl@tmp{#3}\show\brl@tmp
+      \brl@document#3\brl@text_cmd_space ####2\brl@document@end{#2}{-2}{\brl@bse@width}{}{}%
+      {%
+        \addcontentsline{toc}{#1}{\protect\numberline{#3}####1}%
+      }%
+      \xdef\@currentlabel{\csname the#1\endcsname}%
+      \global\brl@document@indenttrue%
+    }%
+    \def##4####1{%
+      ##3[####1]{####1}%
+    }%    
+    % 
+    \def##1*####1{%
+      \brl@document_par%
+      %
+      \brl@document####1\brl@document@end{#2}{-2}{\brl@bse@width}{}{}%
+      %
+      \global\brl@document@indenttrue%
+    }%
+    \@namedef{brl@document@indent_#1}{#2}%
+  }
+}
+
+
+
+\def\proof{%
+  \def\brl@env@currentlastchars{\qedsymbol}%
+  \@ifnextchar[%
+  {\brl@env_proof@withnote}%
+  {\def\brl@env_proof@note{\proofname.}\brl@env_proof@}%
+}%
+
+\def\brl@env_proof@withnote[#1]{%
+  \def\brl@env_proof@note{#1}%
+  \brl@env_proof@%
+}
+
+
+\def\brl@env_proof@{%
+  \brl@document\brl@env_proof@note\brl@document@end{6}{-2}{\brl@bse@width}{}{}%
+}%
+
+\def\endproof{\global\brl@document@indenttrue}
+
+
+
+
+
+\def\numberline#1{#1\brl@text_cmd_space}% to avoid 付録 A bbb etc. -> "A bbb"
+%% 
+%% \def\contentsline#1#2#3#4{%
+%% for the backward compatibility, #4 is omitted.
+%% #4 is used only in hyperref.
+\def\contentsline#1#2#3{%
+  {%
+    \brl@text_direct{#3}% page
+    \xdef\brl@tmp{%
+      \brl@document\unexpanded{#2}\brl@document@end%
+      {\the\numexpr\csname brl@document@indent_#1\endcsname-4\relax}{-2}{\the\numexpr\brl@bse@width-5\relax}{}{%
+        \brl@char@breakable{{\brl@code_text_space\the\brl@text@toks%
+            \ifnum#3<100 %
+              \brl@code_text_space%
+              \ifnum#3<10 %
+                \brl@code_text_space%
+              \fi%
+            \fi%
+          }{\brl@code_math_leader_cdot}{1}{3}}{\brl@char@break_lineend}{}}%
+    }%
+  }%
+  %
+  \brl@tmp%
+  %
+  % example: width is narrower
+  %
+  % contents XXXXXXXX
+  % XXXXXX XXXX ....... 1
+}
+
+
+
+\def\frontmatter{%
+  \let\brl@document@rhead\empty%
+}
+
+\def\backmatter{%
+  \let\brl@document@rhead\empty%
+}
+
+
+
+\def\mainmatter{%
+  \brl@document_newpage%
+  \def\brl@print_newpage{%
+    \brl@print_shipoutcmd%
+    \global\let\brl@document@rhead\brl@document@rheadform%
+    \setcounter{page}{1}%
+    \global\let\brl@print_newpage\brl@print_shipoutcmd%
+  }%
+}
+
+
+
+\def\tableofcontents{%
+  \@ifnextchar[{\tableofcontents_}{\tableofcontents__}%
+}
+
+\def\tableofcontents_[#1]{}% beamer
+
+\def\tableofcontents__{%
+  \xdef\brl@document@inputlineno{\the\inputlineno}%
+  %
+  \brl@document\contentsname\brl@document@end{6}{0}{\brl@bse@width}{}{}%
+%
+  \@starttoc{toc}%
+  \brl@text@toks{%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+    \brl@code_text_rulemm\brl@code_text_rulemm%
+  }%
+  \brl@print{8}{0}{\brl@text@toks}{\brl@bse@width}%
+}
+
+%% listing
+
+
+
+\def\brl@source_start{%
+  \catcode`\#=\active%
+  \catcode`\%=\active%
+  \catcode`\{=\active%
+  \catcode`\}=\active%
+  \catcode`\_=\active%
+  \catcode`\$=\active%
+  \catcode`\&=\active%
+  \catcode`\^=\active%
+  \catcode`\~=\active%
+  \catcode`\\=\active%
+  \catcode`\ =\active%
+  \catcode`\^^I=\active%
+  \catcode`\^^M=\active%
+}
+
+{\catcode`\^^M=\active%
+  \gdef\brl@source@stemplate{\begin{verbatim}^^M}%
+  \catcode`\{=\active\catcode`\}=\active%
+  \catcode`\<=\@ne\catcode`\>=\tw@%
+  \catcode`\!=\z@\catcode`\\=\active%
+  !gdef!brl@source@etemplate<\end{verbatim}>%\end{verbatim}
+>
+
+
+\newtoks\brl@source@toks
+\long\def\brl@source_appendtoks#1{\brl@source@toks\expandafter{\the\brl@source@toks#1}}
+
+\def\lstinputlisting#1{%
+  % 
+  \immediate\newread\brl@source@file%
+  \immediate\openin\brl@source@file=#1\relax%
+  \brl@source@toks\expandafter{\brl@source@stemplate}%
+  {%
+    \brl@source_start%
+    \brl@source_loop%
+    \expandafter\brl@source_appendtoks\expandafter{\brl@source@etemplate}%
+    \xdef\brl@tmp{\the\brl@source@toks}%
+  }%
+  \immediate\closein\brl@source@file%
+  % 
+  % 
+  % 
+  \brl@tmp%
+  % 
+}
+
+\def\brl@source_loop{%
+  \immediate\read\brl@source@file to\brl@source@oneline%
+  \ifeof\brl@source@file%
+  \else%
+    \expandafter\brl@source_appendtoks\expandafter{\brl@source@oneline}%
+    \expandafter%
+    \brl@source_loop%
+  \fi%
+}
+
+
+
+%%
+%% tabbing
+%%
+
+
+\def\tabbing{%
+  \noindent%
+  \edef\brl@print_par{\unexpanded\expandafter{\brl@print_par\xdef\brl@document@noindent_default{\the\brl@env_tabbing@tabpos}}}%
+  \gdef\brl@document@noindent_default{0}%
+  \global\brl@env_tabbing@tabpos\z@%
+  \expandafter\let\csname brl@document_dospecial_\string\>\endcsname\@undefined%
+  \expandafter\let\csname brl@document_dospecial_\string\=\endcsname\@undefined%
+  %
+  \protected\def\+{\global\advance\brl@env_tabbing@tabpos\tw@}%
+  \protected\def\-{\global\advance\brl@env_tabbing@tabpos-\tw@}%
+  \@namedef{brl@document_dospecial_\detokenize{\kill}}{%
+    \xdef\brl@document@noindent_default{\the\brl@env_tabbing@tabpos}%
+  }
+  \let\=\empty%
+  \brl@document_commanddef{\+}%
+  \brl@document_commanddef{\-}%
+  \def\>{\BrailleDirect{\brl@text_cmd_space}}%
+}
+\def\endtabbing{%
+  \gdef\brl@document@noindent_default{0}% default : 0
+}
+
+\newcount\brl@env_tabbing@tabpos
+
+
+
+%%
+%% algorithm
+%%
+
+
+\def\endalgorithm{%
+  \global\brl@document@indenttrue%
+}
+
+\def\algorithm{%
+  \@ifnextchar[%
+  {\brl@env_algorithm_}%
+  {\brl@env_algorithm_[]}%
+}
+
+\def\brl@env_algorithm_[#1]{%
+  \let\brl@env_algorithm@caption\empty%
+  \def\caption{\brl@env_algorithm_caption}%
+}
+
+\def\brl@env_algorithm_caption#1{%
+  \refstepcounter{algorithm}%
+  \addcontentsline{\ext@algorithm}{algorithm}%
+  {\protect\numberline{\thealgorithm}{\ignorespaces #1}}%
+  \brl@document アルゴリズム\thealgorithm: #1\brl@document@end{0}{2}{\brl@bse@width}{}{}%
+}
+
+%%
+%% algorithmic
+%%
+
+\def\algorithmic{%
+  \@ifnextchar[\brl@algorithmic{\brl@algorithmic[]}%
+}
+
+\def\endalgorithmic{\global\brl@document@indenttrue}
+
+
+\newcount\brl@algorithmic@nestlv
+
+\def\brl@algorithmic[#1]{% ignore option
+  \brl@algorithmic@nestlv\tw@%
+  \def\brl@algorithmic@nextlv{0}%
+  \brl@algorithmic_setcom%
+}
+
+\let\brl@algorithmic@end\empty
+
+\@namedef{brl@document_dospecial_\string\brl@algorithmic@end}{%
+  \brl@document_exec_text%
+  \brl@print{\the\brl@algorithmic@nestlv}{-2}{\brl@text@toks}{\brl@bse@width}%
+  \advance\brl@algorithmic@nestlv\brl@algorithmic@nextlv\relax%
+}
+
+\def\brl@algorithmic_setcom{%
+  \def\IF##1{\brl@algorithmic_print_a{if ##1 then}}%
+  \def\ELSIF##1{\brl@algorithmic_print_b{elsif ##1 then}}%
+  \def\ELSE{\brl@algorithmic_print_b{else}}%
+  \def\ENDIF{\brl@algorithmic_print_c{end if}}%
+  \def\FOR##1{\brl@algorithmic_print_a{for ##1 do}}%
+  \def\ENDFOR{\brl@algorithmic_print_c{end for}}%
+  \def\WHILE##1{\brl@algorithmic_print_a{while ##1 do}}%
+  \def\ENDWHILE{\brl@algorithmic_print_c{end while}}%
+  \def\REPEAT{\brl@algorithmic_print_a{repeat}}%
+  \def\UNTIL##1{\brl@algorithmic_print_c{until ##1}}%
+  \def\LOOP{\brl@algorithmic_print_a{loop}}%
+  \def\ENDLOOP{\brl@algorithmic_print_c{end loop}}%
+  \def\STATE{\brl@algorithmic_print{}}%
+  \def\PRINT{\brl@algorithmic_print{print}}%
+  \def\RETURN{\brl@algorithmic_print{return}}%
+  \def\TRUE{true}%
+  \def\FALSE{false}%
+  \let\brl@document_dospecial_csend\brl@algorithmic@document_dospecial_csend%
+  % \brl@algorithmic_preserve{for}%
+  % \brl@algorithmic_preserve{end}%
+  % \brl@algorithmic_preserve{do}%
+  % \brl@algorithmic_preserve{if}%
+  % \brl@algorithmic_preserve{then}%
+  % \brl@algorithmic_preserve{else}%
+  % \brl@algorithmic_preserve{elsif}%
+  % \brl@algorithmic_preserve{return}%
+}
+
+
+
+% \def\brl@algorithmic_preserve#1{%
+%   \@namedef{brl@mecab_nonword@#1}{}%
+% }
+
+
+\def\brl@algorithmic@document_dospecial_csend{%
+  \brl@document_exec_text%
+  \brl@print{\the\brl@algorithmic@nestlv}{-2}{\brl@text@toks}{\brl@bse@width}%
+  \end%
+}
+
+\def\brl@algorithmic_print#1{%
+  \brl@algorithmic@end%
+  \def\brl@algorithmic@nextlv{0}%
+  \brl@document%
+  #1%
+}
+
+\def\brl@algorithmic_print_a#1{%
+  \brl@algorithmic@end%
+  \def\brl@algorithmic@nextlv{4}%
+  \brl@document%
+  #1%
+}
+
+\def\brl@algorithmic_print_b#1{%
+  \brl@algorithmic@end%
+  \advance\brl@algorithmic@nestlv-4\relax%
+  \def\brl@algorithmic@nextlv{4}%
+  \brl@document%
+  #1%
+}
+
+\def\brl@algorithmic_print_c#1{%
+  \brl@algorithmic@end%
+  \advance\brl@algorithmic@nestlv-4\relax%
+  \def\brl@algorithmic@nextlv{0}%
+  \brl@document%
+  #1%
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

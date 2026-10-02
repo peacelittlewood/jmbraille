@@ -1,0 +1,6 @@
+DixBraille fonts are modifications of the SixBraille :
+
+https://teacher.nagano-nct.ac.jp/ito/downloads/font/
+
+ライセンス
+SixBrailleはパブリックドメインです。 すなわち、商用・非商用を問わず、 どのように使っていただいても無料かつ無保証です。 SixBrailleを使った結果、何が起きても作者は一切関知しません。 問題の報告やリクエストは受けとりますが対応するかしないかは作者が決めます。 発見された問題に対処するため予告なくフォント形状などが修正されることがあります。

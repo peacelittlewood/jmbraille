@@ -1,0 +1,126 @@
+% Time-stamp: <2026-09-12 20:44:08 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+%%
+%% use .bux instead of .aux, which might be created in nonbraille mode.
+%%
+% in \document
+%
+% \UseOneTimeHook{begindocument/before}% <- AtEndPreamble
+% ...
+% \begingroup
+% \@input{\jobname.aux}%
+% \endgroup
+% \if@filesw
+%   \immediate\openout\@mainaux\jobname.aux
+%   \immediate\write\@mainaux{\relax}%
+% \fi
+% ...
+% \UseOneTimeHook{begindocument}% <- AtBeginDocument
+
+
+
+%
+\AddToHook{begindocument/before}{%
+  %% 
+  %% mecab
+  %%
+  % \ifx\brl@mecab@prog\empty%
+  %   \brl@atbegdoc_setmecabprog%
+  % \fi%
+  % %
+  % \ifx\brl@mecab@sysdic\empty%
+  %   \brl@atbegdoc_setmecabsysdir%
+  % \fi%
+  % % 
+  % \ifbrl@option@file%
+  %   \edef\brl@mecab@translator{%
+  %     \brl@mecab@prog -p -Obraille-file \brl@mecab@sysdic \brl@mecab@userdic \jobname.mcb -o \jobname.mrt%
+  %   }%
+  % \else%
+  %   \edef\brl@mecab@translator{%
+  %     \brl@mecab@prog \brl@mecab@sysdic \brl@mecab@userdic -p -Obraille%
+  %   }%
+  % \fi%
+  %
+  \let\brl@orig@bibcite\bibcite%
+  \let\brl@orig@newlabel\newlabel%
+  \let\bibcite\@gobbletwo%
+  \def\newlabel{\@newl@bel{brl@@r}}% if aux exists, include it with \brl@XXX instead of \r@XXX
+  \let\ifbrl@@filesw\if@filesw% save the original switch
+   %
+  \@fileswfalse% invalidate openout \@mainaux with suffix .aux in \document
+}
+
+\AtBeginDocument{%
+  \let\bibcite\brl@orig@bibcite%
+  \let\newlabel\brl@orig@newlabel%
+  \begingroup%\@floatplacement\@dblfloatplacement
+    \makeatletter\let\@writefile\@gobbletwo%
+    \global\let\@multiplelabels\relax%
+    \@input{\jobname.bux}% use bux as aux for braille.
+  \endgroup%
+  \let\if@filesw\ifbrl@@filesw% restore the original switch
+%  \@gobble\fi%
+  \if@filesw%
+    \immediate\openout\@mainaux\jobname.bux%
+    \immediate\write\@mainaux{\relax}%
+  \fi%
+  %
+  %
+  % set script for print
+  \ifbrl@option@hires%
+    \ifdefined\brl@bse@outputdevice%
+      \brl@bse@outputlanguage%
+    \else%
+      \PackageError{jmbraille}{The serial port device for your printer is not specified. Give the device by \string\BrailleSetOutputDevice}{}%
+    \fi%
+    \brl@dbc_init% dbc
+  \fi%
+  %
+  %
+  \brl@plot_resource% register the resource for pdf
+  %
+  %
+  %
+  \ifbrl@lualatex%
+    \pdfextension mapline {+DixBrailleA <[Braille.enc <<DixBraille-\brl@braille@fontname.otf}%
+    \pdfextension mapline {+DixBrailleP <[Braille.enc <<DixBraille-Plain.otf}%
+  \else%
+    \AtBeginDvi{%
+      \special{pdf:mapline DixBrailleA Braille.enc DixBraille-\brl@braille@fontname.otf}%
+      \special{pdf:mapline DixBrailleP Braille.enc DixBraille-Plain.otf}%
+    }%    
+  \fi%
+  % 
+  % 
+  \edef\brl@document@inputlinenob{\the\inputlineno}%
+  \edef\brl@document@inputlinenoe{\the\inputlineno}%
+  \edef\brl@document@basegrouplevel{\the\currentgrouplevel}%
+  %
+  \ifdefined\brl@document@nonbraillelinepage% if there is no nonbraille version.
+    \let\brl@document_nonbraille@linepage\brl@document@nonbraillelinepage%
+  \else%
+    \let\brl@document_nonbraille_parsepage\empty%
+  \fi%
+  %
+  \brl@orig@everypar{\brl@document}%
+  %
+  \ifbrl@math@altcolon%
+    \brl@document_math_cmddef{rel}{\colon}{altcolon}%
+    \brl@document_math_cmddef{colon}{:}{colon}%
+  \fi%
+  %
+  \brl@ueb_pqm%
+}%
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

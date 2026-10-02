@@ -1,0 +1,319 @@
+% Time-stamp: <2024-08-19 09:21:24 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% \brl@bse
+%% \brl@ebse
+%%
+
+\newcount\brl@bse@pagenum% bse page number
+\newcount\brl@bse@expagenum% bse right page number 
+\newcount\brl@bse@linenum% bse line number in each page
+
+\newtoks\brl@bse@toks% toks in all pages
+\newtoks\brl@bse@pagetoks% toks in each page
+\newtoks\brl@bse@extoks% toks in all right pages
+\newtoks\brl@bse@expagetoks% toks in each right page
+
+\newcount\brl@ebse@linenum%
+\newcount\brl@ebse@bit%
+
+\newtoks\brl@ebse@linetoks%
+\newtoks\brl@ebse@exlinetoks%
+\newtoks\brl@ebse@toks%
+\newtoks\brl@ebse@pagetoks% toks in each page
+\newtoks\brl@ebse@extoks%
+\newtoks\brl@ebse@expagetoks% toks in each page
+
+\brl@bse@pagenum\@ne%
+\brl@bse@linenum\@ne%
+\brl@bse@expagenum\@ne%
+
+\newif\ifbrl@bse@spread%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% header
+%%
+%% 512 bytes
+%%
+%% 504 (=63 times 8) space
+%% 4 lastpage
+%% 2 width
+%% 2 height
+%%
+{\catcode`\ =11\relax\gdef\brl@bse@eightspaces{        }\gdef\brl@bse@space{ }}% 8 spaces
+\brl@def_fill{63}{\brl@bse@headspaces}{\brl@bse@eightspaces}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\brl@bse_appendtoks#1{\global\brl@bse@toks\expandafter{\the\brl@bse@toks#1}}
+\def\brl@bse_appendpagetoks#1{\global\brl@bse@pagetoks\expandafter{\the\brl@bse@pagetoks#1}}
+
+\def\brl@ebse_appendtoks#1{\global\brl@ebse@toks\expandafter{\the\brl@ebse@toks#1}}
+\def\brl@ebse_appendpagetoks#1{\global\brl@ebse@pagetoks\expandafter{\the\brl@ebse@pagetoks#1}}
+
+\def\brl@bse_appendextoks#1{\global\brl@bse@extoks\expandafter{\the\brl@bse@extoks#1}}
+\def\brl@bse_appendexpagetoks#1{\global\brl@bse@expagetoks\expandafter{\the\brl@bse@expagetoks#1}}
+
+\def\brl@ebse_appendextoks#1{\global\brl@ebse@extoks\expandafter{\the\brl@ebse@extoks#1}}
+\def\brl@ebse_appendexpagetoks#1{\global\brl@ebse@expagetoks\expandafter{\the\brl@ebse@expagetoks#1}}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@bse_formatlastpage
+%%
+%% make four digits: e.g. 12 -> 0012
+%%
+%% input: count
+%%
+%%
+%% output:
+%%
+%%
+
+\def\brl@bse_formatlastpage#1{%
+  \ifnum10>#1%
+    000%
+  \else%
+    \ifnum100>#1%
+      00%
+    \else%
+      \ifnum1000>#1%
+        0%
+      \fi%
+    \fi%
+  \fi%
+  \the#1%
+}
+
+
+
+\edef\brl@bse@runningspread{%
+  \brl@bse@space\brl@bse@space%
+  7(VE<7% (見開き)
+  \brl@bse@space\brl@bse@space\brl@bse@space%
+  \brl@bse@space\brl@bse@space\brl@bse@space%
+  \brl@bse@space\brl@bse@space\brl@bse@space%
+  \brl@bse@space\brl@bse@space\brl@bse@space%
+  \brl@bse@space\brl@bse@space\brl@bse@space%
+  \brl@bse@space\brl@bse@space\brl@bse@space%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% gnb file
+%%
+%% base64 -d \jobname.b64 -o \jobname.gnb
+%%
+%%
+%% input: \brl@ebse@toks ({pagenumber}{linenumber}{pos}...)
+%%
+%% output: \brl@ebse@gnb
+%%
+\def\brl@ebse_parse#1{%
+  % \showthe#1
+  {%
+    \aftergroup\brl@base_parse%
+    \aftergroup{%
+      \expandafter\brl@ebse_parse_loop\the#1\brl@end\brl@end\brl@end%
+    \aftergroup}%
+  }%
+}
+
+
+
+\def\brl@ebse_parse_loop#1#2#3{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+    % 
+    % 
+    %
+    \count@\numexpr12+\brl@bse@width\relax%=2*(8+4+32). one more line with 0 fill. % nonexpr
+    \brl@ebse_binarize_fillzero%
+  %
+  %
+  \else%
+    %
+    % linenum
+    %
+    % 
+    \brl@ebse@bit\sixt@@n%16\relax% 2 bytes = 16 bits
+    \brl@ebse@linenum\numexpr(#1-1)*\brl@bse@height+#2\relax%
+    % \showthe\brl@ebse@linenum
+    \brl@ebse_binarize_linenum% binarize linenumber in 24 bits
+    %
+    %
+    \aftergroup0% reverse or not (reverse = 108)
+    \aftergroup0%
+    \aftergroup0%
+    \aftergroup0%
+    \aftergroup0%
+    \aftergroup0%
+    \aftergroup0%
+    \aftergroup0%
+    % data
+    %
+    %
+    %
+    %
+    \def\brl@ebse@base{\m@ne}%
+    \brl@ebse_binarize_data#3\@M00% binarize data in 64 bits
+    \expandafter\brl@ebse_parse_loop%
+  \fi%
+}
+
+\def\brl@ebse_binarize_linenum{% binarize linenumber in 24 bits
+  \advance\brl@ebse@bit\m@ne%
+  \ifnum\brl@ebse@bit>\m@ne%
+    \ifodd\brl@ebse@linenum%
+      \aftergroup1%
+    \else%
+      \aftergroup0%
+    \fi%
+    \divide\brl@ebse@linenum\tw@%
+    \expandafter\brl@ebse_binarize_linenum%
+  \fi%
+}  
+
+
+%% #1 : {xpos}XY{xpos}XY...
+%%
+
+\def\brl@ebse_binarize_data#1#2#3{%  binarize data in 64 bits
+  \ifnum#1=\@M%
+    \count@\numexpr\brl@bse@width-\brl@ebse@base-\@ne\relax%
+    \brl@ebse_binarize_fillzero%
+  \else%
+    \count@\numexpr#1-\brl@ebse@base-\@ne\relax%
+    \brl@ebse_binarize_fillzero%
+    \aftergroup#2%
+    \aftergroup#3%
+    \def\brl@ebse@base{#1}%
+    \expandafter\brl@ebse_binarize_data%
+  \fi%
+}
+
+\def\brl@ebse_binarize_fillzero{%
+  \ifnum\count@>\z@%
+    \aftergroup0%
+    \aftergroup0%
+    \advance\count@\m@ne%
+    \expandafter\brl@ebse_binarize_fillzero%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@base
+%%
+%% input: 0101........01
+%%
+%% the number of elements in 0101....01 must be even.
+%%
+%% output: \brl@ebse@gnb
+
+\newcount\brl@base@code%
+
+% 1 2 3 4 5 6 7 8 9 0 1 2 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+% 0101100000000000000000000101100001010000000000000000000000000000000000000000000000000000
+% 1101100000000000000000000100000000000000000000000000000000000000000000000000000000000000
+% 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+% 1000000000000000000000000000001000000001000000000000000000000000000000000000000000000000
+% 0100000000000000000000000000001000000001000000000000000000000000000000000000000000000000
+% 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+\def\brl@base_parse#1{%
+%
+  {%
+    \def\brl@base@charnum{0}%
+    \brl@base@code\z@%
+    \def\brl@base@bit{0}%
+    \aftergroup\def%
+    \aftergroup\brl@ebse@gnb%
+    \aftergroup{%
+      \brl@base_parse_loop#1\brl@end%
+    \aftergroup}%
+  }%
+}
+
+\def\brl@base_parse_loop#1{%
+  \def\brl@base@firstbit{#1}%
+  \ifx\brl@base@firstbit\brl@@end%
+    \@nameuse{brl@base_fillbit_\brl@base@bit}%
+    \@nameuse{brl@base_filleq_\brl@base@charnum}% 0 1 2 3
+  \else%
+    \expandafter\brl@base_parse_loop_%
+  \fi%
+}
+
+\@namedef{brl@base_fillbit_0}{}
+\@namedef{brl@base_fillbit_2}{\brl@base_encode00\brl@base_encode00}
+\@namedef{brl@base_fillbit_4}{\brl@base_encode00}
+
+\@namedef{brl@base_filleq_0}{}
+\@namedef{brl@base_filleq_1}{\aftergroup=\aftergroup=\aftergroup=}
+\@namedef{brl@base_filleq_2}{\aftergroup=\aftergroup=}
+\@namedef{brl@base_filleq_3}{\aftergroup=}
+
+\def\brl@base_parse_loop_#1#2#3#4#5#6#7{%
+  \brl@base_encode#6#7%
+  \brl@base_encode#4#5%
+  \brl@base_encode#2#3%
+  \brl@base_encode\brl@base@firstbit#1%
+  \brl@base_parse_loop%
+}
+
+
+\def\brl@base_encode#1#2{%
+  \brl@base@code\numexpr\brl@base@code*4+2*#2+#1\relax%
+  \@nameuse{brl@base_encode_\brl@base@bit}%
+}
+
+\@namedef{brl@base_encode_0}{\def\brl@base@bit{2}}
+\@namedef{brl@base_encode_2}{\def\brl@base@bit{4}}
+\@namedef{brl@base_encode_4}{%
+  \ifnum26>\brl@base@code%
+    \advance\brl@base@code65\relax% A-Z
+  \else%
+    \ifnum52>\brl@base@code%
+      \advance\brl@base@code71\relax% a-z
+    \else%
+      \ifnum62>\brl@base@code%
+        \advance\brl@base@code-4\relax% 0-9
+      \else%
+        \ifnum62=\brl@base@code%
+          \brl@base@code=43\relax% +
+        \else%
+          \brl@base@code=47\relax% /
+        \fi%
+      \fi%
+    \fi%
+  \fi%
+  \begingroup\lccode`\!=\brl@base@code\lowercase{\endgroup\aftergroup!}%
+%
+  \edef\brl@base@charnum{\csname brl@base@charnum_\brl@base@charnum\endcsname}%
+  \def\brl@base@bit{0}%
+  \brl@base@code\z@%
+}
+
+\@namedef{brl@base@charnum_0}{1}
+\@namedef{brl@base@charnum_1}{2}
+\@namedef{brl@base@charnum_2}{3}
+\@namedef{brl@base@charnum_3}{0}
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

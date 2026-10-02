@@ -1,0 +1,376 @@
+% Time-stamp: <2026-09-16 22:36:02 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\def\brl@alph_appendtoks#1{\brl@alph@toks\expandafter{\the\brl@alph@toks#1}}
+\newtoks\brl@alph@toks
+
+\def\brl@alph_appendUtoks#1{\brl@alph@Utoks\expandafter{\the\brl@alph@Utoks#1}}
+\newtoks\brl@alph@Utoks
+
+%
+% output: \brl@text@toks
+%
+
+\protected\def\brl@alph#1{%
+  %
+  \brl@alph@toks{}%
+  \def\brl@alph@currquote{N}% quotation condition
+  %
+  \let\brl@alph@accent\empty%
+  %
+  \brl@alph_loop#1\brl@end%
+}
+
+
+\def\brl@alph_loop#1{%
+  \csname brl@alph_sub\csname brl@alph@case_\string#1\endcsname\endcsname{#1}%
+}
+
+% A : acc
+% L : lowercase
+% N : number
+% O : empty = _
+% Q : direct
+% S : symbol
+% U : uppercase
+% W : space
+% X : `
+% Y : '
+% Z : \brl@end
+
+% A
+% 
+% #1: cmd
+% #2: â
+% #3: \^
+% #4: a
+%
+% or
+%
+% #1: cmd
+% #2: Æ
+% #3: \emptyaccent
+% #4: AE
+%
+
+\def\brl@alph_subA#1#2#3#4{% accent
+  \def\brl@tmp{#3}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \def\brl@alph@accent{\brl@code_alph_englishaccent}% english accent or empty
+    %
+  \fi%
+  \brl@alph_loop#4%
+}
+
+\newif\ifbrl@alph@Ufirst
+
+\def\brl@alph_subU#1{% A etc.
+  \edef\brl@tmp{{\brl@alph@accent\csname brl@code_alph_#1\endcsname}}%
+  %
+  \let\brl@alph@accent\empty%
+  %
+  \brl@alph@Utoks\brl@tmp%
+  %
+  \brl@alph@Ufirsttrue%
+  % 
+  \brl@alph_subU_loop%
+}
+
+\def\brl@alph_subU_loop#1{% A etc.
+  %
+  \edef\brl@alph@currcase{\csname brl@alph@case_\string#1\endcsname}%
+  \if U\brl@alph@currcase%
+    %
+    \brl@alph@Ufirstfalse%
+    \edef\brl@tmp{{\brl@alph@accent\csname brl@code_alph_#1\endcsname}}%
+    \let\brl@alph@accent\empty%
+    \expandafter\brl@alph_appendUtoks\brl@tmp%
+    \expandafter\brl@alph_subU_loop%
+  \else%
+    \if A\brl@alph@currcase%
+      \def\brl@alph_next{\brl@alph_subU_subA}%
+    \else%
+      \def\brl@alph_next{\brl@alph_subU_finish#1}%
+    \fi%
+    \expandafter\brl@alph_next%
+  \fi%
+}
+
+
+\def\brl@alph_subU_subA#1#2#3{% accent
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \def\brl@alph@accent{\brl@code_alph_englishaccent}% english accent or empty
+    %
+  \fi%
+  \brl@alph_subU_loop#3%
+}
+
+
+\def\brl@alph_subU_finish{%
+  %
+  % \ifnum\brl@alph@Unum=\@ne%
+  \ifbrl@alph@Ufirst%
+    \def\brl@alph@Utop{\brl@code_text_capital}%
+    \let\brl@alph@Ulast\empty%
+  \else%
+    \def\brl@alph@Utop{\brl@code_text_doublecapital}%
+    \if L\brl@alph@currcase%
+      \def\brl@alph@Ulast{\brl@alph@small}% append stopcapital or small
+    \else%
+      \let\brl@alph@Ulast\empty%
+    \fi%
+  \fi%
+  %
+  \edef\brl@tmp{{\brl@alph@Utop\the\brl@alph@Utoks\brl@alph@Ulast}}%
+  \expandafter\brl@alph_appendtoks\brl@tmp%
+  \brl@alph_loop%
+}
+
+\def\brl@alph_subL#1{% a etc.
+  \edef\brl@tmp{{\brl@alph@accent\csname brl@code_alph_#1\endcsname}}%
+  \let\brl@alph@accent\empty%
+  %
+  \expandafter\brl@alph_appendtoks\brl@tmp%
+  %
+  %
+  \brl@alph_loop%
+}
+
+
+\def\brl@alph_subS#1{% ; etc.
+  \edef\brl@tmp{{\csname brl@code_alph_\string#1\endcsname}}%
+  \expandafter\brl@alph_appendtoks\brl@tmp%
+  \brl@alph_loop%
+}
+
+\def\brl@alph_subN#1{% 1 etc.
+  \edef\brl@tmp{{\brl@code_text_numbersign\csname brl@code_alph_#1\endcsname}}%
+  \expandafter\brl@alph_appendtoks\brl@tmp%
+  %
+  \brl@alph_numbermode%
+  \brl@alph_subN_loop%
+}
+
+  
+\def\brl@alph_subN_loop#1{% 1 etc.
+  %
+  \if N\csname brl@alph@case_\string#1\endcsname%
+    %
+    \edef\brl@tmp{{\csname brl@code_alph_#1\endcsname}}%
+    \expandafter\brl@alph_appendtoks\brl@tmp%
+    \expandafter\brl@alph_subN_loop%
+  \else%
+    \brl@alph_alphmode%
+    \ifcsname brl@@letteraj_\string#1\endcsname%
+      \brl@alph_appendtoks{\brl@code_text_small}%
+    \fi%
+    \def\brl@alph_next{\brl@alph_loop#1}%
+    \expandafter\brl@alph_next%
+  \fi%
+}
+
+%% special commands
+%%
+
+
+\def\brl@alph_subQ#1#2{% cmd_direct
+  \brl@alph_appendtoks{\brl@char@cmd_direct{#2}}%
+  \brl@alph_loop%
+}
+
+
+\def\brl@alph_subO#1{% _
+  \brl@alph_loop%
+}
+
+\def\brl@alph_subW#1{% glue etc.
+  \brl@alph_subW_loop%
+}
+
+\def\brl@alph_subW_loop#1{% skip consecutive W and omit the spaces at the end.
+  %
+  \if W\csname brl@alph@case_\string#1\endcsname%
+    \expandafter\brl@alph_subW_loop%
+  \else%
+    \if Z\csname brl@alph@case_\string#1\endcsname% end
+    \else%
+      \edef\brl@tmp{{\brl@char@breakable{t}{\brl@char@break_big}{1}}}%
+      \expandafter\brl@alph_appendtoks\brl@tmp%
+    \fi%
+    \def\brl@alph_next{\brl@alph_loop#1}%
+    \expandafter\brl@alph_next%
+  \fi%
+}
+
+
+
+
+\def\brl@alph_subX#1{%
+  \def\brl@alph@currquote{S}%
+  \brl@alph_appendtoks{\brl@code_alph_singlequoteopen}%
+  \brl@alph_loop%
+}
+
+\def\brl@alph_subY#1#2{%
+  \if N\brl@alph@currquote% not between quotation mark.
+    \brl@alph_appendtoks{\brl@code_alph_apostrophe}%
+  \else%
+    \ifcsname brl@alph@prime_\csname brl@alph@case_\string#2\endcsname\endcsname% check the next letter
+      \brl@alph_appendtoks{\brl@code_alph_apostrophe}%
+    \else%
+      \brl@alph_appendtoks{\brl@code_alph_singlequoteclose}%
+      \def\brl@alph@currquote{N}%
+    \fi%
+  \fi%
+  \brl@alph_loop#2%
+}
+
+% ' is apostrophe before the following
+% 's 'S '18 etc.
+\@namedef{brl@alph@prime_L}{}
+\@namedef{brl@alph@prime_U}{}
+\@namedef{brl@alph@prime_N}{}
+
+
+
+\def\brl@alph_subZ#1{% \brl@end
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@alph_alphdef#1#2{%
+  \@namedef{brl@alph@case_\string#1}{#2}%
+}
+
+
+
+\brl@alph_alphdef{\brl@text_cmd_letter}{A}%
+%
+\brl@alph_alphdef{_}{O}% TV_Ontario defined by SetWord etc.
+\brl@alph_alphdef{\brl@char@cmd_direct}{Q}
+
+\brl@alph_alphdef{`}{X}
+\brl@alph_alphdef{'}{Y}
+\brl@alph_alphdef{\brl@end}{Z}
+
+\brl@alph_alphdef{\brl@text_cmd_glue}{W}% by ints
+\brl@alph_alphdef{\brl@text_cmd_space}{W}
+\brl@alph_alphdef{\!}{W}
+\brl@alph_alphdef{\,}{W}
+\brl@alph_alphdef{\>}{W}
+\brl@alph_alphdef{\:}{W}
+\brl@alph_alphdef{\;}{W}
+\brl@alph_alphdef{\ }{W}
+\brl@alph_alphdef{~}{W}
+\brl@alph_alphdef{\quad}{W}
+\brl@alph_alphdef{\qquad}{W}
+
+\brl@alph_alphdef{;}{S}
+\brl@alph_alphdef{:}{S}
+\brl@alph_alphdef{!}{S}
+\brl@alph_alphdef{?}{S}
+\brl@alph_alphdef{-}{S}
+\brl@alph_alphdef{\dots}{S}
+\brl@alph_alphdef{/}{S}
+\brl@alph_alphdef{(}{S}
+\brl@alph_alphdef{)}{S}
+\brl@alph_alphdef{[}{S}
+\brl@alph_alphdef{]}{S}
+\brl@alph_alphdef{\&}{S}
+\brl@alph_alphdef{“}{S}
+\brl@alph_alphdef{”}{S}
+
+\brl@alph_alphdef{A}{U}
+\brl@alph_alphdef{B}{U}
+\brl@alph_alphdef{C}{U}
+\brl@alph_alphdef{D}{U}
+\brl@alph_alphdef{E}{U}
+\brl@alph_alphdef{F}{U}
+\brl@alph_alphdef{G}{U}
+\brl@alph_alphdef{H}{U}
+\brl@alph_alphdef{I}{U}
+\brl@alph_alphdef{J}{U}
+\brl@alph_alphdef{K}{U}
+\brl@alph_alphdef{L}{U}
+\brl@alph_alphdef{M}{U}
+\brl@alph_alphdef{N}{U}
+\brl@alph_alphdef{O}{U}
+\brl@alph_alphdef{P}{U}
+\brl@alph_alphdef{Q}{U}
+\brl@alph_alphdef{R}{U}
+\brl@alph_alphdef{S}{U}
+\brl@alph_alphdef{T}{U}
+\brl@alph_alphdef{U}{U}
+\brl@alph_alphdef{V}{U}
+\brl@alph_alphdef{W}{U}
+\brl@alph_alphdef{X}{U}
+\brl@alph_alphdef{Y}{U}
+\brl@alph_alphdef{Z}{U}
+
+\brl@alph_alphdef{a}{L}
+\brl@alph_alphdef{b}{L}
+\brl@alph_alphdef{c}{L}
+\brl@alph_alphdef{d}{L}
+\brl@alph_alphdef{e}{L}
+\brl@alph_alphdef{f}{L}
+\brl@alph_alphdef{g}{L}
+\brl@alph_alphdef{h}{L}
+\brl@alph_alphdef{i}{L}
+\brl@alph_alphdef{j}{L}
+\brl@alph_alphdef{k}{L}
+\brl@alph_alphdef{l}{L}
+\brl@alph_alphdef{m}{L}
+\brl@alph_alphdef{n}{L}
+\brl@alph_alphdef{o}{L}
+\brl@alph_alphdef{p}{L}
+\brl@alph_alphdef{q}{L}
+\brl@alph_alphdef{r}{L}
+\brl@alph_alphdef{s}{L}
+\brl@alph_alphdef{t}{L}
+\brl@alph_alphdef{u}{L}
+\brl@alph_alphdef{v}{L}
+\brl@alph_alphdef{w}{L}
+\brl@alph_alphdef{x}{L}
+\brl@alph_alphdef{y}{L}
+\brl@alph_alphdef{z}{L}
+
+\brl@alph_alphdef{0}{N}
+\brl@alph_alphdef{1}{N}
+\brl@alph_alphdef{2}{N}
+\brl@alph_alphdef{3}{N}
+\brl@alph_alphdef{4}{N}
+\brl@alph_alphdef{5}{N}
+\brl@alph_alphdef{6}{N}
+\brl@alph_alphdef{7}{N}
+\brl@alph_alphdef{8}{N}
+\brl@alph_alphdef{9}{N}
+
+\def\brl@alph_numbermode{%
+  \brl@alph_alphdef{,}{N}
+  \brl@alph_alphdef{.}{N}
+}
+\def\brl@alph_alphmode{%
+  \brl@alph_alphdef{,}{S}
+  \brl@alph_alphdef{.}{S}
+}
+
+% default , . are alphmode
+%
+\brl@alph_alphmode
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

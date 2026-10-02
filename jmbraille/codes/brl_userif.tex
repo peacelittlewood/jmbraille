@@ -1,0 +1,923 @@
+% Time-stamp: <2026-09-13 13:35:21 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%
+%% user interface
+%%
+
+\def\BrailleSetFont#1{\def\brl@braille@fontname{#1}}
+\def\BrailleSetFontSize#1{\brl@braille@fontsize#1\relax}
+\def\BrailleSetFigureFontSize#1{\brl@braille@figurefontsize#1\relax}
+\def\BrailleSetMeaningFontSize#1{%
+  \brl@char@meanfontsize#1\relax%
+  \brl@font@load%
+}
+\def\BrailleSetMeaningColor#1{\def\brl@char@meancolor{#1}}
+\def\BrailleSetOriginalColor#1{\def\brl@char@origcolor{#1}}
+\def\BrailleSetAmbiguityColor#1{\def\brl@char@ambcolor{#1}}
+\def\BrailleSetWarningColor#1{\def\brl@char@warncolor{#1}}
+\def\BrailleSetTransparentColor#1{\def\brl@char@transparentcolor{#1}}
+% \def\BrailleSetMecabProgram{%
+%   \bgroup\catcode`\\12\relax%
+%     \BrailleSetMecabProgram_%
+% }
+% \def\BrailleSetMecabProgram_#1{%
+%     \gdef\brl@tmp{#1 }%
+%   \egroup%
+%   \let\brl@mecab@prog\brl@tmp%
+% }
+
+% \def\BrailleSetMecabDirectory{%
+%   \bgroup\catcode`\\12\relax%
+%     \BrailleSetMecabDirectory_%
+% }
+% \def\BrailleSetMecabDirectory_#1{%
+%     \gdef\brl@tmp{-d #1 }%
+%   \egroup%
+%   \let\brl@mecab@sysdic\brl@tmp%
+% }
+
+% \def\BrailleSetMecabUserDictionary{%
+%   \bgroup\catcode`\\12\relax%
+%     \BrailleSetMecabUserDictionary_%
+% }
+% \def\BrailleSetMecabUserDictionary_#1{%
+%     \gdef\brl@tmp{#1}%
+%     \ifx\brl@tmp\empty%
+%     \else%
+%       \gdef\brl@tmp{-u #1 }%
+%     \fi%
+%   \egroup%
+%   \let\brl@mecab@userdic\brl@tmp%
+% }
+
+
+{%
+  \lccode`\!=`\_%
+  \catcode`\!\active%
+  \lowercase{%
+  \gdef\brl@userif_us_cmdempty{\def!{_}}%
+  \gdef\brl@userif_us_empty{\let!\empty}%
+  }%
+}
+
+\def\BrailleSetWord{%
+  \bgroup\catcode`\_\active%
+    \brl@userif_us_empty%
+    \BrailleSetWord_%
+}
+
+\def\BrailleSetWord_#1{% ABC_DEF
+    \brl@userif_us_empty%
+    \edef\brl@tmp{#1}% ABCDEF
+    \brl@userif_us_cmdempty% ABC_DEF
+    \expandafter\xdef\csname brl@mecab_alph_dict@\brl@tmp\endcsname{%
+      \unexpanded{\brl@mecab_appendtoks{\brl@mecab@repl_alphword\brl@mecab@cmd_cr}%
+        \edef\brl@tmp}{{#1}{\brl@mecab@idalph_word}}% trueid
+    }%
+  \egroup%
+}
+
+\def\BrailleSetAlphabet{%
+  %
+  \bgroup\catcode`\_\active%
+    \brl@userif_us_empty%
+    \BrailleSetAlphabet_%
+}
+
+\def\BrailleSetAlphabet_#1{% ABC_DEF
+    \brl@userif_us_empty%
+    \edef\brl@tmp{#1}% ABCDEF
+    \brl@userif_us_cmdempty% ABC_DEF
+    \expandafter\xdef\csname brl@mecab_alph_dict@\brl@tmp\endcsname{%
+      \unexpanded{\brl@mecab_appendtoks{\brl@mecab@repl_alphlett\brl@mecab@cmd_cr}%
+        \edef\brl@tmp}{{#1}{\noexpand\brl@mecab@idpnp}}% trueid
+    }%
+  \egroup%
+}
+
+\def\BrailleSetAlphabetUnit{%
+  %
+  \bgroup\catcode`\_\active%
+    \brl@userif_us_empty%
+    \BrailleSetAlphabetUnit_%
+}
+
+\def\BrailleSetAlphabetUnit_#1{% ABC_DEF
+    \brl@userif_us_empty%
+    \edef\brl@tmp{#1}% ABCDEF
+    \brl@userif_us_cmdempty% ABC_DEF
+    \expandafter\xdef\csname brl@mecab_alph_dict@\brl@tmp\endcsname{%
+      \unexpanded{\brl@mecab_appendtoks{\brl@mecab@repl_alphunit\brl@mecab@cmd_cr}%
+        \edef\brl@tmp}{{#1}{\noexpand\noexpand\noexpand\brl@mecab@id}}% trueid
+    }%
+  \egroup%
+}
+
+
+
+
+
+
+\def\BrailleTerminology#1{%
+  \edef\brl@mecab@term{#1}%
+  \ifcsname brl@mecab@science_#1\endcsname%
+    \expandafter\edef\csname brl@mecab@wakachi_\brl@mecab@idalph_lett\endcsname{{100}{\brl@mecab@wakachi_science}}%
+    \expandafter\edef\csname brl@mecab@wakachi_\brl@mecab@idalph_unit\endcsname{{-130}{\brl@mecab@wakachi_science}}%
+   \else%
+     \expandafter\edef\csname brl@mecab@wakachi_\brl@mecab@idalph_lett\endcsname{{100}{\brl@mecab@wakachi_common}}%
+     \expandafter\edef\csname brl@mecab@wakachi_\brl@mecab@idalph_unit\endcsname{{-130}{\brl@mecab@wakachi_common}}%
+  \fi%
+}
+
+\def\BrailleSetTerminology#1#2#3#4{%
+  \expandafter\gdef\csname brl@mecab@term_#1/#2_#3\endcsname{#4}%
+}
+
+\def\BrailleSetTerminologyScience#1{%
+  \expandafter\let\csname brl@mecab@science_#1\endcsname\brl@mecab@wakachi_science%
+}
+
+
+
+\def\BrailleSetOutputBaudrate#1{%
+  \def\brl@bse@outputbaudrate{#1}%
+}
+
+\def\BrailleSetOutputLanguage#1{%
+  \ifcsname BrailleSetOutputDevice_#1\endcsname%
+    \expandafter\def\expandafter\brl@bse@outputlanguage\expandafter{\csname BrailleSetOutputDevice_#1\endcsname}%
+  \else%
+    \PackageError{jmbraille}{Specify either `python' or `powershell'}{}%
+  \fi%
+}
+
+
+\def\BrailleSetOutputDevice#1{%
+  \def\brl@bse@outputdevice{#1}%
+}
+
+
+\def\BrailleSetOutputDevice_python{%
+  % 
+  \def\brl@bse_output@linebegin{ser.write(b'}%
+  \def\brl@bse_output@lineend{')^^J}%
+  \def\brl@bse_output@filebegin{%
+    import serial^^J%
+    ser = serial.Serial('\brl@bse@outputdevice', baudrate=\brl@bse@outputbaudrate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, write_timeout=None, xonxoff=True)^^J%
+    ser.write(b'\string\x1b\string\x1bSF')^^J% flow control
+  }%
+  \def\brl@bse_output@fileend{ser.close()}%
+  \def\brl@bse_output@ext{.py}%
+  \edef\brl@bse@singleq{\string\'}%
+  \edef\brl@bse@bs{\string\\}%
+  \edef\brl@bse@del{\string\x7f}%
+  \edef\brl@bse@crlf{\string\r\string\n}%
+  \edef\brl@bse@gon{\string\x1b\string\x1bG\string\x1b\string\x1bD0}% Graphic mode and small dot
+  \edef\brl@bse@goff{\string\x1d ` @\string\r}% after drawing all the graphics, move to (0,0) = 0x20 0x60 0x20 0x40 = " ` @" and exit = CR = 0x0d.
+  \edef\brl@bse@newpage{\string\x0c}%
+}
+
+\def\BrailleSetOutputDevice_powershell{%
+  \def\brl@bse_output@linebegin{$ser.Write('}%$
+  \def\brl@bse_output@lineend{)^^J}%
+  \def\brl@bse_output@filebegin{%
+    $ser = new-Object System.IO.Ports.SerialPort "\brl@bse@outputdevice", \brl@bse@outputbaudrate, None, 8, 1^^J%$
+    $ser.Handshake = 1^^J%$ XOnXOff
+    $ser.WriteTimeout = -1^^J%$ InfiniteTimeout
+    $ser.Open()^^J%$
+    $ser.Write([char]0x1b+[char]0x1b+'SF')^^J%$
+  }%
+  \def\brl@bse_output@fileend{$ser.Close()}%$
+  \def\brl@bse_output@ext{.ps1}%
+  \def\brl@bse@singleq{''}%
+  \let\brl@bse@bs\brl@@bs%
+  \def\brl@bse@del{'+[char]0x7f+'}%
+  \def\brl@bse@crlf{'+[char]0x0d+[char]0x0a}%
+  \def\brl@bse@gon{'+[char]0x1b+[char]0x1b+'G'+[char]0x1b+[char]0x1b+'D0}% Graphic and small dot
+  \def\brl@bse@goff{'+[char]0x1d+' ` @'+[char]0x0d}%
+  \def\brl@bse@newpage{'+[char]0x0c}%
+}
+
+\def\BrailleSetReading{%
+  \@ifnextchar[{\BrailleSetReading_}{\BrailleSetReading_[]}%
+}
+
+\def\BrailleSetReading_[#1]{%
+  \bgroup%
+  \catcode`\ \active%
+  \let\brl@text_cmd_glue\relax% defined after \begin{document}
+  \@ifnextchar<{\BrailleSetReading__{#1}}{\BrailleSetReading__{#1}<*>}%
+}
+
+\def\BrailleSetReading__#1<#2>#3{%
+  \ifcsname brl@document@unk_#1\endcsname%
+    \xdef\brl@tmp{{{\csname brl@document@unk_#1\endcsname}{#2}}}%
+    \expandafter\xdef\csname brl@mecab_reading@\detokenize{#3}\expandafter\endcsname\brl@tmp%
+  \else%
+    \PackageError{jmbraille}{#1 should be one of `人名', `組織', `地域', `一般', or omitted}{}%
+  \fi%
+  \egroup%
+}
+
+
+\@namedef{brl@document@unk_人名}{名詞,固有名詞,人名,一般}
+\@namedef{brl@document@unk_組織}{名詞,固有名詞,組織,*}
+\@namedef{brl@document@unk_地域}{名詞,固有名詞,地域,*}
+\@namedef{brl@document@unk_一般}{名詞,一般,*,*}
+\@namedef{brl@document@unk_}{*,*,*,*}
+
+
+\@namedef{brl@char_user@char_math_\string\sqrt[]}{sqrtm}
+\@namedef{brl@char_user@char_math_\string\sqrt}{sqrts}
+\@namedef{brl@char_user@char_ueb_(}{"<^a}
+\@namedef{brl@char_user@char_ueb_)}{">^a}
+\@namedef{brl@char_user@char_ueb_*}{"9^a}
+\@namedef{brl@char_user@char_ueb_,}{1^a}
+\@namedef{brl@char_user@char_ueb_.}{4^a}
+\@namedef{brl@char_user@char_ueb_/}{_/^a}
+\@namedef{brl@char_user@char_ueb_:}{3^b}
+\@namedef{brl@char_user@char_ueb_;}{2^c}
+\@namedef{brl@char_user@char_ueb_=}{"7^a}
+\@namedef{brl@char_user@char_ueb_?}{8^b}
+
+
+%%
+%% #1 : char (\sqrt, \alpha, etc.)
+%% #2 : dot pattern (1234-123 etc.)
+%%
+\def\BrailleSetMathBraille#1#2{%
+  %%
+  \ifcsname brl@char_user@char_math_\string#1\endcsname%
+    \edef\brl@char_user@char{\csname brl@char_user@char_math_\string#1\endcsname}%
+  \else%
+    \ifcsname brl@code_math_\string#1\endcsname%
+      \edef\brl@char_user@char{\string#1}%
+    \else%
+      \PackageError{jmbraille}{The character \string#1 in the math mode is not defined}{}%
+    \fi%
+  \fi%
+  {%
+    \let\brl@do\brl@do_key%
+    \csname brl@code_math_\brl@char_user@char\endcsname% -> brl@char@key
+  }%
+  \brl@char_user_def{#2}%
+}
+
+\def\BrailleSetJapaneseBraille#1#2{%
+  %%
+  \ifcsname brl@char_user@char_\string#1\endcsname%
+    \edef\brl@char_user@char{\csname brl@char_user@char_text_\string#1\endcsname}%
+  \else%
+    \ifcsname brl@code_text_\string#1\endcsname%
+      \edef\brl@char_user@char{\string#1}%
+    \else%
+      \PackageError{jmbraille}{The character \string#1 in the text mode is not defined}{}%
+    \fi%
+  \fi%
+  {%
+    \let\brl@do\brl@do_key%
+    \csname brl@code_text_\brl@char_user@char\endcsname% -> brl@char@key
+  }%
+  \brl@char_user_def{#2}%
+}
+
+\def\BrailleSetEnglishBraille#1#2{%
+  %%
+  \ifcsname brl@char_user@char_ueb_\string#1\endcsname%
+    \edef\brl@char_user@char{\csname brl@char_user@char_ueb_\string#1\endcsname}%
+  \else%
+    \ifcsname brl@code_ueb_\string#1\endcsname%
+      \edef\brl@char_user@char{\string#1}%
+    \else%
+      \PackageError{jmbraille}{The character \string#1 in the UEB mode is not defined}{}%
+    \fi%
+  \fi%
+  {%
+    \let\brl@do\brl@do_key%
+    \csname brl@code_ueb_\brl@char_user@char\endcsname% -> brl@char@key
+  }%
+  \brl@char_user_def{#2}%
+  \ifcsname brl@char_user@char_alph_\string#1\endcsname%
+    \edef\brl@char_user@char{\csname brl@char_user@char_alph_\string#1\endcsname}%
+  \else%
+    %\ifcsname brl@code_alph_#1\endcsname%
+    \edef\brl@char_user@char{\string#1}%
+    % \else%
+    %   \PackageError{jmbraille}{The character \string#1 in the UEB mode is not defined}{}%
+    % \fi%
+  \fi%
+  {%
+    \let\brl@do\brl@do_key%
+    \csname brl@code_alph_\brl@char_user@char\endcsname% -> brl@char@key
+  }%
+  \brl@char_user_def_sub%
+}
+
+
+
+
+%\mathord, \mathop, \mathbin, \mathrel, \mathopen, \mathclose, and \mathpunct
+%%
+%% #1 : char (\gtrsim, etc.)
+%% #2 : property (ord, open, close, etc.)
+%% #3 : dot pattern (1234-123 etc.)
+%%
+\def\BrailleSetMathCharacter#1#2#3{%
+  %%
+  \AtBeginDocument{\brl@def_cmdonly{#1}}%
+  %%
+  \brl@char_getnewkey%
+  % 
+  %
+  \protected\expandafter\edef\csname brl@code_math_\string#1\endcsname{\noexpand\brl@do{\brl@char@key}}%
+  \expandafter\edef\csname brl@char@load_\brl@char@key\endcsname{%
+    \csname brl@code_math_\string#1\endcsname}%
+  % 
+  \expandafter\xdef\csname brl@char@mean_\brl@char@key\endcsname{\brl@char_textstack{ユーザー定義}{\string#1}}%
+  %
+  % 
+  \brl@char_user_def{#3}%
+  \ifcsname brl@char_user_#2\endcsname%
+    \csname brl@char_user_#2\endcsname%{#1}%
+    \brl@document_math_cmddef{#2}{#1}{\string#1}%
+  \else%
+    \PackageError{jmbraille}{`#2' is wrong. It should be one of `ord', `open', `close', `bin', `op', `rel', `punct'}{}%
+  \fi%
+}
+
+\let\brl@char_user_ord\relax
+\let\brl@char_user_open\relax
+\let\brl@char_user_close\relax
+\let\brl@char_user_bin\relax
+\let\brl@char_user_op\relax
+\let\brl@char_user_rel\relax
+\let\brl@char_user_punct\relax
+
+%%
+%% create braille toks
+%%
+%% output : \brl@char@toks
+%%
+\def\brl@char_user_def#1{%
+  % 
+  % 
+  %% code
+  \brl@char@spacefalse%
+  \brl@char@charnum\z@%
+  \brl@char@toks{}%
+  \brl@char_user#1-\brl@end-%
+  \brl@char_user_def_sub%
+}
+
+%%
+%% input : \brl@char@key
+%%
+\def\brl@char_user_def_sub{%
+  %
+  % 
+  \edef\brl@tmp{\ifnum\brl@char@charnum>\z@\advance\brl@char@charnum\the\brl@char@charnum\relax\fi}%
+  \global\expandafter\let\csname brl@char@count_\brl@char@key\endcsname\brl@tmp%
+  % 
+  \edef\brl@tmp{\ifbrl@char@space\noexpand\brl@char@spacetrue\fi}%
+  \global\expandafter\let\csname brl@char@space_\brl@char@key\endcsname\brl@tmp%
+  % 
+  \edef\brl@tmp{\the\brl@char@toks}%
+  \global\expandafter\let\csname brl@char@code_\brl@char@key\endcsname\brl@tmp%
+  % 
+  \ifbrl@option@hires%
+    \global\expandafter\let\csname brl@char@draw_\brl@char@key\endcsname\brl@tmp%
+  \fi%
+  %
+}
+
+% \sf, \mathsf, cap, let, num
+\newcount\brl@math_font@num
+
+\def\BrailleSetMathFont#1#2#3#4#5{%
+  \advance\brl@math_font@num\@ne%
+  {\lccode`\!\numexpr\brl@math_font@num+64\relax\lowercase{\gdef\brl@math_font@namealph{!}}}%
+  \edef\brl@math_font@cmdname{brl@math_cmd_font@\brl@math_font@namealph}%
+  %
+  \def\brl@tmp{#1}% \sf or empty
+  \ifx\brl@tmp\empty% 
+    \let\brl@math_font@cmd\brl@math_font@cmdname% font@A
+    \let\brl@math_font@texcmd\empty%
+  \else%
+    \edef\brl@math_font@cmd{\expandafter\@gobble\string#1}% sf
+    \edef\brl@math_font@texcmd{\string#1}% \sf
+    \AtBeginDocument{\brl@def_cmdonly{#1}}%
+  \fi%
+  %
+  %             \cmdname \cmd   \texcmd 
+  %#1 == empty  font@A   font@A {}
+  %#1 != empty  font@A   sf     \string\sf
+  %
+  %                 font@A             font@A or sf
+  \brl@def{\brl@math_font@cmdname}{\brl@math_font@cmd}\brl@end{%
+    % brl_aliases
+    \protected\edef##1{\def\noexpand\brl@math@fontprefix{\brl@math_font@namealph}}%      \font@A
+    %
+    %
+    \@namedef{brl@document_math_dospecial_\string##2}{% \font@A or \sf
+      % \brl@document_appendmathtoks{##1}%
+      % \def\brl@document_math@lastfont{##2}%
+      \def\brl@document_math@currfont{##1}%
+      \brl@document_math%
+    }%
+  }%
+  %
+  % either #1 or #2 is defined.
+  %                   
+  %            \cmd \texcmd        \texfont_A  \texfont_A_
+  %#2 == empty sf   \string\sf     ={\sf#1}    \sf
+  %#2 != empty      \string\mathsf =\mathsf{#1}
+  %
+  \def\brl@tmp{#2}% \mathsf or {}
+  \ifx\brl@tmp\empty% {}              \brl@math_font@texfont_A
+    \edef\brl@tmp{\expandafter\noexpand\csname brl@math_font@texfont_\brl@math_font@namealph _\endcsname}%
+    \expandafter\let\brl@tmp#1%
+    \protected\expandafter\edef\csname brl@math_font@texfont_\brl@math_font@namealph\endcsname##1{{\expandafter\noexpand\brl@tmp##1}}% \sf (#1 is not empty in this case.)
+  \else%
+    \edef\brl@math_font@texcmd{\string#2}% \mathsf
+    %         font@A or sf
+    \brl@def{\brl@math_font@cmd}\brl@end{%
+      %
+      \expandafter\let\csname brl@math_font@texfont_\brl@math_font@namealph\endcsname#2%
+      %                \def\mathsf#1{{\font@A or \sf{#1}}}
+      \AtBeginDocument{\def#2####1{{##1####1}}}%
+    }%
+  \fi%
+  %
+  %
+  %
+  \brl@math_exec_defletter{\brl@math_font@namealph}{U}%
+  \brl@math_exec_defletter{\brl@math_font@namealph}{K}%
+  \brl@math_exec_defletter{\brl@math_font@namealph}{L}%
+  % 
+  \brl@char@spacefalse%
+  \brl@char@charnum\@ne% count one letter
+  \brl@char@toks{}%
+  \brl@char_user#3-\brl@end-%
+  % char@toks
+  \brl@math_fontdef{A}{a}%
+  \brl@math_fontdef{B}{b}%
+  \brl@math_fontdef{C}{c}%
+  \brl@math_fontdef{D}{d}%
+  \brl@math_fontdef{E}{e}%
+  \brl@math_fontdef{F}{f}%
+  \brl@math_fontdef{G}{g}%
+  \brl@math_fontdef{H}{h}%
+  \brl@math_fontdef{I}{i}%
+  \brl@math_fontdef{J}{j}%
+  \brl@math_fontdef{K}{k}%
+  \brl@math_fontdef{L}{l}%
+  \brl@math_fontdef{M}{m}%
+  \brl@math_fontdef{N}{n}%
+  \brl@math_fontdef{O}{o}%
+  \brl@math_fontdef{P}{p}%
+  \brl@math_fontdef{Q}{q}%
+  \brl@math_fontdef{R}{r}%
+  \brl@math_fontdef{S}{s}%
+  \brl@math_fontdef{T}{t}%
+  \brl@math_fontdef{U}{u}%
+  \brl@math_fontdef{V}{v}%
+  \brl@math_fontdef{W}{w}%
+  \brl@math_fontdef{X}{x}%
+  \brl@math_fontdef{Y}{y}%
+  \brl@math_fontdef{Z}{z}%
+  %
+  \brl@char@spacefalse%
+  \brl@char@charnum\@ne% count one letter
+  \brl@char@toks{}%
+  \brl@char_user#4-\brl@end-%
+  % char@toks
+  \brl@math_fontdef{a}{a}%
+  \brl@math_fontdef{b}{b}%
+  \brl@math_fontdef{c}{c}%
+  \brl@math_fontdef{d}{d}%
+  \brl@math_fontdef{e}{e}%
+  \brl@math_fontdef{f}{f}%
+  \brl@math_fontdef{g}{g}%
+  \brl@math_fontdef{h}{h}%
+  \brl@math_fontdef{i}{i}%
+  \brl@math_fontdef{j}{j}%
+  \brl@math_fontdef{k}{k}%
+  \brl@math_fontdef{l}{l}%
+  \brl@math_fontdef{m}{m}%
+  \brl@math_fontdef{n}{n}%
+  \brl@math_fontdef{o}{o}%
+  \brl@math_fontdef{p}{p}%
+  \brl@math_fontdef{q}{q}%
+  \brl@math_fontdef{r}{r}%
+  \brl@math_fontdef{s}{s}%
+  \brl@math_fontdef{t}{t}%
+  \brl@math_fontdef{u}{u}%
+  \brl@math_fontdef{v}{v}%
+  \brl@math_fontdef{w}{w}%
+  \brl@math_fontdef{x}{x}%
+  \brl@math_fontdef{y}{y}%
+  \brl@math_fontdef{z}{z}%
+  %
+  %
+  \brl@char@spacefalse%
+  \brl@char@charnum\@ne% count one letter
+  \brl@char@toks{}%
+  \brl@char_user#5-\brl@end-%
+  % char@toks
+  \brl@math_fontdef{numbersign}{numbersign}%
+  \expandafter\edef\csname brl@char@mean_\brl@char@key\endcsname{\brl@char_textstack{\brl@math_font@texcmd}{数}}% rewrite
+}
+
+
+
+\def\brl@math_fontdef#1#2{%
+  %
+  {%
+    \let\brl@do\brl@do_key%
+    \csname brl@code_math_n_#2\endcsname% -> brl@char@key
+  }%
+  % \edef\brl@tmp{\expandafter\noexpand\csname brl@char@code_\brl@char@key\endcsname}%
+  % \expandafter\let\expandafter\brl@math_font@origchar\brl@tmp%
+  %
+  %\edef\brl@tmp{\expandafter\noexpand}%
+  \expandafter\let\expandafter\brl@math_font@origchar\csname brl@char@code_\brl@char@key\endcsname
+  %
+  % \show\brl@math_font@origchar
+  %
+  %
+  \brl@char_getnewkey%
+  %
+  %
+  \protected\expandafter\xdef\csname brl@code_math_\brl@math_font@namealph _#1\endcsname{\noexpand\brl@do{\brl@char@key}}%
+  \expandafter\xdef\csname brl@char@load_\brl@char@key\endcsname{%
+    \csname brl@code_math_\brl@math_font@namealph _#1\endcsname%
+  }%
+  %
+  %
+  \expandafter\xdef\csname brl@char@mean_\brl@char@key\endcsname{\brl@char_textstack{\brl@math_font@texcmd}{\brl@orig@eq\expandafter\noexpand\csname brl@math_font@texfont_\brl@math_font@namealph\endcsname{#1}\brl@orig@eq}}%
+  %
+  %
+  \edef\brl@tmp{\ifnum\brl@char@charnum>\z@\advance\brl@char@charnum\the\brl@char@charnum\relax\fi}%
+  \global\expandafter\let\csname brl@char@count_\brl@char@key\endcsname\brl@tmp%
+  % 
+  \edef\brl@tmp{\ifbrl@char@space\noexpand\brl@char@spacetrue\fi}%
+  \global\expandafter\let\csname brl@char@space_\brl@char@key\endcsname\brl@tmp%
+  %
+  \edef\brl@tmp{\the\brl@char@toks\expandafter\noexpand\brl@math_font@origchar}%
+  % \show\brl@tmp
+  \global\expandafter\let\csname brl@char@code_\brl@char@key\endcsname\brl@tmp%
+  % 
+  \ifbrl@option@hires%
+    \global\expandafter\let\csname brl@char@draw_\brl@char@key\endcsname\brl@tmp%
+  \fi%
+  %
+}
+
+
+\newcount\brl@text_font@num
+
+% #1 \sc
+% #2 \textsc
+% #3 jp 1--3
+% #4 en 1--5 (5--9)
+
+\expandafter\edef\csname brl@text_enfont1\endcsname{{\brl@ueb@backslash5}}
+\expandafter\edef\csname brl@text_enfont2\endcsname{{\brl@ueb@backslash6}}
+\expandafter\edef\csname brl@text_enfont3\endcsname{{\brl@ueb@backslash7}}
+\expandafter\edef\csname brl@text_enfont4\endcsname{{\brl@ueb@backslash8}}
+\expandafter\edef\csname brl@text_enfont5\endcsname{{\brl@ueb@backslash9}}
+
+\expandafter\def\csname brl@text_jpenfont1\endcsname{A}
+\expandafter\def\csname brl@text_jpenfont2\endcsname{B}
+\expandafter\def\csname brl@text_jpenfont3\endcsname{C}
+\expandafter\def\csname brl@text_jpenfont4\endcsname{D}
+\expandafter\def\csname brl@text_jpenfont5\endcsname{E}
+
+\expandafter\def\csname brl@text_jpfont1l\endcsname{\brl@text_cmd_firstindopen}
+\expandafter\def\csname brl@text_jpfont2l\endcsname{\brl@text_cmd_secondindopen}
+\expandafter\def\csname brl@text_jpfont3l\endcsname{\brl@text_cmd_thirdindopen}
+\expandafter\def\csname brl@text_jpfont1r\endcsname{\brl@text_cmd_firstindclose}
+\expandafter\def\csname brl@text_jpfont2r\endcsname{\brl@text_cmd_secondindclose}
+\expandafter\def\csname brl@text_jpfont3r\endcsname{\brl@text_cmd_thirdindclose}
+  
+
+\def\BrailleSetTextFont#1#2#3#4{%
+  \advance\brl@text_font@num\@ne%
+  {\lccode`\!\numexpr\brl@text_font@num+64\relax\lowercase{\gdef\brl@text_font@namealph{!}}}%
+  \edef\brl@text_font@cmdopenname{brl@text_cmd_font@\brl@text_font@namealph open}%
+  \edef\brl@text_font@cmdclosename{brl@text_cmd_font@\brl@text_font@namealph close}%
+  %
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\empty% 
+    \let\brl@text_font@cmd\brl@text_font@cmdopenname% font@A
+    \let\brl@text_font@texcmd\empty%
+  \else%
+    \edef\brl@text_font@cmd{\expandafter\@gobble\string#1}% sc
+    \edef\brl@text_font@texcmd{\string#1}%
+    \AtBeginDocument{\brl@def_cmdonly{#1}}% \sc
+  \fi%
+  %
+  %
+  \brl@def{\brl@text_font@cmdopenname}% ##1 \font@2open
+  {\brl@text_font@cmdclosename}% ##2 \font@1close
+  {\brl@text_font@cmd}% ##3 \font@1open or \sc
+  {brl@text_jpfont#3l}% ##4 \firstindopen
+  {brl@text_jpfont#3r}% ##5 \firstindclose
+  {brl@text_enfont#4}% ##6 \\5
+  % {brl@text_jpenfont#4}% ##7 tr1
+  \brl@end{%
+    % brl_aliases
+    \AtBeginDocument{%
+      \brl@def_cmdonly{##1}%
+      \brl@def_cmdonly{##2}%
+    }%
+    % brl_document (jp and en)
+    \@namedef{brl@document_dospecial_\string##3}{%
+      \brl@document_prependfont{##2}%%
+      \brl@document_appendfont{##1}%%
+      \brl@document_appendtoks{##1}%
+      \brl@document_text%
+    }%
+    %
+    % brl_mecab (jp)
+    % 
+    \brl@mecab_markfbdef{##1}{##4}%
+    \brl@mecab_markfadef{##2}{##5}%
+    %
+    % brl_ueb (en)
+    %
+    \@namedef{brl@ueb_dospecial_\string##1}{%
+      \expandafter\brl@ueb_appendtoks##6%
+      \brl@ueb_loop_ignorespaces%
+    }%
+    \@namedef{brl@ueb_dospecial_\string##2}{%
+      \expandafter\brl@ueb_appendtoks##6%
+      \brl@ueb_loop%
+    }%
+    \brl@ueb_setgluedef{##2}%
+  }%
+  %
+  %
+  %
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\empty% \sf
+%    \protected\expandafter\edef\csname brl@text_font@texfont_\brl@text_font@namealph\endcsname{\string#1}% either #1 or #2 is defined.
+    \protected\expandafter\edef\csname brl@ueb@tr\csname brl@text_jpenfont#4\endcsname\endcsname{\string#1}%
+  \else% \textsf
+    \protected\expandafter\edef\csname brl@ueb@tr\csname brl@text_jpenfont#4\endcsname\endcsname{\string#2}%
+%    \edef\brl@text_font@texcmd{\string#2}%
+    % \brl@def{\brl@text_font@cmd}\brl@end{%
+    %   \expandafter\let\csname brl@text_font@texfont_\brl@text_font@namealph _\endcsname#2%
+    %   \protected\expandafter\edef\csname brl@text_font@texfont_\brl@text_font@namealph\endcsname{\expandafter\noexpand\csname brl@text_font@texfont_\brl@text_font@namealph _\endcsname}%
+    %   \AtBeginDocument{\def#2####1{{##1####1}}}% \textsf{#1} -> {\font #1}
+    % }%
+  \fi%
+  %
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+\def\brl@ueb@pqm_single{%
+  \edef\brl@ueb@sqopen{{\brl@ueb@backslash x2039}}%
+  \edef\brl@ueb@sqclose{{\brl@ueb@backslash x203a}}%
+  \edef\brl@ueb@dqleft{{\brl@ueb@backslash x201c}}%
+  \edef\brl@ueb@dqright{{\brl@ueb@backslash x201d}}%
+}
+
+\def\brl@ueb@pqm_double{%
+  \edef\brl@ueb@sqopen{{\brl@ueb@backslash x2018}}%
+  \edef\brl@ueb@sqclose{{\brl@ueb@backslash x2019}}%
+  \edef\brl@ueb@dqleft{{\brl@ueb@backslash x2039}}%
+  \edef\brl@ueb@dqright{{\brl@ueb@backslash x203a}}%
+}
+
+\def\brl@ueb@pqm_auto{%
+  \ifcsname brl@ueb@auxsqnum\endcsname%
+    \ifnum\brl@ueb@auxdqnum>\brl@ueb@auxsqnum%
+      \brl@ueb@pqm_double%
+    \else%
+      \brl@ueb@pqm_single%
+    \fi%
+  \else% default
+    \brl@ueb@pqm_single%
+  \fi%
+}
+
+\def\BrailleSetPredominantQuotationMarks#1{%
+  \expandafter\let\expandafter\brl@ueb_pqm\csname brl@ueb@pqm_#1\endcsname%
+}
+
+
+%%%
+
+
+% #1 : color
+% #2 : step x
+% #3 : step y
+% #4 : pattern in each y
+
+% ->\xcolor@ {}{gray 0.1}{gray}{0.1}. % xelatex
+% ->\xcolor@ {}{0.1 g 0.1 G}{gray}{0.1}. % lualatex
+
+
+\def\BrailleSetFillColor{%
+  \@ifnextchar[{\BrailleSetFillColor_}{\BrailleSetFillColor_[1,1]}%
+}
+
+\def\BrailleSetFillColor_[#1,#2]#3#4{%
+  {%
+    \brl@orig@color{#3}% gives \XC@current@color -> \xcolor@ {}{rgb 1 0 0}{rgb}{1,0,0}
+    \edef\brl@tmp{\expandafter\brl@pgf_filldef_getcolor\XC@current@color}%
+    %
+    \expandafter\brl@pgf_filldef_save\expandafter{\brl@tmp}{#1}{#2}{#4}%
+    %
+  }%
+  %
+}
+
+
+%%
+%% allowed in the document
+%%
+
+\def\BrailleFigureAutoSettingOn{\brl@figure@autosettingtrue}
+\def\BrailleFigureAutoSettingOff{\brl@figure@autosettingfalse}
+
+\def\BrailleSetFigureArrowScale#1{\def\brl@figure@plotarrowscale{#1}}
+
+\def\BrailleSetFigureLinewidthScale#1{\def\brl@env_draw@linewidthscale{#1}}
+\def\BrailleSetBSEWidth#1{\def\brl@bse@width{#1}}
+
+
+\def\BrailleFigureSpecial{%
+  % 
+  \catcode`\_=11\relax%
+  \makeatletter%
+  \afterassignment\brl@env@endspecial%
+  \brl@figure@special%
+}
+
+\def\BrailleVerbatimSpecial{%
+  % 
+  \catcode`\_=11\relax%
+  \makeatletter%
+  \afterassignment\brl@env@endspecial%
+  \brl@env_verbatim@special%
+}
+
+\def\brl@env@endspecial{%
+  \makeatother%
+  \catcode`\_=8\relax%
+}
+
+\def\BrailleFigureSpreadOn{\brl@figure@spreadtrue}
+\def\BrailleFigureSpreadOff{\brl@figure@spreadfalse}
+
+
+\ifbrl@option@pindisplay
+  \protected\def\BrailleSetFigureScale#1{%
+    \edef\brl@figure@scaleorig{#1}%
+    \@tempdima\brl@plot@pindisplayratio\p@%
+    \@tempdima\brl@plot@pindisplayscale\@tempdima%
+    \@tempdima#1\@tempdima%
+    \edef\brl@figure@scale{\expandafter\brl@@strip@pt\the\@tempdima}%
+    %
+    %
+    \edef\brl@figure@scaleinv{\expandafter\brl@@strip@pt\the\dimexpr\p@*\p@/\@tempdima\relax}%
+  }
+  \def\brl@plot@pindisplayscale{1}%
+  \def\BrailleSetFigurePindisplayScale#1{% integer
+    \def\brl@plot@pindisplayscale{#1}%
+    \@tempdima#1\p@%
+    \edef\brl@plot@pindisplayscaleinv{\expandafter\brl@@strip@pt\the\dimexpr\p@*\p@/\@tempdima\relax}%
+    \BrailleSetFigureScale{\brl@figure@scaleorig}%
+  }
+  \let\BrailleFigureLandscapeOn\empty% ignore
+  \let\BrailleFigureLandscapeOff\empty% ignore
+  \let\BrailleFigurePlotOn\empty% ignore
+  \let\BrailleFigurePlotOff\empty% ignore
+  \brl@figure@plottrue% always plot
+  \let\BrailleSetFigureDensity\@gobble%
+  \def\BrailleSetFigurePindisplayStep#1{%
+  \ifcsname brl@plot_drawpoint_#1\endcsname%
+    \expandafter\let\expandafter\brl@plot_drawpoint\csname brl@plot_drawpoint_#1\endcsname%
+  \else%
+    \PackageError{jmbraille}{The value #1 is invalid. The value must be either 1, 2, or 4}{}%
+  \fi%
+}
+\else
+  \protected\def\BrailleSetFigureScale#1{%
+    \def\brl@figure@scale{#1}%
+    \@tempdima#1\p@%
+    \edef\brl@figure@scaleinv{\expandafter\brl@@strip@pt\the\dimexpr\p@*\p@/\@tempdima\relax}%
+  }
+  \let\BrailleSetFigurePindisplayScale\@gobble%
+  \def\BrailleFigureLandscapeOn{\brl@figure@landscapetrue}
+  \def\BrailleFigureLandscapeOff{\brl@figure@landscapefalse}
+  \def\BrailleFigurePlotOn{\brl@figure@plottrue}
+  \def\BrailleFigurePlotOff{\brl@figure@plotfalse}
+  \def\BrailleSetFigureDensity#1{%
+    \csname brl@pgf@step_#1\endcsname% filldist is set
+  }%
+  \let\BrailleSetFigurePindisplayStep\@gobble%
+\fi
+
+\def\BrailleNewpage{\brl@document_newpage}
+\def\BraillePar{\brl@document_par}
+\long\def\BrailleAlternative#1#2{#2}
+\def\BrailleAltColonOn{\brl@math@altcolontrue}
+\def\BrailleAltColonOff{\brl@math@altcolonfalse}
+
+\def\BrailleTabularRuleOn{\brl@figure@plotruletrue}
+\def\BrailleTabularRuleOff{\brl@figure@plotrulefalse}
+
+\def\BrailleEnglishOn{%
+  \@englishtrue%
+  \let\brl@env@format_itemize\brl@env@format_itemize_en%
+  \let\brl@env@format_enumerate\brl@env@format_enumerate_en%
+  \let\brl@env@format_description\brl@env@format_description_en%
+  \let\brl@env_itemize@item\brl@env_itemize@item_en%
+  \let\brl@text\brl@ueb%
+}%
+  
+\def\BrailleEnglishOff{%
+  \@englishfalse%
+  \let\brl@env@format_itemize\empty%
+  \let\brl@env@format_enuerate\empty%
+  \let\brl@env@format_description\empty%
+  \let\brl@env_itemize@item\brl@env_itemize@item_jp%
+  \let\brl@text\brl@text_jp%
+}
+
+
+
+\def\BrailleSetJpContext#1{%
+  \ifcsname brl@userif_context@jp_\string#1\endcsname%
+    \csname brl@userif_context@jp_\string#1\endcsname%
+  \else%
+    \PackageError{jmbraille}{The context of #1 can not be changed}{}%
+  \fi%
+}
+
+\def\BrailleSetEnContext#1{%
+  \ifcsname brl@userif_context@en_\string#1\endcsname%
+    \csname brl@userif_context@en_\string#1\endcsname%
+  \else%
+    \PackageError{jmbraille}{The context of #1 can not be changed}{}%
+  \fi%
+}
+
+\def\brl@userif_contextenjpdef#1#2{%
+  \@namedef{brl@userif_context@jp_\string#1}{%
+    \expandafter\let\csname brl@mecab@jp_#2\endcsname\empty%
+  }
+  \@namedef{brl@userif_context@en_\string#1}{%
+    \expandafter\let\csname brl@mecab@jp_#2\endcsname\@undefined%
+  }
+}
+
+\brl@userif_contextenjpdef{(}{900}
+\brl@userif_contextenjpdef{)}{901}
+\brl@userif_contextenjpdef{``}{902}%''
+\brl@userif_contextenjpdef{''}{903}
+\brl@userif_contextenjpdef{[}{904}
+\brl@userif_contextenjpdef{]}{905}
+\brl@userif_contextenjpdef{`}{906}
+%\brl@userif_contextenjpdef{'}{907}
+\brl@userif_contextenjpdef{.}{908}
+\brl@userif_contextenjpdef{,}{909}
+\brl@userif_contextenjpdef{;}{910}
+\brl@userif_contextenjpdef{:}{911}
+\brl@userif_contextenjpdef{!}{912}
+\brl@userif_contextenjpdef{?}{913}
+\brl@userif_contextenjpdef{-}{914}
+\brl@userif_contextenjpdef{/}{915}
+\brl@userif_contextenjpdef{--}{916}
+\brl@userif_contextenjpdef{\dots}{917}
+\brl@userif_contextenjpdef{\&}{918}
+\brl@userif_contextenjpdef{0}{948}
+
+\@namedef{brl@userif_context@jp_'}{%
+  \expandafter\let\csname brl@mecab@jp_907\endcsname\empty%
+  \expandafter\let\csname brl@mecab@jp_1010\endcsname\empty%
+}
+\@namedef{brl@userif_context@en_'}{%
+  \expandafter\let\csname brl@mecab@jp_907\endcsname\@undefined%
+  \expandafter\let\csname brl@mecab@jp_1010\endcsname\@undefined%
+}
+
+
+
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

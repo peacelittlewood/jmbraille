@@ -1,0 +1,156 @@
+% Time-stamp: <2024-09-20 14:20:53 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+\def\brl@env_plot_tikzpicture{%
+  %
+  % minipage is replaced by the following.
+  % in \tikz@do@fig, \minipage...\leavevmode\hbox{} prepends unnecessary hbox.
+  % 
+  \let\pgfutil@minipage\brl@plot@pgfutil@minipage% 
+  \let\pgfutil@endminipage\brl@plot@pgfutil@endminipage%
+  %
+  \global\advance\brl@figure@figurenum\@ne%
+  %
+  \brl@env_insert_pageref%
+  % 
+  %\let\brl@print_par\empty% does not do \par at the end of print, which was need
+  \let\brl@print_allsclines_start\brl@print_allsclines_plot_start% only prints brailles.
+  \let\brl@document_tikz\brl@document_plot_tikz%
+  \brl@pgfsys_init% replace all pgfsys by those for plot.
+  %
+  %
+  % check before
+  % 
+  % if the figure is out of range in the previous compilation,
+  % use the recommended setting \ifbrl@figure@autosetting.
+  %
+  % \brl@env_check_before%
+  % 
+  %
+  %
+  %% 
+  \ifbrl@figure@spread% is this figure spread ?
+    \let\brl@plot@tmpmaxlinex\brl@plot@maxlinex_double%
+    \let\brl@plot@tmpwidth\brl@plot@width_double%
+%    \def\brl@plot@tmpfilenum{2}%
+  \else%
+    \let\brl@plot@tmpmaxlinex\brl@plot@maxlinex_single%
+    \let\brl@plot@tmpwidth\brl@plot@width_single%
+%    \def\brl@plot@tmpfilenum{1}%
+  \fi%
+  %
+  %
+  % 
+  %
+  % 
+  \edef\brl@plot@maxlinex{\the\numexpr\brl@plot@tmpmaxlinex*\brl@plot@pindisplayscale}%
+  \edef\brl@plot@maxliney{\the\numexpr\brl@plot@maxliney*\brl@plot@pindisplayscale}%
+  \edef\brl@plot@width{\the\numexpr\brl@plot@tmpwidth*\brl@plot@pindisplayscale}%
+  % \edef\brl@plot@maxfilenum{\the\numexpr\brl@plot@tmpfilenum*\brl@plot@pindisplayscale\relax}%
+  %
+  % 
+  % 
+  % 
+  \setbox\z@\hbox\bgroup%
+  %
+    % for the end procedure of this tikz.
+    \let\brl@env_inplot_endcmd\brl@env_inplot_endcmd_tikz%
+    %
+    % for each entry.
+    % \let\brl@document_end\brl@document_end_plot_tikz% if \brl@document encounters \begin{tikzpicture or tabular}, then \brl@document should continue.
+    %
+    \the\brl@figure@special%
+    %
+    %
+    \edef\brl@figure@arrowscale{\brl@figure@plotarrowscale}%
+    %
+    % change font size
+    \brl@braille@fontsize\brl@figure@scaleinv\brl@braille@figurefontsize%
+    \brl@braille_setfontdimen%
+    % 
+    \brl@pgf_init%
+    \brl@orig@tikzpicture%
+}%
+
+\def\brl@env_plot_endtikzpicture{%
+    \endbrl@orig@tikzpicture%
+  \egroup% discard \box\z@
+  %
+  % check after
+  %
+  % \def\brl@env_check_rec_scale{\brl@env_check_rec_scale_plot}%
+  % \def\brl@env_check_after_init{\brl@env_check_after_init_plot}%
+  % \brl@env_check_after%
+  %
+  %
+  \setbox\brl@print@onepage\vbox{%
+    \edef\brl@figure@figurenum_plot{\the\brl@figure@figurenum}% for the edl filename.
+    \brl@orig@label{fig:brl@figure\the\brl@figure@figurenum}%
+    %
+    {% during \bf etc., page no. is bold.
+      \let\brl@document@currprependfont\empty%
+      \let\brl@document@currappendfont\empty%
+      \brl@document\pageref{fig:brl@figure\the\brl@figure@figurenum}\brl@document@endtext%
+      \xdef\brl@plot@page{\the\brl@text@toks}%
+    }%
+    %
+    \setbox\z@\hbox{\brl@plot}%
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    \brl@@scalebox{\brl@plot@pindisplayscaleinv}{\box\z@}%
+    \box\brl@@scalebox@box%
+    %
+    \setbox\@ne\hbox{\box\brl@plot@nodebox}%
+    \wd\@ne\z@%
+    \ht\@ne\z@%
+    \dp\@ne\z@%
+    \setbox\z@\hbox{\raise\numexpr(-\brl@pgf@maxy-\brl@plot@headsep)*8+4\relax bp\hbox{\brl@orig@hskip\numexpr(-\brl@pgf@minx+\brl@plot@leftsidemargin)*8\relax bp\box\@ne\box\brl@plot@headerbox}}% +4bp : depth of braille
+    \wd\z@\z@%
+    \ht\z@\z@%
+    \dp\z@\z@%
+    \brl@@scalebox{\brl@plot@pindisplayscaleinv}{\box\z@}%
+    \box\brl@@scalebox@box%
+    %
+    \let\protect\noexpand% from the original \@outputpage
+    \unvbox\brl@print@outbox% exec label etc.
+  }% \box\brl@print@onepage
+  %
+  \global\advance\brl@figure@floatpnum\@ne%
+  % 
+  \ifcsname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \else%
+    \expandafter\newbox\csname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \fi%
+  %
+  \global\setbox\csname brl@figure@floatp_\the\brl@figure@floatpnum\endcsname%
+  \vbox{%
+    \brl@orig@vskip\brl@figure@alltopmargin%
+    \hbox{\brl@orig@hskip\brl@figure@alloddsidemargin\box\brl@print@onepage}%
+    % 
+  }% 
+  \ifbrl@figure@spread% is this page spread ?
+    \global\expandafter\let\csname brl@figure@floatp_page\the\brl@figure@floatpnum\endcsname\brl@print@pdouble%
+  \else%
+    \global\expandafter\let\csname brl@figure@floatp_page\the\brl@figure@floatpnum\endcsname\brl@print@psingle%
+  \fi%
+  %
+  % 
+  \expandafter\brl@document_appendmattoks\expandafter{\the\brl@text@mattoks}%
+  \global\brl@text@mattoks{}%
+  % 
+  \brl@document_footnote%
+  \global\brl@document@indentfalse%
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

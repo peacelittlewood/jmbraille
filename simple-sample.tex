@@ -1,0 +1,58 @@
+% このファイルは Mac, Windows で uplatex, xelatex, lualatex でコンパイルできる.
+% 全部自動判定している.
+%
+\ifdefined\directlua% luatex
+  \documentclass[lualatex,ja=standard,jafont=haranoaji]{bxjsarticle}
+  \def\pgfsysdriver{pgfsys-luatex.def}
+\else%
+  \ifdefined\kanjiskip% uplatex
+    \documentclass[dvipdfmx,uplatex,ja=standard,jafont=haranoaji]{bxjsarticle}
+    \def\pgfsysdriver{pgfsys-dvipdfmx.def}
+  \else% xelatex
+    \documentclass[xelatex,ja=standard,jafont=haranoaji,prefercjk]{bxjsarticle}
+    \def\pgfsysdriver{pgfsys-xetex.def}
+  \fi%
+\fi%
+
+%
+% jmbraille を最後に読み込む. 
+%
+\usepackage{amsmath,amscd,amssymb,amsthm}
+
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+
+%
+%\usepackage{jmbraille}% 墨字用
+
+%
+\usepackage[braille]{jmbraille}% 墨字 → 点字
+% \usepackage[pindisplay,braille]{jmbraille}% ピンディスプレイでのみ使用する場合
+% \usepackage[overfull]{jmbraille}% 点字 → 墨字 (ページをはみ出している行を .ovfl ファイルに出力)
+
+
+% 専門用語の扱い
+% \BrailleTerminology{math}% 数学用 : default
+\BrailleTerminology{phys}% 物理用
+
+\begin{document}
+
+
+原子核物理
+
+シュレディンガー方程式(2階偏微分方程式)
+\begin{equation}
+  \label{eq:a}
+  i\hbar\frac{\partial\Psi}{\partial t}=-\frac{\hbar^2}{2m}\frac{\partial^2\Psi}{\partial x^2}
+\end{equation}
+
+波動方程式 \eqref{eq:a} は自由粒子に対するシュレーディンガー方程式である.
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% TeX-command-extra-options: "-shell-escape -8bit"
+%%% TeX-master: t
+%%% End:

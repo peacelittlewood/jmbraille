@@ -1,0 +1,2625 @@
+% Time-stamp: <2026-09-15 16:26:15 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+\newwrite\brl@char@file
+\immediate\openout\brl@char@file=jmbraille/codes/brl_char_def.tex\relax%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@char_def[meaning]{char}{\brl@char_bc...\brl@char@spacetrue...\brl@char@rawtoks{...}\brl@char_bc...}
+%% \brl@char_edef[meaning]{char}{\brl@char_bc...\brl@char@spacetrue...\brl@char@rawtoks{...}\brl@char_bc...}
+%% \brl@char_pdef[meaning]{char}{\brl@char_bc...\brl@char@spacetrue...\brl@char@rawtoks{...}\brl@char_bc...}
+%%
+%% def: \def\...{...} : catcode = 11
+%% pdef: \expandafter\def\csname\string ...\endcsname{...} : \cs
+%% edef: \expandafter\def\csname ...\endcsname{...} : \brl@@percent etc. to be expanded
+%%
+%% output:
+%% \protected\brl@code_<context>_<char> -> \brl@do{context}{char} 
+%% \brl@char@save_<context>_<char> -> <context>_\unexpanded{<char>} : char is the original form so that it can be saved into a file.
+%% \brl@char@mean_<context>_<char> -> meaning
+%% \brl@char@code_<context>_<char> -> \brl@bc{ } ... \brl@bc{ }
+%% \brl@char@count_<context>_<char> -> \advance\brl@char@charnum charnum
+%% \brl@char@space_<context>_<char> -> \brl@char@spacetrue, rawcodes
+%% 
+%% 
+%% <context> = math, text, info, etc.
+%%
+
+
+
+\def\brl@char_def_[#1]{%
+  \brl@char_def___{#1}%
+}
+\def\brl@char_def__#1{%
+  \brl@char_def___{#1}{#1}%
+}
+
+\def\brl@char_def{%
+  \let\brl@char@def\brl@char@ndef%
+  \let\brl@char@string\empty%
+  \@ifnextchar[%
+  {\brl@char_def_}%
+  {\brl@char_def__}%
+}
+\def\brl@char_pdef{%
+  \let\brl@char@def\brl@char@pdef%
+  \def\brl@char@string{\noexpand\string}%
+  \@ifnextchar[%
+  {\brl@char_def_}%
+  {\brl@char_def__}%
+}
+\def\brl@char_edef{%
+  \let\brl@char@def\brl@char@edef%
+  \let\brl@char@string\empty%
+  \@ifnextchar[%
+  {\brl@char_def_}%
+  {\brl@char_def__}%
+}
+
+
+%% define ordinary property
+\def\brl@char@odef#1{\immediate\write\brl@char@file{\def\expandafter\noexpand\csname#1\brl@char@key\endcsname{\unexpanded\expandafter{\brl@tmp}}}}
+
+
+%% define char and load
+\def\brl@char@ndef#1{%
+  \immediate\write\brl@char@file{%
+    \protected\def\expandafter\noexpand\csname brl@code_\brl@char@defcontext#1\endcsname{\noexpand\brl@do{\brl@char@key}}%
+    ^^J%
+    \def\expandafter\noexpand\csname brl@char@load_\brl@char@key\endcsname{%
+      \expandafter\noexpand\csname brl@code_\brl@char@defcontext#1\endcsname}%
+  }%
+}
+
+\def\brl@char@pdef#1{%
+  \immediate\write\brl@char@file{%
+    \protected\noexpand\expandafter\def\noexpand\csname brl@code_\brl@char@defcontext\unexpanded{\string#1}\noexpand\endcsname{\noexpand\brl@do{\brl@char@key}}%
+    ^^J%
+    \edef\expandafter\noexpand\csname brl@char@load_\brl@char@key\endcsname{%
+      \noexpand\csname brl@code_\brl@char@defcontext\unexpanded{\string#1}\noexpand\endcsname}%
+  }%
+}
+
+\def\brl@char@edef#1{%
+  \immediate\write\brl@char@file{%
+    \protected\noexpand\expandafter\def\noexpand\csname brl@code_\brl@char@defcontext\unexpanded{#1}\noexpand\endcsname{\noexpand\brl@do{\brl@char@key}}%
+    ^^J%
+    \edef\expandafter\noexpand\csname brl@char@load_\brl@char@key\endcsname{%
+      \noexpand\csname brl@code_\brl@char@defcontext\unexpanded{#1}\noexpand\endcsname}%
+  }%
+}
+
+
+
+\def\brl@char_def___#1#2#3{%
+  %% do
+  %
+  \edef\brl@char@defcontext{\brl@char@context _}%
+  %
+  % 
+  % 
+  %
+  \brl@char_getnewkey%
+  %
+  % deed and load
+  \edef\brl@tmp{\noexpand\brl@do{\brl@char@key}}%
+  \brl@char@def{#2}%
+  %% save
+  %
+  %% mean
+  \def\brl@tmp{#1}%
+  \brl@char@odef{brl@char@mean_}%
+  %
+  %% count
+  %% code
+  \brl@char@charnum\z@%
+  \brl@char@spacefalse%
+  \brl@char@toks{}%
+  % 
+  %
+  #3%
+  % 
+  %
+  \edef\brl@tmp{%
+    \ifcase\brl@char@charnum%
+    \or\advance\brl@char@charnum\@ne%
+    \or\advance\brl@char@charnum\tw@%
+    \or\advance\brl@char@charnum\thr@@%
+    \else\advance\brl@char@charnum\the\brl@char@charnum\relax\fi%
+  }%
+  %
+  \brl@char@odef{brl@char@count_}%
+  % 
+  \edef\brl@tmp{\ifbrl@char@space\noexpand\brl@char@spacetrue\fi}%
+  \brl@char@odef{brl@char@space_}%
+  %
+  \edef\brl@tmp{\the\brl@char@toks}%
+  \brl@char@odef{brl@char@code_}%
+  %% 
+  %%
+  %%
+  \@ifnextchar<{\brl@char_def_draw}{\brl@char_def_nodraw}%  
+}
+%
+%
+%
+% 32 22 0~725 0~479
+% 15x33
+%%
+%
+% \ifbrl@option@hires, \draw is defined either \code or \dbc
+% and \brl@do_draw is defined.
+% else, \draw is not defined and
+% \brl@do_draw is \brl@do_code.
+%
+%
+%\ifbrl@option@hires
+
+\def\brl@char_def_draw<#1>{%
+  \edef\brl@tmp{#1}%
+  \brl@char@odef{brl@char@draw_}%
+}
+\def\brl@char_def_nodraw{%
+  % the same as its code.
+  \brl@char@odef{brl@char@draw_}%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% char_aliasdef
+%%
+%% char@xx alias. not used directly.
+%%
+
+\brl@char_aliasdef{one}{\brl@char_bc100000}
+\brl@char_aliasdef{two}{\brl@char_bc110000}
+\brl@char_aliasdef{three}{\brl@char_bc100100}
+\brl@char_aliasdef{four}{\brl@char_bc100110}
+\brl@char_aliasdef{five}{\brl@char_bc100010}
+\brl@char_aliasdef{six}{\brl@char_bc110100}
+\brl@char_aliasdef{seven}{\brl@char_bc110110}
+\brl@char_aliasdef{eight}{\brl@char_bc110010}
+\brl@char_aliasdef{nine}{\brl@char_bc010100}
+\brl@char_aliasdef{zero}{\brl@char_bc010110}
+\brl@char_aliasdef{a}{\brl@char_bc100000}
+\brl@char_aliasdef{b}{\brl@char_bc110000}
+\brl@char_aliasdef{c}{\brl@char_bc100100}
+\brl@char_aliasdef{d}{\brl@char_bc100110}
+\brl@char_aliasdef{e}{\brl@char_bc100010}
+\brl@char_aliasdef{f}{\brl@char_bc110100}
+\brl@char_aliasdef{g}{\brl@char_bc110110}
+\brl@char_aliasdef{h}{\brl@char_bc110010}
+\brl@char_aliasdef{i}{\brl@char_bc010100}
+\brl@char_aliasdef{j}{\brl@char_bc010110}
+\brl@char_aliasdef{k}{\brl@char_bc101000}
+\brl@char_aliasdef{l}{\brl@char_bc111000}
+\brl@char_aliasdef{m}{\brl@char_bc101100}
+\brl@char_aliasdef{n}{\brl@char_bc101110}
+\brl@char_aliasdef{o}{\brl@char_bc101010}
+\brl@char_aliasdef{p}{\brl@char_bc111100}
+\brl@char_aliasdef{q}{\brl@char_bc111110}
+\brl@char_aliasdef{r}{\brl@char_bc111010}
+\brl@char_aliasdef{s}{\brl@char_bc011100}
+\brl@char_aliasdef{t}{\brl@char_bc011110}
+\brl@char_aliasdef{u}{\brl@char_bc101001}
+\brl@char_aliasdef{v}{\brl@char_bc111001}
+\brl@char_aliasdef{w}{\brl@char_bc010111}
+\brl@char_aliasdef{x}{\brl@char_bc101101}
+\brl@char_aliasdef{y}{\brl@char_bc101111}
+\brl@char_aliasdef{z}{\brl@char_bc101011}
+\brl@char_aliasdef{alpha}{\brl@char_bc100000}
+\brl@char_aliasdef{beta}{\brl@char_bc110000}
+\brl@char_aliasdef{gamma}{\brl@char_bc110110}
+\brl@char_aliasdef{delta}{\brl@char_bc100110}
+\brl@char_aliasdef{epsilon}{\brl@char_bc100010}
+\brl@char_aliasdef{zeta}{\brl@char_bc101011}
+\brl@char_aliasdef{eta}{\brl@char_bc100011}
+\brl@char_aliasdef{theta}{\brl@char_bc100111}
+\brl@char_aliasdef{iota}{\brl@char_bc010100}
+\brl@char_aliasdef{kappa}{\brl@char_bc101000}
+\brl@char_aliasdef{lambda}{\brl@char_bc111000}
+\brl@char_aliasdef{mu}{\brl@char_bc101100}
+\brl@char_aliasdef{nu}{\brl@char_bc101110}
+\brl@char_aliasdef{xi}{\brl@char_bc101101}
+\brl@char_aliasdef{omicron}{\brl@char_bc101010}
+\brl@char_aliasdef{pi}{\brl@char_bc111100}
+\brl@char_aliasdef{rho}{\brl@char_bc111010}
+\brl@char_aliasdef{sigma}{\brl@char_bc011100}
+\brl@char_aliasdef{tau}{\brl@char_bc011110}
+\brl@char_aliasdef{upsilon}{\brl@char_bc101001}
+\brl@char_aliasdef{phi}{\brl@char_bc110100}
+\brl@char_aliasdef{chi}{\brl@char_bc111101}
+\brl@char_aliasdef{psi}{\brl@char_bc101111}
+\brl@char_aliasdef{omega}{\brl@char_bc010111}
+\brl@char_aliasdef{var}{\brl@char_bc000101}
+
+\brl@char_aliasdef{plus}{\brl@char_bc010001}
+\brl@char_aliasdef{minus}{\brl@char_bc001010}
+\brl@char_aliasdef{times}{\brl@char_bc100001}
+\brl@char_aliasdef{space}{\brl@char@spacetrue\brl@char_bc000000}
+\brl@char_aliasdef{nmspace}{\brl@char_bc000000}
+\brl@char_aliasdef{hfill}{\brl@char_bc010010}
+\brl@char_aliasdef{rightarrow}{\brl@char_bc010010\brl@char_bc101010}
+\brl@char_aliasdef{leftarrow}{\brl@char_bc010101\brl@char_bc010010}
+\brl@char_aliasdef{leftrightarrow}{\brl@char_bc010101\brl@char_bc010010\brl@char_bc101010}
+\brl@char_aliasdef{vert}{\brl@char_bc110011}
+\brl@char_aliasdef{cup}{\brl@char_bc001101}
+\brl@char_aliasdef{cap}{\brl@char_bc100101}
+\brl@char_aliasdef{not}{\brl@char_bc000101}
+\brl@char_aliasdef{int}{\brl@char_bc011101}
+
+\brl@char_aliasdef{bar}{\brl@char_bc000100\brl@char_bc100100}
+\brl@char_aliasdef{overline}{\brl@char_bc000100\brl@char_bc100100}
+\brl@char_aliasdef{underline}{\brl@char_bc000001\brl@char_bc001001}
+\brl@char_aliasdef{tilde}{\brl@char_bc000100\brl@char_bc010010}
+\brl@char_aliasdef{hat}{\brl@char_bc000100\brl@char_bc110010}
+\brl@char_aliasdef{dot}{\brl@char_bc000100\brl@char_bc001000}
+\brl@char_aliasdef{mathring}{\brl@char_bc000100\brl@char_bc010000}
+\brl@char_aliasdef{overarrow}{\brl@char_bc000100}
+\brl@char_aliasdef{underarrow}{\brl@char_bc000001}
+
+
+
+\brl@char_aliasdef{parenopen}{\brl@char_bc011001}% (
+\brl@char_aliasdef{parenclose}{\brl@char_bc001011}% )
+\brl@char_aliasdef{braceopen}{\brl@char_bc000001\brl@char_bc110001}% \{
+\brl@char_aliasdef{braceclose}{\brl@char_bc001110\brl@char_bc001000}% \}
+\brl@char_aliasdef{bracketopen}{\brl@char_bc000001\brl@char_bc111011}% [
+\brl@char_aliasdef{bracketclose}{\brl@char_bc011111\brl@char_bc001000}% ]
+\brl@char_aliasdef{numbersign}{\brl@char_bc001111}
+\brl@char_aliasdef{equationsign}{\brl@char_bc000011}
+\brl@char_aliasdef{capital}{\brl@char_bc000001}
+\brl@char_aliasdef{small}{\brl@char_bc000011}
+
+\brl@char_aliasdef{frakc}{\brl@char_bc000111}
+\brl@char_aliasdef{fraks}{\brl@char_bc000010}
+\brl@char_aliasdef{bfc}{\brl@char_bc000111\brl@char_bc000001}
+\brl@char_aliasdef{bfs}{\brl@char_bc000111\brl@char_bc000011}
+\brl@char_aliasdef{bfns}{\brl@char_bc000111}
+\brl@char_aliasdef{calc}{\brl@char_bc000101\brl@char_bc000001}
+\brl@char_aliasdef{cals}{\brl@char_bc000101\brl@char_bc000011}
+\brl@char_aliasdef{calns}{\brl@char_bc000101}
+
+\brl@char_aliasdef{colon}{\brl@char_bc000010\brl@char_bc010000}
+
+
+\brl@char_aliasdef{text}{\brl@char_bc011011}
+\brl@char_aliasdef{linebreak}{\brl@char_bc000001}
+
+\brl@char_aliasdef{greek}{\brl@char_bc000100}
+\brl@char_aliasdef{Greek}{\brl@char_bc000101}
+
+\brl@char_aliasdef{あ}{\brl@char_bc100000}
+\brl@char_aliasdef{い}{\brl@char_bc110000}
+\brl@char_aliasdef{う}{\brl@char_bc100100}
+\brl@char_aliasdef{え}{\brl@char_bc110100}
+\brl@char_aliasdef{お}{\brl@char_bc010100}
+\brl@char_aliasdef{か}{\brl@char_bc100001}
+\brl@char_aliasdef{き}{\brl@char_bc110001}
+\brl@char_aliasdef{く}{\brl@char_bc100101}
+\brl@char_aliasdef{け}{\brl@char_bc110101}
+\brl@char_aliasdef{こ}{\brl@char_bc010101}
+\brl@char_aliasdef{さ}{\brl@char_bc100011}
+\brl@char_aliasdef{し}{\brl@char_bc110011}
+\brl@char_aliasdef{す}{\brl@char_bc100111}
+\brl@char_aliasdef{せ}{\brl@char_bc110111}
+\brl@char_aliasdef{そ}{\brl@char_bc010111}
+\brl@char_aliasdef{た}{\brl@char_bc101010}
+\brl@char_aliasdef{ち}{\brl@char_bc111010}
+\brl@char_aliasdef{つ}{\brl@char_bc101110}
+\brl@char_aliasdef{て}{\brl@char_bc111110}
+\brl@char_aliasdef{と}{\brl@char_bc011110}
+\brl@char_aliasdef{な}{\brl@char_bc101000}
+\brl@char_aliasdef{に}{\brl@char_bc111000}
+\brl@char_aliasdef{ぬ}{\brl@char_bc101100}
+\brl@char_aliasdef{ね}{\brl@char_bc111100}
+\brl@char_aliasdef{の}{\brl@char_bc011100}
+\brl@char_aliasdef{は}{\brl@char_bc101001}
+\brl@char_aliasdef{ひ}{\brl@char_bc111001}
+\brl@char_aliasdef{ふ}{\brl@char_bc101101}
+\brl@char_aliasdef{へ}{\brl@char_bc111101}
+\brl@char_aliasdef{ほ}{\brl@char_bc011101}
+\brl@char_aliasdef{ま}{\brl@char_bc101011}
+\brl@char_aliasdef{み}{\brl@char_bc111011}
+\brl@char_aliasdef{む}{\brl@char_bc101111}
+\brl@char_aliasdef{め}{\brl@char_bc111111}
+\brl@char_aliasdef{も}{\brl@char_bc011111}
+\brl@char_aliasdef{や}{\brl@char_bc001100}
+
+\brl@char_aliasdef{ゆ}{\brl@char_bc001101}
+
+\brl@char_aliasdef{よ}{\brl@char_bc001110}
+\brl@char_aliasdef{ら}{\brl@char_bc100010}
+\brl@char_aliasdef{り}{\brl@char_bc110010}
+\brl@char_aliasdef{る}{\brl@char_bc100110}
+\brl@char_aliasdef{れ}{\brl@char_bc110110}
+\brl@char_aliasdef{ろ}{\brl@char_bc010110}
+\brl@char_aliasdef{わ}{\brl@char_bc001000}
+\brl@char_aliasdef{ゐ}{\brl@char_bc011000}
+
+\brl@char_aliasdef{ゑ}{\brl@char_bc011010}
+\brl@char_aliasdef{を}{\brl@char_bc001010}
+\brl@char_aliasdef{ん}{\brl@char_bc001011}
+\brl@char_aliasdef{っ}{\brl@char_bc010000}
+\brl@char_aliasdef{jbo}{\brl@char_bc010010}
+\brl@char_aliasdef{jten}{\brl@char_bc000011}
+\brl@char_aliasdef{jmaru}{\brl@char_bc010011}
+\brl@char_aliasdef{jque}{\brl@char_bc010001}
+\brl@char_aliasdef{jexc}{\brl@char_bc011010}
+\brl@char_aliasdef{jnakaten}{\brl@char_bc000010}
+\brl@char_aliasdef{jdaku}{\brl@char_bc000010}
+\brl@char_aliasdef{jhandaku}{\brl@char_bc000001}
+\brl@char_aliasdef{ゃ}{\brl@char_bc000100}
+\brl@char_aliasdef{jdakuゃ}{\brl@char_bc000110}
+\brl@char_aliasdef{jhandakuゃ}{\brl@char_bc000101}
+
+\brl@char_aliasdef{rulemu}{\brl@char_bc100100}
+\brl@char_aliasdef{rulemm}{\brl@char_bc010010}
+\brl@char_aliasdef{rulemd}{\brl@char_bc001001}
+
+\brl@char_aliasdef{rulemuu}{\brl@char_bc110110}
+\brl@char_aliasdef{rulemdd}{\brl@char_bc011011}
+
+\brl@char_aliasdef{rulelu}{\brl@char_bc011010}
+\brl@char_aliasdef{ruleru}{\brl@char_bc010011}
+\brl@char_aliasdef{ruleld}{\brl@char_bc110010}
+\brl@char_aliasdef{rulerd}{\brl@char_bc010110}
+
+\brl@char_aliasdef{ruleu}{\brl@char_bc011011}
+\brl@char_aliasdef{ruled}{\brl@char_bc110110}
+
+\brl@char_aliasdef{ruleolu}{\brl@char_bc111100}
+\brl@char_aliasdef{ruleoru}{\brl@char_bc100111}
+\brl@char_aliasdef{ruleold}{\brl@char_bc111001}
+\brl@char_aliasdef{ruleord}{\brl@char_bc001111}
+
+\brl@char_aliasdef{ruleb}{\brl@char_bc111111}
+
+
+\brl@char_aliasdef{quoteopen}{\brl@char_bc011001}
+\brl@char_aliasdef{quoteclose}{\brl@char_bc001011}
+
+\brl@char_aliasdef{emptybox}{\brl@char_bc000111\brl@char_bc101101\brl@char_bc101101\brl@char_bc111000}
+
+\brl@char_aliasdef{Rightarrow}{\brl@char_bc010010\brl@char_bc010010\brl@char_bc101010}%
+\brl@char_aliasdef{Leftarrow}{\brl@char_bc010101\brl@char_bc010010\brl@char_bc010010}%
+\brl@char_aliasdef{Leftrightarrow}{\brl@char_bc010101\brl@char_bc010010\brl@char_bc010010\brl@char_bc101010}%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% dbc alias for draw
+
+
+\brl@char_alias_dbcdef{cmatrix_lu}{{9}{0}{7}{3}{7}{6}{5}{9}{5}{12}{5}{15}{3}{18}{0}{20}{3}{22}{5}{25}{5}{28}{5}{31}}
+\brl@char_alias_dbcdef{cmatrix_lm}{{5}{0}{5}{3}{5}{6}{5}{9}{5}{12}{5}{15}{5}{18}{5}{21}{5}{24}{5}{27}{5}{30}}
+\brl@char_alias_dbcdef{cmatrix_ld}{{5}{0}{5}{3}{5}{6}{7}{9}{7}{12}{9}{15}}
+
+\brl@char_alias_dbcdef{cmatrix_ru}{{3}{0}{5}{3}{5}{6}{7}{9}{7}{12}{7}{15}{9}{18}{12}{20}{9}{22}{7}{25}{7}{28}{7}{31}}
+\brl@char_alias_dbcdef{cmatrix_rm}{{7}{0}{7}{3}{7}{6}{7}{9}{7}{12}{7}{15}{7}{18}{7}{21}{7}{24}{7}{27}{7}{30}}
+\brl@char_alias_dbcdef{cmatrix_rd}{{7}{0}{7}{3}{7}{6}{5}{9}{5}{12}{3}{15}}
+
+
+\brl@char_alias_dbcdef{pmatrix_lu}{{9}{0}{7}{3}{7}{6}{5}{9}{5}{12}{5}{15}{3}{18}{3}{21}{3}{24}{3}{27}{3}{30}}
+\brl@char_alias_dbcdef{pmatrix_ld}{{5}{0}{5}{3}{5}{6}{7}{9}{7}{12}{9}{15}}
+
+\brl@char_alias_dbcdef{pmatrix_ru}{{3}{0}{5}{3}{5}{6}{7}{9}{7}{12}{7}{15}{9}{18}{9}{21}{9}{24}{9}{27}{9}{30}}
+\brl@char_alias_dbcdef{pmatrix_rd}{{7}{0}{7}{3}{7}{6}{5}{9}{5}{12}{3}{15}}
+
+\brl@char_alias_dbcdef{bmatrix_lu}{{3}{0}{6}{0}{9}{0}{12}{0}{3}{3}{3}{6}{3}{9}{3}{12}{3}{15}{3}{18}{3}{21}{3}{24}{3}{27}{3}{30}}
+\brl@char_alias_dbcdef{bmatrix_ld}{{3}{0}{3}{3}{3}{6}{3}{9}{3}{12}{3}{15}{6}{15}{9}{15}{12}{15}}
+
+\brl@char_alias_dbcdef{bmatrix_ru}{{0}{0}{3}{0}{6}{0}{9}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{15}{9}{18}{9}{21}{9}{24}{9}{27}{9}{30}}
+\brl@char_alias_dbcdef{bmatrix_rd}{{9}{0}{9}{3}{9}{6}{9}{9}{9}{12}{0}{15}{3}{15}{6}{15}{9}{15}}
+
+\brl@char_alias_dbcdef{matrix_lm}{{3}{0}{3}{3}{3}{6}{3}{9}{3}{12}{3}{15}{3}{18}{3}{21}{3}{24}{3}{27}{3}{30}}
+\brl@char_alias_dbcdef{matrix_rm}{{9}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{15}{9}{18}{9}{21}{9}{24}{9}{27}{9}{30}}
+
+\brl@char_alias_dbcdef{matrix_ld}{{3}{0}{3}{3}{3}{6}{3}{9}{3}{12}{3}{15}}
+\brl@char_alias_dbcdef{matrix_rd}{{9}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{15}}
+
+
+
+
+\brl@char_alias_dbcdef{bracelu}{{1}{17}{3}{13}{6}{10}{9}{9}{12}{9}}
+\brl@char_alias_dbcdef{braceru}{{0}{9}{3}{9}{6}{10}{9}{13}{11}{17}}
+
+\brl@char_alias_dbcdef{braceld}{{1}{1}{3}{5}{6}{8}{9}{9}{12}{9}}
+\brl@char_alias_dbcdef{bracerd}{{0}{9}{3}{9}{6}{8}{9}{5}{11}{1}}
+
+\brl@char_alias_dbcdef{bracem}{{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}}
+
+\brl@char_alias_dbcdef{braceu}{{1}{17}{3}{13}{6}{9}{9}{13}{11}{17}}
+\brl@char_alias_dbcdef{braced}{{1}{1}{3}{5}{6}{7}{9}{5}{11}{1}}
+
+
+%%
+%% oooo : udlr
+%%
+%% single
+\brl@char_alias_dbcdef{ooooa}{}
+\brl@char_alias_dbcdef{xoooa}{{6}{0}{6}{3}{6}{6}{6}{9}{6}{12}{6}{15}}%{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}% full length
+\brl@char_alias_dbcdef{oxooa}{{6}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{ooxoa}{{0}{9}{3}{9}{6}{9}}
+\brl@char_alias_dbcdef{oooxa}{{6}{9}{9}{9}{12}{9}}
+\brl@char_alias_dbcdef{xxooa}{{6}{0}{6}{3}{6}{6}{6}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xoxoa}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}}
+\brl@char_alias_dbcdef{xooxa}{{6}{0}{6}{3}{6}{6}{6}{9}{9}{9}{12}{9}}
+\brl@char_alias_dbcdef{oxxoa}{{0}{9}{3}{9}{6}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{oxoxa}{{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{ooxxa}{{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}}
+\brl@char_alias_dbcdef{xxxoa}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xxoxa}{{6}{0}{6}{3}{6}{6}{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xoxxa}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}}
+\brl@char_alias_dbcdef{oxxxa}{{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xxxxa}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+
+%% double
+\brl@char_alias_dbcdef{oooob}{}
+\brl@char_alias_dbcdef{xooob}{{6}{0}{6}{3}{6}{6}{6}{9}{6}{12}{6}{15}}%{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}% full length
+\brl@char_alias_dbcdef{oxoob}{{6}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{ooxob}{{0}{9}{3}{9}{6}{9}{0}{15}{3}{15}{6}{15}}
+\brl@char_alias_dbcdef{oooxb}{{6}{9}{9}{9}{12}{9}{6}{15}{9}{15}{12}{15}}
+\brl@char_alias_dbcdef{xxoob}{{6}{0}{6}{3}{6}{6}{6}{9}{6}{12}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xoxob}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{6}{12}{0}{15}{3}{15}{6}{15}}
+\brl@char_alias_dbcdef{xooxb}{{6}{0}{6}{3}{6}{6}{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{9}{15}{12}{15}}
+\brl@char_alias_dbcdef{oxxob}{{0}{9}{3}{9}{6}{9}{0}{12}{0}{15}{3}{15}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{oxoxb}{{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{9}{15}{12}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{ooxxb}{{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{0}{15}{3}{15}{6}{15}{9}{15}{12}{15}}
+\brl@char_alias_dbcdef{xxxob}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{6}{12}{0}{15}{3}{15}{6}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xxoxb}{{6}{0}{6}{3}{6}{6}{6}{9}{9}{9}{12}{9}{6}{12}{6}{15}{9}{15}{12}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xoxxb}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{0}{15}{3}{15}{6}{15}{9}{15}{12}{15}}
+\brl@char_alias_dbcdef{oxxxb}{{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{0}{15}{3}{15}{6}{15}{9}{15}{12}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+\brl@char_alias_dbcdef{xxxxb}{{6}{0}{6}{3}{6}{6}{0}{9}{3}{9}{6}{9}{9}{9}{12}{9}{6}{12}{0}{15}{3}{15}{6}{15}{9}{15}{12}{15}{6}{18}{6}{21}{6}{24}{6}{27}{6}{30}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% def
+%%
+%% character or command
+%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% context : text
+
+\brl@char_context{text}
+
+
+
+
+\brl@char_def{あ}{\brl@char@alias_あ}
+\brl@char_def{い}{\brl@char@alias_い}
+\brl@char_def{う}{\brl@char@alias_う}
+\brl@char_def{え}{\brl@char@alias_え}
+\brl@char_def{お}{\brl@char@alias_お}
+\brl@char_def{か}{\brl@char@alias_か}
+\brl@char_def{き}{\brl@char@alias_き}
+\brl@char_def{く}{\brl@char@alias_く}
+\brl@char_def{け}{\brl@char@alias_け}
+\brl@char_def{こ}{\brl@char@alias_こ}
+\brl@char_def{さ}{\brl@char@alias_さ}
+\brl@char_def{し}{\brl@char@alias_し}
+\brl@char_def{す}{\brl@char@alias_す}
+\brl@char_def{せ}{\brl@char@alias_せ}
+\brl@char_def{そ}{\brl@char@alias_そ}
+\brl@char_def{た}{\brl@char@alias_た}
+\brl@char_def{ち}{\brl@char@alias_ち}
+\brl@char_def{つ}{\brl@char@alias_つ}
+\brl@char_def{て}{\brl@char@alias_て}
+\brl@char_def{と}{\brl@char@alias_と}
+\brl@char_def{な}{\brl@char@alias_な}
+\brl@char_def{に}{\brl@char@alias_に}
+\brl@char_def{ぬ}{\brl@char@alias_ぬ}
+\brl@char_def{ね}{\brl@char@alias_ね}
+\brl@char_def{の}{\brl@char@alias_の}
+\brl@char_def{は}{\brl@char@alias_は}
+\brl@char_def{ひ}{\brl@char@alias_ひ}
+\brl@char_def{ふ}{\brl@char@alias_ふ}
+\brl@char_def{へ}{\brl@char@alias_へ}
+\brl@char_def{ほ}{\brl@char@alias_ほ}
+\brl@char_def{ま}{\brl@char@alias_ま}
+\brl@char_def{み}{\brl@char@alias_み}
+\brl@char_def{む}{\brl@char@alias_む}
+\brl@char_def{め}{\brl@char@alias_め}
+\brl@char_def{も}{\brl@char@alias_も}
+\brl@char_def{や}{\brl@char@alias_や}
+
+\brl@char_def{ゆ}{\brl@char@alias_ゆ}
+
+\brl@char_def{よ}{\brl@char@alias_よ}
+\brl@char_def{ら}{\brl@char@alias_ら}
+\brl@char_def{り}{\brl@char@alias_り}
+\brl@char_def{る}{\brl@char@alias_る}
+\brl@char_def{れ}{\brl@char@alias_れ}
+\brl@char_def{ろ}{\brl@char@alias_ろ}
+\brl@char_def{わ}{\brl@char@alias_わ}
+\brl@char_def{ゐ}{\brl@char@alias_ゐ}
+
+\brl@char_def{ゑ}{\brl@char@alias_ゑ}
+\brl@char_def{を}{\brl@char@alias_を}
+\brl@char_def{ん}{\brl@char@alias_ん}
+\brl@char_def{っ}{\brl@char@alias_っ}
+\brl@char_def{ー}{\brl@char@alias_jbo}
+\brl@char_edef{、}{\brl@char@alias_jten}
+\brl@char_edef{。}{\brl@char@alias_jmaru}
+%
+\brl@char_edef{．}{\brl@char@alias_jmaru}
+\brl@char_edef{？}{\brl@char@alias_jque}
+\brl@char_edef{！}{\brl@char@alias_jexc}
+
+\brl@char_edef{・}{\brl@char@alias_jnakaten}
+
+\brl@char_def{が}{\brl@char@alias_jdaku\brl@char@alias_か}
+\brl@char_def{ぎ}{\brl@char@alias_jdaku\brl@char@alias_き}
+\brl@char_def{ぐ}{\brl@char@alias_jdaku\brl@char@alias_く}
+\brl@char_def{げ}{\brl@char@alias_jdaku\brl@char@alias_け}
+\brl@char_def{ご}{\brl@char@alias_jdaku\brl@char@alias_こ}
+\brl@char_def{ざ}{\brl@char@alias_jdaku\brl@char@alias_さ}
+\brl@char_def{じ}{\brl@char@alias_jdaku\brl@char@alias_し}
+\brl@char_def{ず}{\brl@char@alias_jdaku\brl@char@alias_す}
+\brl@char_def{ぜ}{\brl@char@alias_jdaku\brl@char@alias_せ}
+\brl@char_def{ぞ}{\brl@char@alias_jdaku\brl@char@alias_そ}
+\brl@char_def{だ}{\brl@char@alias_jdaku\brl@char@alias_た}
+\brl@char_def{ぢ}{\brl@char@alias_jdaku\brl@char@alias_ち}
+\brl@char_def{づ}{\brl@char@alias_jdaku\brl@char@alias_つ}
+\brl@char_def{で}{\brl@char@alias_jdaku\brl@char@alias_て}
+\brl@char_def{ど}{\brl@char@alias_jdaku\brl@char@alias_と}
+\brl@char_def{ば}{\brl@char@alias_jdaku\brl@char@alias_は}
+\brl@char_def{び}{\brl@char@alias_jdaku\brl@char@alias_ひ}
+\brl@char_def{ぶ}{\brl@char@alias_jdaku\brl@char@alias_ふ}
+\brl@char_def{べ}{\brl@char@alias_jdaku\brl@char@alias_へ}
+\brl@char_def{ぼ}{\brl@char@alias_jdaku\brl@char@alias_ほ}
+\brl@char_def{ぱ}{\brl@char@alias_jhandaku\brl@char@alias_は}
+\brl@char_def{ぴ}{\brl@char@alias_jhandaku\brl@char@alias_ひ}
+\brl@char_def{ぷ}{\brl@char@alias_jhandaku\brl@char@alias_ふ}
+\brl@char_def{ぺ}{\brl@char@alias_jhandaku\brl@char@alias_へ}
+\brl@char_def{ぽ}{\brl@char@alias_jhandaku\brl@char@alias_ほ}
+
+
+\brl@char_def{きゃ}{\brl@char@alias_ゃ\brl@char@alias_か}
+\brl@char_def{きゅ}{\brl@char@alias_ゃ\brl@char@alias_く}
+\brl@char_def{きょ}{\brl@char@alias_ゃ\brl@char@alias_こ}
+\brl@char_def{しゃ}{\brl@char@alias_ゃ\brl@char@alias_さ}
+\brl@char_def{しゅ}{\brl@char@alias_ゃ\brl@char@alias_す}
+\brl@char_def{しょ}{\brl@char@alias_ゃ\brl@char@alias_そ}
+\brl@char_def{ちゃ}{\brl@char@alias_ゃ\brl@char@alias_た}
+\brl@char_def{ちゅ}{\brl@char@alias_ゃ\brl@char@alias_つ}
+\brl@char_def{ちょ}{\brl@char@alias_ゃ\brl@char@alias_と}
+\brl@char_def{にゃ}{\brl@char@alias_ゃ\brl@char@alias_な}
+\brl@char_def{にゅ}{\brl@char@alias_ゃ\brl@char@alias_ぬ}
+\brl@char_def{にょ}{\brl@char@alias_ゃ\brl@char@alias_の}
+\brl@char_def{ひゃ}{\brl@char@alias_ゃ\brl@char@alias_は}
+\brl@char_def{ひゅ}{\brl@char@alias_ゃ\brl@char@alias_ふ}
+\brl@char_def{ひょ}{\brl@char@alias_ゃ\brl@char@alias_ほ}
+\brl@char_def{みゃ}{\brl@char@alias_ゃ\brl@char@alias_ま}
+\brl@char_def{みゅ}{\brl@char@alias_ゃ\brl@char@alias_む}
+\brl@char_def{みょ}{\brl@char@alias_ゃ\brl@char@alias_も}
+\brl@char_def{りゃ}{\brl@char@alias_ゃ\brl@char@alias_ら}
+\brl@char_def{りゅ}{\brl@char@alias_ゃ\brl@char@alias_る}
+\brl@char_def{りょ}{\brl@char@alias_ゃ\brl@char@alias_ろ}
+
+\brl@char_def{ぎゃ}{\brl@char@alias_jdakuゃ\brl@char@alias_か}
+\brl@char_def{ぎゅ}{\brl@char@alias_jdakuゃ\brl@char@alias_く}
+\brl@char_def{ぎょ}{\brl@char@alias_jdakuゃ\brl@char@alias_こ}
+\brl@char_def{じゃ}{\brl@char@alias_jdakuゃ\brl@char@alias_さ}
+\brl@char_def{じゅ}{\brl@char@alias_jdakuゃ\brl@char@alias_す}
+\brl@char_def{じょ}{\brl@char@alias_jdakuゃ\brl@char@alias_そ}
+\brl@char_def{ぢゃ}{\brl@char@alias_jdakuゃ\brl@char@alias_た}
+\brl@char_def{ぢゅ}{\brl@char@alias_jdakuゃ\brl@char@alias_つ}
+\brl@char_def{ぢょ}{\brl@char@alias_jdakuゃ\brl@char@alias_と}
+\brl@char_def{びゃ}{\brl@char@alias_jdakuゃ\brl@char@alias_は}
+\brl@char_def{びゅ}{\brl@char@alias_jdakuゃ\brl@char@alias_ふ}
+\brl@char_def{びょ}{\brl@char@alias_jdakuゃ\brl@char@alias_ほ}
+
+\brl@char_def{ぴゃ}{\brl@char@alias_jhandakuゃ\brl@char@alias_は}
+\brl@char_def{ぴゅ}{\brl@char@alias_jhandakuゃ\brl@char@alias_ふ}
+\brl@char_def{ぴょ}{\brl@char@alias_jhandakuゃ\brl@char@alias_ほ}
+
+\brl@char_def{いぇ}{\brl@char@alias_ゃ\brl@char@alias_え}
+\brl@char_def{きぇ}{\brl@char@alias_ゃ\brl@char@alias_け}
+\brl@char_def{しぇ}{\brl@char@alias_ゃ\brl@char@alias_せ}
+\brl@char_def{ちぇ}{\brl@char@alias_ゃ\brl@char@alias_て}
+\brl@char_def{にぇ}{\brl@char@alias_ゃ\brl@char@alias_ね}
+\brl@char_def{ひぇ}{\brl@char@alias_ゃ\brl@char@alias_へ}
+\brl@char_def{じぇ}{\brl@char@alias_jdakuゃ\brl@char@alias_せ}
+
+\brl@char_def{うぁ}{\brl@char@alias_jque\brl@char@alias_あ}
+\brl@char_def{うぃ}{\brl@char@alias_jque\brl@char@alias_い}
+\brl@char_def{うぇ}{\brl@char@alias_jque\brl@char@alias_え}
+\brl@char_def{うぉ}{\brl@char@alias_jque\brl@char@alias_お}
+\brl@char_def{くぁ}{\brl@char@alias_jque\brl@char@alias_か}
+\brl@char_def{くぃ}{\brl@char@alias_jque\brl@char@alias_き}
+\brl@char_def{くぇ}{\brl@char@alias_jque\brl@char@alias_け}
+\brl@char_def{くぉ}{\brl@char@alias_jque\brl@char@alias_こ}
+\brl@char_def{つぁ}{\brl@char@alias_jque\brl@char@alias_た}
+\brl@char_def{つぃ}{\brl@char@alias_jque\brl@char@alias_ち}
+\brl@char_def{つぇ}{\brl@char@alias_jque\brl@char@alias_て}
+\brl@char_def{つぉ}{\brl@char@alias_jque\brl@char@alias_と}
+\brl@char_def{ふぁ}{\brl@char@alias_jque\brl@char@alias_は}
+\brl@char_def{ふぃ}{\brl@char@alias_jque\brl@char@alias_ひ}
+\brl@char_def{ふぇ}{\brl@char@alias_jque\brl@char@alias_へ}
+\brl@char_def{ふぉ}{\brl@char@alias_jque\brl@char@alias_ほ}
+\brl@char_def{ぐぁ}{\brl@char@alias_jmaru\brl@char@alias_か}
+\brl@char_def{ぐぃ}{\brl@char@alias_jmaru\brl@char@alias_き}
+\brl@char_def{ぐぇ}{\brl@char@alias_jmaru\brl@char@alias_け}
+\brl@char_def{ぐぉ}{\brl@char@alias_jmaru\brl@char@alias_こ}
+
+\brl@char_def{ゔぁ}{\brl@char@alias_jmaru\brl@char@alias_は}
+\brl@char_def{ゔぃ}{\brl@char@alias_jmaru\brl@char@alias_ひ}
+\brl@char_def{ゔぇ}{\brl@char@alias_jmaru\brl@char@alias_へ}
+\brl@char_def{ゔぉ}{\brl@char@alias_jmaru\brl@char@alias_ほ}
+
+\brl@char_def{とぅ}{\brl@char@alias_jque\brl@char@alias_つ}
+\brl@char_def{どぅ}{\brl@char@alias_jhandaku\brl@char@alias_つ}
+
+\brl@char_def{すぃ}{\brl@char@alias_ゃ\brl@char@alias_し}
+\brl@char_def{てぃ}{\brl@char@alias_ゃ\brl@char@alias_ち}
+\brl@char_def{ずぃ}{\brl@char@alias_jdakuゃ\brl@char@alias_し}
+\brl@char_def{でぃ}{\brl@char@alias_jdakuゃ\brl@char@alias_ち}
+
+\brl@char_def{てゅ}{\brl@char@alias_jhandakuゃ\brl@char@alias_つ}
+\brl@char_def{ふゅ}{\brl@char@alias_jhandakuゃ\brl@char@alias_ゆ}
+\brl@char_def{ふょ}{\brl@char@alias_jhandakuゃ\brl@char@alias_よ}
+
+\brl@char_def{でゅ}{\brl@char_bc000111\brl@char@alias_つ}
+
+\brl@char_def{ゔゅ}{\brl@char_bc000111\brl@char@alias_ゆ}
+\brl@char_def{ゔょ}{\brl@char_bc000111\brl@char@alias_よ}
+\brl@char_def{ゔ}{\brl@char@alias_jdaku\brl@char@alias_う}
+
+
+
+\brl@char_def{ア}{\brl@char@alias_あ}
+\brl@char_def{イ}{\brl@char@alias_い}
+\brl@char_def{ウ}{\brl@char@alias_う}
+\brl@char_def{エ}{\brl@char@alias_え}
+\brl@char_def{オ}{\brl@char@alias_お}
+\brl@char_def{カ}{\brl@char@alias_か}
+\brl@char_def{キ}{\brl@char@alias_き}
+\brl@char_def{ク}{\brl@char@alias_く}
+\brl@char_def{ケ}{\brl@char@alias_け}
+\brl@char_def{コ}{\brl@char@alias_こ}
+\brl@char_def{サ}{\brl@char@alias_さ}
+\brl@char_def{シ}{\brl@char@alias_し}
+\brl@char_def{ス}{\brl@char@alias_す}
+\brl@char_def{セ}{\brl@char@alias_せ}
+\brl@char_def{ソ}{\brl@char@alias_そ}
+\brl@char_def{タ}{\brl@char@alias_た}
+\brl@char_def{チ}{\brl@char@alias_ち}
+\brl@char_def{ツ}{\brl@char@alias_つ}
+\brl@char_def{テ}{\brl@char@alias_て}
+\brl@char_def{ト}{\brl@char@alias_と}
+\brl@char_def{ナ}{\brl@char@alias_な}
+\brl@char_def{ニ}{\brl@char@alias_に}
+\brl@char_def{ヌ}{\brl@char@alias_ぬ}
+\brl@char_def{ネ}{\brl@char@alias_ね}
+\brl@char_def{ノ}{\brl@char@alias_の}
+\brl@char_def{ハ}{\brl@char@alias_は}
+\brl@char_def{ヒ}{\brl@char@alias_ひ}
+\brl@char_def{フ}{\brl@char@alias_ふ}
+\brl@char_def{ヘ}{\brl@char@alias_へ}
+\brl@char_def{ホ}{\brl@char@alias_ほ}
+\brl@char_def{マ}{\brl@char@alias_ま}
+\brl@char_def{ミ}{\brl@char@alias_み}
+\brl@char_def{ム}{\brl@char@alias_む}
+\brl@char_def{メ}{\brl@char@alias_め}
+\brl@char_def{モ}{\brl@char@alias_も}
+\brl@char_def{ヤ}{\brl@char@alias_や}
+
+\brl@char_def{ユ}{\brl@char@alias_ゆ}
+
+\brl@char_def{ヨ}{\brl@char@alias_よ}
+\brl@char_def{ラ}{\brl@char@alias_ら}
+\brl@char_def{リ}{\brl@char@alias_り}
+\brl@char_def{ル}{\brl@char@alias_る}
+\brl@char_def{レ}{\brl@char@alias_れ}
+\brl@char_def{ロ}{\brl@char@alias_ろ}
+\brl@char_def{ワ}{\brl@char@alias_わ}
+\brl@char_def{ヰ}{\brl@char@alias_ゐ}
+
+\brl@char_def{ヱ}{\brl@char@alias_ゑ}
+\brl@char_def{ヲ}{\brl@char@alias_を}
+\brl@char_def{ン}{\brl@char@alias_ん}
+\brl@char_def{ッ}{\brl@char@alias_っ}
+
+\brl@char_def{ガ}{\brl@char@alias_jdaku\brl@char@alias_か}
+\brl@char_def{ギ}{\brl@char@alias_jdaku\brl@char@alias_き}
+\brl@char_def{グ}{\brl@char@alias_jdaku\brl@char@alias_く}
+\brl@char_def{ゲ}{\brl@char@alias_jdaku\brl@char@alias_け}
+\brl@char_def{ゴ}{\brl@char@alias_jdaku\brl@char@alias_こ}
+\brl@char_def{ザ}{\brl@char@alias_jdaku\brl@char@alias_さ}
+\brl@char_def{ジ}{\brl@char@alias_jdaku\brl@char@alias_し}
+\brl@char_def{ズ}{\brl@char@alias_jdaku\brl@char@alias_す}
+\brl@char_def{ゼ}{\brl@char@alias_jdaku\brl@char@alias_せ}
+\brl@char_def{ゾ}{\brl@char@alias_jdaku\brl@char@alias_そ}
+\brl@char_def{ダ}{\brl@char@alias_jdaku\brl@char@alias_た}
+\brl@char_def{ヂ}{\brl@char@alias_jdaku\brl@char@alias_ち}
+\brl@char_def{ヅ}{\brl@char@alias_jdaku\brl@char@alias_つ}
+\brl@char_def{デ}{\brl@char@alias_jdaku\brl@char@alias_て}
+\brl@char_def{ド}{\brl@char@alias_jdaku\brl@char@alias_と}
+\brl@char_def{バ}{\brl@char@alias_jdaku\brl@char@alias_は}
+\brl@char_def{ビ}{\brl@char@alias_jdaku\brl@char@alias_ひ}
+\brl@char_def{ブ}{\brl@char@alias_jdaku\brl@char@alias_ふ}
+\brl@char_def{ベ}{\brl@char@alias_jdaku\brl@char@alias_へ}
+\brl@char_def{ボ}{\brl@char@alias_jdaku\brl@char@alias_ほ}
+\brl@char_def{パ}{\brl@char@alias_jhandaku\brl@char@alias_は}
+\brl@char_def{ピ}{\brl@char@alias_jhandaku\brl@char@alias_ひ}
+\brl@char_def{プ}{\brl@char@alias_jhandaku\brl@char@alias_ふ}
+\brl@char_def{ペ}{\brl@char@alias_jhandaku\brl@char@alias_へ}
+\brl@char_def{ポ}{\brl@char@alias_jhandaku\brl@char@alias_ほ}
+
+\brl@char_def{キャ}{\brl@char@alias_ゃ\brl@char@alias_か}
+\brl@char_def{キュ}{\brl@char@alias_ゃ\brl@char@alias_く}
+\brl@char_def{キョ}{\brl@char@alias_ゃ\brl@char@alias_こ}
+\brl@char_def{シャ}{\brl@char@alias_ゃ\brl@char@alias_さ}
+\brl@char_def{シュ}{\brl@char@alias_ゃ\brl@char@alias_す}
+\brl@char_def{ショ}{\brl@char@alias_ゃ\brl@char@alias_そ}
+\brl@char_def{チャ}{\brl@char@alias_ゃ\brl@char@alias_た}
+\brl@char_def{チュ}{\brl@char@alias_ゃ\brl@char@alias_つ}
+\brl@char_def{チョ}{\brl@char@alias_ゃ\brl@char@alias_と}
+\brl@char_def{ニャ}{\brl@char@alias_ゃ\brl@char@alias_な}
+\brl@char_def{ニュ}{\brl@char@alias_ゃ\brl@char@alias_ぬ}
+\brl@char_def{ニョ}{\brl@char@alias_ゃ\brl@char@alias_の}
+\brl@char_def{ヒャ}{\brl@char@alias_ゃ\brl@char@alias_は}
+\brl@char_def{ヒュ}{\brl@char@alias_ゃ\brl@char@alias_ふ}
+\brl@char_def{ヒョ}{\brl@char@alias_ゃ\brl@char@alias_ほ}
+\brl@char_def{ミャ}{\brl@char@alias_ゃ\brl@char@alias_ま}
+\brl@char_def{ミュ}{\brl@char@alias_ゃ\brl@char@alias_む}
+\brl@char_def{ミョ}{\brl@char@alias_ゃ\brl@char@alias_も}
+\brl@char_def{リャ}{\brl@char@alias_ゃ\brl@char@alias_ら}
+\brl@char_def{リュ}{\brl@char@alias_ゃ\brl@char@alias_る}
+\brl@char_def{リョ}{\brl@char@alias_ゃ\brl@char@alias_ろ}
+
+\brl@char_def{ギャ}{\brl@char@alias_jdakuゃ\brl@char@alias_か}
+\brl@char_def{ギュ}{\brl@char@alias_jdakuゃ\brl@char@alias_く}
+\brl@char_def{ギョ}{\brl@char@alias_jdakuゃ\brl@char@alias_こ}
+\brl@char_def{ジャ}{\brl@char@alias_jdakuゃ\brl@char@alias_さ}
+\brl@char_def{ジュ}{\brl@char@alias_jdakuゃ\brl@char@alias_す}
+\brl@char_def{ジョ}{\brl@char@alias_jdakuゃ\brl@char@alias_そ}
+\brl@char_def{ヂャ}{\brl@char@alias_jdakuゃ\brl@char@alias_た}
+\brl@char_def{ヂュ}{\brl@char@alias_jdakuゃ\brl@char@alias_つ}
+\brl@char_def{ヂョ}{\brl@char@alias_jdakuゃ\brl@char@alias_と}
+\brl@char_def{ビャ}{\brl@char@alias_jdakuゃ\brl@char@alias_は}
+\brl@char_def{ビュ}{\brl@char@alias_jdakuゃ\brl@char@alias_ふ}
+\brl@char_def{ビョ}{\brl@char@alias_jdakuゃ\brl@char@alias_ほ}
+
+\brl@char_def{ピャ}{\brl@char@alias_jhandakuゃ\brl@char@alias_は}
+\brl@char_def{ピュ}{\brl@char@alias_jhandakuゃ\brl@char@alias_ふ}
+\brl@char_def{ピョ}{\brl@char@alias_jhandakuゃ\brl@char@alias_ほ}
+
+\brl@char_def{イェ}{\brl@char@alias_ゃ\brl@char@alias_え}
+\brl@char_def{キェ}{\brl@char@alias_ゃ\brl@char@alias_け}
+\brl@char_def{シェ}{\brl@char@alias_ゃ\brl@char@alias_せ}
+\brl@char_def{チェ}{\brl@char@alias_ゃ\brl@char@alias_て}
+\brl@char_def{ニェ}{\brl@char@alias_ゃ\brl@char@alias_ね}
+\brl@char_def{ヒェ}{\brl@char@alias_ゃ\brl@char@alias_へ}
+\brl@char_def{ジェ}{\brl@char@alias_jdakuゃ\brl@char@alias_せ}
+
+
+\brl@char_def{ウァ}{\brl@char@alias_jque\brl@char@alias_あ}
+\brl@char_def{ウィ}{\brl@char@alias_jque\brl@char@alias_い}
+\brl@char_def{ウェ}{\brl@char@alias_jque\brl@char@alias_え}
+\brl@char_def{ウォ}{\brl@char@alias_jque\brl@char@alias_お}
+\brl@char_def{クァ}{\brl@char@alias_jque\brl@char@alias_か}
+\brl@char_def{クィ}{\brl@char@alias_jque\brl@char@alias_き}
+\brl@char_def{クェ}{\brl@char@alias_jque\brl@char@alias_け}
+\brl@char_def{クォ}{\brl@char@alias_jque\brl@char@alias_こ}
+\brl@char_def{ツァ}{\brl@char@alias_jque\brl@char@alias_た}
+\brl@char_def{ツィ}{\brl@char@alias_jque\brl@char@alias_ち}
+\brl@char_def{ツェ}{\brl@char@alias_jque\brl@char@alias_て}
+\brl@char_def{ツォ}{\brl@char@alias_jque\brl@char@alias_と}
+\brl@char_def{ファ}{\brl@char@alias_jque\brl@char@alias_は}
+\brl@char_def{フィ}{\brl@char@alias_jque\brl@char@alias_ひ}
+\brl@char_def{フェ}{\brl@char@alias_jque\brl@char@alias_へ}
+\brl@char_def{フォ}{\brl@char@alias_jque\brl@char@alias_ほ}
+\brl@char_def{グァ}{\brl@char@alias_jmaru\brl@char@alias_か}
+\brl@char_def{グィ}{\brl@char@alias_jmaru\brl@char@alias_き}
+\brl@char_def{グェ}{\brl@char@alias_jmaru\brl@char@alias_け}
+\brl@char_def{グォ}{\brl@char@alias_jmaru\brl@char@alias_こ}
+\brl@char_def{ヴァ}{\brl@char@alias_jmaru\brl@char@alias_は}
+\brl@char_def{ヴィ}{\brl@char@alias_jmaru\brl@char@alias_ひ}
+\brl@char_def{ヴェ}{\brl@char@alias_jmaru\brl@char@alias_へ}
+\brl@char_def{ヴォ}{\brl@char@alias_jmaru\brl@char@alias_ほ}
+
+
+\brl@char_def{トゥ}{\brl@char@alias_jque\brl@char@alias_つ}
+\brl@char_def{ドゥ}{\brl@char@alias_jhandaku\brl@char@alias_つ}
+
+\brl@char_def{スィ}{\brl@char@alias_ゃ\brl@char@alias_し}
+\brl@char_def{ティ}{\brl@char@alias_ゃ\brl@char@alias_ち}
+\brl@char_def{ズィ}{\brl@char@alias_jdakuゃ\brl@char@alias_し}
+\brl@char_def{ディ}{\brl@char@alias_jdakuゃ\brl@char@alias_ち}
+
+\brl@char_def{テュ}{\brl@char@alias_jhandakuゃ\brl@char@alias_つ}
+\brl@char_def{フュ}{\brl@char@alias_jhandakuゃ\brl@char@alias_ゆ}
+\brl@char_def{フョ}{\brl@char@alias_jhandakuゃ\brl@char@alias_よ}
+
+\brl@char_def{デュ}{\brl@char_bc000111\brl@char@alias_つ}
+
+\brl@char_def{ヴュ}{\brl@char_bc000111\brl@char@alias_ゆ}
+\brl@char_def{ヴョ}{\brl@char_bc000111\brl@char@alias_よ}
+\brl@char_def{ヴ}{\brl@char@alias_jdaku\brl@char@alias_う}
+
+
+
+
+\brl@char_def[-]{hfill}{\brl@char@alias_hfill}%
+
+\brl@char_def[]{space}{\brl@char@alias_nmspace}% space used by system
+%
+\brl@char_edef[,]{commamath}{\brl@char_bc010000}%
+
+
+%
+% use to avoid empty line
+%
+\brl@char_def[\brl@char_nomean]{textmode}{}
+%
+%
+%
+%
+\brl@char_def[\brl@char_textstack{数}{}]{numbersign}{\brl@char@alias_numbersign}
+
+
+% tabular
+\brl@char_def[空]{blank}{\brl@char_bc010010\brl@char_bc010010}
+
+
+
+\brl@char_def[\brl@char_textstack{繋}{}]{tsunagi}{\brl@char_bc001001}
+
+\brl@char_edef{.}{\brl@char@alias_jmaru}% 1.2 etc.
+
+\brl@char_def[━]{rulemu}{\brl@char@alias_rulemu}
+\brl@char_def[━]{rulemm}{\brl@char@alias_rulemm}
+\brl@char_def[━]{rulemd}{\brl@char@alias_rulemd}
+%\brl@char_def[▀]{rulemuu}{\brl@char@alias_rulemuu}
+\brl@char_def[\brl@orig@raisebox{0.5\brl@char@meanfontsize}{▄}]{rulemuu}{\brl@char@alias_rulemuu}
+\brl@char_def[▄]{rulemdd}{\brl@char@alias_rulemdd}
+
+%
+
+\brl@char_def[┏]{rulelu}{\brl@char@alias_rulelu}
+\brl@char_def[┓]{ruleru}{\brl@char@alias_ruleru}
+\brl@char_def[┗]{ruleld}{\brl@char@alias_ruleld}
+\brl@char_def[┛]{rulerd}{\brl@char@alias_rulerd}
+
+\brl@char_def[╭]{ruleolu}{\brl@char@alias_ruleolu}
+\brl@char_def[╮]{ruleoru}{\brl@char@alias_ruleoru}
+\brl@char_def[╰]{ruleold}{\brl@char@alias_ruleold}
+\brl@char_def[╯]{ruleord}{\brl@char@alias_ruleord}
+
+\brl@char_def[█]{ruleblu}{\brl@char@alias_ruleb}
+\brl@char_def[█]{rulebru}{\brl@char@alias_ruleb}
+\brl@char_def[█]{rulebld}{\brl@char@alias_ruleb}
+\brl@char_def[█]{rulebrd}{\brl@char@alias_ruleb}
+
+
+\brl@char_def[“]{quoteopen}{\brl@char@alias_quoteopen}
+\brl@char_def[”]{quoteclose}{\brl@char@alias_quoteclose}
+\brl@char_def[\brl@char_textstack{引}{“}]{foreignquoteopen}{\brl@char@alias_quoteopen}
+\brl@char_def[\brl@char_textstack{引}{”}]{foreignquoteclose}{\brl@char@alias_quoteclose}
+
+
+\brl@char_def[（]{eqquoteopen}{\brl@char@alias_quoteopen}
+\brl@char_def[）]{eqquoteclose}{\brl@char@alias_quoteclose}
+
+
+
+%%
+%% slash = space in the text mode
+%%
+\brl@char_edef[／]{/}{\brl@char@alias_nmspace}% used for many choices aa/bb/cc
+\brl@char_edef{／}{\brl@char@alias_nmspace}
+
+
+%%
+%% footnote
+
+\brl@char_def[\brl@char_textstack{脚}{*}]{footnoteopen}{\brl@char_bc000011}
+\brl@char_def[]{footnoteclose}{\brl@char_bc011000}
+
+
+\brl@char_edef{…}{\brl@char_bc010000\brl@char_bc010000\brl@char_bc010000}
+
+\brl@char_edef{＝}{\brl@char_bc010010\brl@char_bc010010}
+\brl@char_edef{―}{\brl@char_bc010010\brl@char_bc010010}% U+2015
+\brl@char_edef{■}{\brl@char@alias_nmspace}
+
+%%
+%% 第１かっこ
+\brl@char_edef{（}{\brl@char@alias_text}
+\brl@char_edef{）}{\brl@char@alias_text}
+
+%% 
+%% 二重かっこ
+\brl@char_edef[（（]{⸨}{\brl@char_bc000011\brl@char@alias_text}
+\brl@char_edef[））]{⸩}{\brl@char@alias_text\brl@char_bc011000}
+%%
+%% 第２かっこ
+\brl@char_edef{［}{\brl@char_bc000010\brl@char@alias_text}
+\brl@char_edef{］}{\brl@char@alias_text\brl@char_bc010000}
+
+
+%%
+%% 第１かぎ
+\brl@char_edef{「}{\brl@char_bc001001}
+\brl@char_edef{」}{\brl@char_bc001001}
+%%
+%% 二重かぎ
+\brl@char_edef{『}{\brl@char_bc000011\brl@char_bc001001}
+\brl@char_edef{』}{\brl@char_bc001001\brl@char_bc011000}
+%%
+%% 第２かぎ
+\brl@char_edef{“}{\brl@char_bc000011\brl@char_bc001000}
+\brl@char_edef{”}{\brl@char_bc000001\brl@char_bc011000}
+
+
+
+
+
+
+\brl@char_edef{％}{\brl@char_bc000011\brl@char_bc111100}
+\brl@char_edef{♯}{\brl@char_bc000011\brl@char_bc100101}
+\brl@char_edef{＊}{\brl@char_bc000011\brl@char_bc100001}
+\brl@char_edef{＆}{\brl@char_bc000011\brl@char_bc111101}
+\brl@char_edef{＠}{\brl@char_bc000011\brl@char_bc010101}
+
+
+\brl@char_edef{〜}{\brl@char_bc001001\brl@char_bc001001}% 〜
+
+\brl@char_edef{☆}{\brl@char_bc001010\brl@char_bc001010}
+\brl@char_edef{※}{\brl@char_bc010001\brl@char_bc010001}
+\brl@char_edef{★}{\brl@char_bc000001\brl@char_bc010001}
+
+
+
+\brl@char_edef{：}{\brl@char@alias_colon}
+\brl@char_edef{；}{\brl@char@alias_jten}
+
+
+
+
+\brl@char_def[\brl@char_textstack{外}{}]{small}{\brl@char_bc000011}
+\brl@char_def[\brl@char_textstack{大}{}]{capital}{\brl@char@alias_capital}
+\brl@char_def[\brl@char_textstack{大大}{}]{doublecapital}{\brl@char@alias_capital\brl@char@alias_capital}
+
+\brl@char_def[\brl@char_textstack{大止}{}]{stopcapital}{\brl@char@alias_capital\brl@char_bc001000}
+
+\brl@char_def[\brl@char_textstack{見出1}{}]{desci}{\brl@char_bc000001\brl@char_bc001001}
+\brl@char_def[\brl@char_textstack{見出2}{}]{descii}{\brl@char_bc000010\brl@char_bc010000}
+
+
+\brl@char_def[\brl@char_textstack{訳注}{}]{transopen}{\brl@char@alias_text\brl@char@alias_text}% BrailleRemark
+\brl@char_def[\brl@char_textstack{訳注}{}]{transclose}{\brl@char@alias_text\brl@char@alias_text}%
+
+
+
+
+\brl@char_def[\brl@char_textstack{強}{}]{firstindopen}{\brl@char_bc000010\brl@char_bc001001}
+\brl@char_def[\brl@char_textstack{強}{}]{firstindclose}{\brl@char_bc001001\brl@char_bc010000}
+\brl@char_def[]{secondindopen}{\brl@char_bc000010\brl@char_bc001001\brl@char_bc001001}
+\brl@char_def[]{secondindclose}{\brl@char_bc001001\brl@char_bc001001\brl@char_bc010000}
+\brl@char_def[\brl@char_textstack{下線}{}]{thirdindopen}{\brl@char_bc000011\brl@char_bc001001\brl@char_bc001001}
+\brl@char_def[\brl@char_textstack{下線}{}]{thirdindclose}{\brl@char_bc001001\brl@char_bc001001\brl@char_bc011000}
+
+\brl@char_pdef[□]{\qedsymbol}{\brl@char_bc111111\brl@char_bc111111}
+
+
+\brl@char_def[\brl@char_nomean]{ambb}{\brl@char@toks{\global\brl@text@ambtrue}}
+\brl@char_def[\brl@char_nomean]{ambe}{\brl@char@toks{\global\brl@text@ambfalse}}
+
+\brl@char_def[\brl@char_nomean]{unkb}{\brl@char@toks{\global\brl@text@unktrue}}
+\brl@char_def[\brl@char_nomean]{unke}{\brl@char@toks{\global\brl@text@unkfalse}}
+
+
+\brl@char_def[\brl@char_textstack{情報}{}]{infoquoteopen}{\brl@char_bc000001\brl@char@alias_quoteopen}
+\brl@char_def[\brl@char_textstack{情報}{}]{infoquoteclose}{\brl@char_bc000001\brl@char@alias_quoteclose}
+
+\brl@char_def[\brl@char_textstack{逐語}{}]{verbquoteopen}{\brl@char_bc000001\brl@char@alias_quoteopen}
+\brl@char_def[\brl@char_textstack{逐語}{}]{verbquoteclose}{\brl@char_bc000001\brl@char@alias_quoteclose}
+
+
+\brl@char_def[\brl@char_textstack{日本語}{}]{textquoteopen}{\brl@char_bc000111\brl@char@alias_quoteopen}
+\brl@char_def[\brl@char_textstack{日本語}{}]{textquoteclose}{\brl@char_bc000111\brl@char@alias_quoteclose}
+
+
+
+\brl@char_edef{→}{\brl@char@alias_rightarrow}
+\brl@char_edef{←}{\brl@char@alias_leftarrow}
+\brl@char_edef{↔}{\brl@char@alias_leftrightarrow}
+
+\brl@char_edef{⇒}{\brl@char@alias_Rightarrow}
+\brl@char_edef{⇐}{\brl@char@alias_Leftarrow}
+\brl@char_edef{⇔}{\brl@char@alias_Leftrightarrow}
+
+
+
+
+\brl@char_edef{1}{\brl@char@alias_one}
+\brl@char_edef{2}{\brl@char@alias_two}
+\brl@char_edef{3}{\brl@char@alias_three}
+\brl@char_edef{4}{\brl@char@alias_four}
+\brl@char_edef{5}{\brl@char@alias_five}
+\brl@char_edef{6}{\brl@char@alias_six}
+\brl@char_edef{7}{\brl@char@alias_seven}
+\brl@char_edef{8}{\brl@char@alias_eight}
+\brl@char_edef{9}{\brl@char@alias_nine}
+\brl@char_edef{0}{\brl@char@alias_zero}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% context : ueb
+
+\def\brl@char@context{ueb}
+
+%%
+%%
+%% 
+%%
+%% symbols
+\brl@char_def[qed]{qed}{\brl@char_bc000100\brl@char_bc110101\brl@char@alias_q\brl@char@alias_e\brl@char@alias_d}
+
+\brl@char_def[非UEB]{nonuebword}{\brl@char_bc000110\brl@char_bc111011}
+\brl@char_def[非UEB始]{nonuebstart}{\brl@char_bc000010\brl@char_bc111011\brl@char_bc001000}
+\brl@char_def[非UEB終]{nonuebend}{\brl@char_bc000001\brl@char_bc000010\brl@char_bc011111}
+
+
+
+
+
+\brl@char_edef[\brl@char_textstack{強縮}{the}]{!}{\brl@char_bc011101}
+\brl@char_edef[\brl@char_textstack{頭縮}{}]{"}{\brl@char_bc000010}
+
+\brl@char_edef[\brl@char_textstack{数}{}]{\brl@@sharp}{\brl@char_bc001111}
+\brl@char_edef[\brl@char_textstack{強縮}{ed}]{$}{\brl@char_bc110101}%$
+\brl@char_edef[\brl@char_textstack{強縮}{sh}]{\brl@@percent}{\brl@char_bc100101}
+\brl@char_edef[\brl@char_textstack{強縮}{and}]{&}{\brl@char_bc111101}
+
+
+\brl@char_edef{'}{\brl@char_bc001000}
+\brl@char_edef[\brl@char_textstack{強縮}{of}]{(}{\brl@char_bc111011}
+\brl@char_edef[\brl@char_textstack{強縮}{with}]{)}{\brl@char_bc011111}
+\brl@char_edef[\brl@char_textstack{強縮}{ch}]{*}{\brl@char_bc100001}
+\brl@char_edef[\brl@char_textstack{強縮}{ing}]{+}{\brl@char_bc001101}
+\brl@char_edef[\brl@char_textstack{大}{}]{,}{\brl@char_bc000001}
+\brl@char_edef[\brl@char_textstack{大止}{}]{,'^a}{\brl@char_bc000001\brl@char_bc001000}%endcapsword d-6-3-ae
+\brl@char_edef{-}{\brl@char_bc001001}
+\brl@char_edef[\brl@char_textstack{末縮}{}]{.}{\brl@char_bc000101}
+\brl@char_edef[\brl@char_textstack{強縮}{st}]{/}{\brl@char_bc001100}
+\brl@char_edef[\brl@char_textstack{主引}{}]{0}{\brl@char_bc001011}
+\brl@char_edef[\brl@char_textstack{下縮}{ea}]{1}{\brl@char_bc010000}
+\brl@char_edef[\brl@char_textstack{下縮}{be}]{2}{\brl@char_bc011000}
+\brl@char_edef[\brl@char_textstack{下縮}{con}]{3}{\brl@char_bc010010}
+\brl@char_edef[\brl@char_textstack{下縮}{dis}]{4}{\brl@char_bc010011}
+\brl@char_edef[\brl@char_textstack{下縮}{en}]{5}{\brl@char_bc010001}
+\brl@char_edef[\brl@char_textstack{下縮}{ff}]{6}{\brl@char_bc011010}
+\brl@char_edef[\brl@char_textstack{下縮}{gg}]{7}{\brl@char_bc011011}
+\brl@char_edef[\brl@char_textstack{主引}{}]{8}{\brl@char_bc011001}%
+\brl@char_edef[\brl@char_textstack{下縮}{in}]{9}{\brl@char_bc001010}
+\brl@char_edef[\brl@char_textstack{強縮}{wh}]{:}{\brl@char_bc100011}
+\brl@char_edef[\brl@char_textstack{末縮}{Gr1}]{;}{\brl@char_bc000011}
+\brl@char_edef[\brl@char_textstack{強縮}{gh}]{<}{\brl@char_bc110001}
+\brl@char_edef[\brl@char_textstack{強縮}{for}]{=}{\brl@char_bc111111}
+\brl@char_edef[\brl@char_textstack{強縮}{ar}]{>}{\brl@char_bc001110}
+\brl@char_edef[\brl@char_textstack{強縮}{th}]{?}{\brl@char_bc100111}
+
+
+\brl@char_edef[\brl@char_textstack{頭縮}{}]{_}{\brl@char_bc000111}
+
+\brl@char_edef{`}{\brl@char_bc000100}% @
+\brl@char_def{a}{\brl@char@alias_a}
+\brl@char_def{b}{\brl@char@alias_b}
+\brl@char_def{c}{\brl@char@alias_c}
+\brl@char_def{d}{\brl@char@alias_d}
+\brl@char_def{e}{\brl@char@alias_e}
+\brl@char_def{f}{\brl@char@alias_f}
+\brl@char_def{g}{\brl@char@alias_g}
+\brl@char_def{h}{\brl@char@alias_h}
+\brl@char_def{i}{\brl@char@alias_i}
+\brl@char_def{j}{\brl@char@alias_j}
+\brl@char_def{k}{\brl@char@alias_k}
+\brl@char_def{l}{\brl@char@alias_l}
+\brl@char_def{m}{\brl@char@alias_m}
+\brl@char_def{n}{\brl@char@alias_n}
+\brl@char_def{o}{\brl@char@alias_o}
+\brl@char_def{p}{\brl@char@alias_p}
+\brl@char_def{q}{\brl@char@alias_q}
+\brl@char_def{r}{\brl@char@alias_r}
+\brl@char_def{s}{\brl@char@alias_s}
+\brl@char_def{t}{\brl@char@alias_t}
+\brl@char_def{u}{\brl@char@alias_u}
+\brl@char_def{v}{\brl@char@alias_v}
+\brl@char_def{w}{\brl@char@alias_w}
+\brl@char_def{x}{\brl@char@alias_x}
+\brl@char_def{y}{\brl@char@alias_y}
+\brl@char_def{z}{\brl@char@alias_z}
+\brl@char_edef[\brl@char_textstack{強縮}{ou}]{|}{\brl@char_bc110011}% ^
+
+
+\brl@char_edef[\brl@char_textstack{強縮}{ow}]{\brl@@lbrace}{\brl@char_bc010101}% [
+\brl@char_edef[\brl@char_textstack{強縮}{er}]{\brl@@rbrace}{\brl@char_bc110111}% ]
+\brl@char_edef[\brl@char_textstack{頭縮}{}]{\brl@@tilde}{\brl@char_bc000110}
+
+% tex
+\brl@char_edef[£]{`l^a}{\brl@char_bc000100\brl@char_bc111000}%sign \x00a3 d-4-123-ae £ pound
+\brl@char_edef[§]{\brl@@tilde s^a}{\brl@char_bc000110\brl@char_bc011100}%sign \x00a7 d-45-234-ae § section
+\brl@char_edef[©]{\brl@@tilde c^a}{\brl@char_bc000110\brl@char_bc100100}%sign \x00a9 d-45-14-ae © copyright
+\brl@char_edef[·]{`*^b}{\brl@char_bc000100\brl@char_bc100001}%math \x00b7 d-4-16-be ·
+\brl@char_edef[¶]{\brl@@tilde p^a}{\brl@char_bc000110\brl@char_bc111100}%sign \x00b6 d-45-1234-ae ¶ pilcrow
+\brl@char_edef[†]{`,?^a}{\brl@char_bc000100\brl@char_bc000001\brl@char_bc100111}%sign \x2020 d-4-6-1456-ae †   dagger
+\brl@char_edef[‡]{`,\brl@@rbrace ^a}{\brl@char_bc000100\brl@char_bc000001\brl@char_bc110111}%sign \x2021 d-4-6-12456-ae ‡   double dagger
+\brl@char_edef[•]{_4^a}{\brl@char_bc000111\brl@char_bc010011}%sign \x2022 d-456-256-ae •   bullet
+\brl@char_edef[…]{444^a}{\brl@char_bc010011\brl@char_bc010011\brl@char_bc010011}%punctuation \x2026 d-256-256-256-ae …   ellipsis
+\brl@char_edef[‖]{,_^a}{\brl@char_bc000001\brl@char_bc000111}%noback sign \x2016 d-6-456-ae ‖   second variant vertical line segment
+
+
+\brl@char_edef[\brl@char_textstack{sup}{}]{9^a}{\brl@char_bc001010}%sign \xe05e d-35-ae # ^ superscript
+\brl@char_edef[\brl@char_textstack{grp}{\char123}]{<^b}{\brl@char_bc110001}%sign \xe028 d-126-be # bgroup
+\brl@char_edef[\brl@char_textstack{grp}{\char125}]{>^b}{\brl@char_bc001110}%sign \xe029 d-345-be # egroup
+
+\brl@char_edef[↦]{;||o^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc110011\brl@char_bc101010}%sign \x21a6 d-56-1256-1256-135-ae ↦ ##  11.6.2
+\brl@char_edef[↱]{;|44+^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc010011\brl@char_bc010011\brl@char_bc001101}%sign \x21b0 d-56-1256-256-256-346-ae ↱ ##  11.6.2
+\brl@char_edef[↰]{;|00+^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc001011\brl@char_bc001011\brl@char_bc001101}%sign \x21b1 d-56-1256-356-356-346-ae ↰ ##  11.6.2
+\brl@char_edef[↲]{;|44\brl@@percent^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc010011\brl@char_bc010011\brl@char_bc100101}%sign \x21b2 d-56-1256-256-256-146-ae ↲ ##  11.6.2
+\brl@char_edef[↳]{;|00\brl@@percent^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc001011\brl@char_bc001011\brl@char_bc100101}%sign \x21b3 d-56-1256-356-356-146-ae ↳ ##  11.6.2
+\brl@char_edef[↔]{;|wro^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc010111\brl@char_bc111010\brl@char_bc101010}%sign \x2194 d-56-1256-2456-1235-135-ae ↔ ##  11.6.2
+\brl@char_edef[⇐]{;|77\brl@@lbrace^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc011011\brl@char_bc011011\brl@char_bc010101}%sign \x21d0 d-56-1256-2356-2356-246-ae ⇐ ##  11.6.2
+\brl@char_edef[⇒]{;|77o^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc011011\brl@char_bc011011\brl@char_bc101010}%sign \x21d2 d-56-1256-2356-2356-135-ae ⇒ ##  11.6.2
+\brl@char_edef[⇔]{;|w77ro^a}{\brl@char_bc000011\brl@char_bc110011\brl@char_bc010111\brl@char_bc011011\brl@char_bc011011\brl@char_bc111010\brl@char_bc101010}%sign \x21d4 d-56-1256-2456-2356-2356-1235-135-ae ⇔ ##  11.6.2
+
+
+%% chardefs
+\brl@char_edef[!]{6^a}{\brl@char_bc011010}%punctuation ! d-235-ae
+\brl@char_edef[\char35]{_?^a}{\brl@char_bc000111\brl@char_bc100111}%sign # d-456-1456-ae
+\brl@char_edef[\char36]{`s^a}{\brl@char_bc000100\brl@char_bc011100}%sign $ d-4-234-ae
+\brl@char_edef[\char37]{.0^a}{\brl@char_bc000101\brl@char_bc001011}%sign % d-46-356-ae
+\brl@char_edef[\char38]{`&^a}{\brl@char_bc000100\brl@char_bc111101}%sign & d-4-12346-ae
+
+\brl@char_edef[(]{"<^a}{\brl@char_bc000010\brl@char_bc110001}%punctuation ( d-5-126-ae
+\brl@char_edef[)]{">^a}{\brl@char_bc000010\brl@char_bc001110}%punctuation ) d-5-345-ae
+\brl@char_edef[*]{"9^a}{\brl@char_bc000010\brl@char_bc001010}%sign * d-5-35-ae
+\brl@char_edef[+]{"6^a}{\brl@char_bc000010\brl@char_bc011010}%math + d-5-235-ae
+\brl@char_edef[,]{1^a}{\brl@char_bc010000}%punctuation , d-2-ae
+\brl@char_edef[.]{4^a}{\brl@char_bc010011}%punctuation . d-256-ae
+\brl@char_edef[/]{_/^a}{\brl@char_bc000111\brl@char_bc001100}%math / d-456-34-ae
+\brl@char_edef[:]{3^b}{\brl@char_bc010010}%punctuation : d-25-be
+\brl@char_edef[;]{2^c}{\brl@char_bc011000}%punctuation ; d-23-ce
+
+\brl@char_edef[=]{"7^a}{\brl@char_bc000010\brl@char_bc011011}%math = d-5-2356-ae
+\brl@char_edef[?]{8^b}{\brl@char_bc011001}%postpunc ? d-236-be
+
+\brl@char_edef[--]{,-^a}{\brl@char_bc000001\brl@char_bc001001}%punctuation \x2014 d-6-36-ae —   Rules of UEB, App.3
+\brl@char_edef[---]{",-^a}{\brl@char_bc000010\brl@char_bc000001\brl@char_bc001001}%punctuation \x2015 d-5-6-36-ae ―
+\brl@char_edef[‘]{,8^a}{\brl@char_bc000001\brl@char_bc011001}%noback punctuation \x2018 d-6-236-ae ‘
+\brl@char_edef[’]{,0^a}{\brl@char_bc000001\brl@char_bc001011}%noback punctuation \x2019 d-6-356-ae ’
+\brl@char_edef[“]{\brl@@tilde 8^a}{\brl@char_bc000110\brl@char_bc011001}%punctuation \x201c d-45-236-ae “
+\brl@char_edef[”]{\brl@@tilde 0^a}{\brl@char_bc000110\brl@char_bc001011}%punctuation \x201d d-45-356-ae ”
+
+\brl@char_edef[\brl@char@font{ope}{5B}]{.<^a}{\brl@char_bc000101\brl@char_bc110001}%punctuation [ d-46-126-ae
+\brl@char_edef[\brl@char@font{ope}{5D}]{.>^a}{\brl@char_bc000101\brl@char_bc001110}%punctuation ] d-46-345-ae
+
+\brl@char_edef[\brl@char@font{ope}{5E}]{`5^a}{\brl@char_bc000100\brl@char_bc010001}%sign \x005e d-4-26-ae ^
+\brl@char_edef[\brl@char@font{ope}{7E}]{`9^a}{\brl@char_bc000100\brl@char_bc001010}%math \x007e d-4-35-ae ~
+\brl@char_edef[\brl@char@font{sym}{6E}]{_*^a}{\brl@char_bc000111\brl@char_bc100001}%sign \\ d-456-16-ae
+\brl@char_edef[\brl@char@textunderscore]{.-^a}{\brl@char_bc000101\brl@char_bc001001}%sign _ d-46-36-ae
+\brl@char_edef[\brl@char@font{sym}{66}]{_<^a}{\brl@char_bc000111\brl@char_bc110001}%punctuation { d-456-126-ae
+\brl@char_edef[\brl@char@font{sym}{67}]{_>^a}{\brl@char_bc000111\brl@char_bc001110}%punctuation } d-456-345-ae
+
+% accent
+%
+
+\brl@char_edef[\brl@char@font{ope}{12}]{\brl@@tilde *^a}{\brl@char_bc000110\brl@char_bc100001}%lowercase \x00e0 d-45-16-ae-1 à
+\brl@char_edef[\brl@char@font{ope}{13}]{\brl@@tilde /^a}{\brl@char_bc000110\brl@char_bc001100}%lowercase \x00e1 d-45-34-ae-1 á
+\brl@char_edef[\brl@char@font{ope}{14}]{\brl@@tilde +^a}{\brl@char_bc000110\brl@char_bc001101}%lowercase \x010f d-45-346-ae-145 ď
+\brl@char_edef[\brl@char@font{ope}{15}{`+^a}{\brl@char_bc000100\brl@char_bc001101}%lowercase \x0103 d-4-346-ae-1 ă
+\brl@char_edef[\brl@char@font{ope}{16}]{`-^a}{\brl@char_bc000100\brl@char_bc001001}%lowercase \x0101 d-4-36-ae-1 ā
+\brl@char_edef[\brl@char@font{ope}{17}]{\brl@@tilde $^a}{\brl@char_bc000110\brl@char_bc110101}%lowercase \x00e5 d-45-1246-ae-1 å
+\brl@char_edef[\brl@char@font{ope}{18}]{\brl@@tilde &^a}{\brl@char_bc000110\brl@char_bc111101}%lowercase \x00e7 d-45-12346-ae-14 ç
+\brl@char_edef[\brl@char@font{ope}{19}]{.!^a}{\brl@char_bc000101\brl@char_bc011101}%lowercase \x00df d-46-2346-ae ß
+
+\brl@char_edef[\brl@char@font{ope}{5E}]{\brl@@tilde \brl@@percent ^a}{\brl@char_bc000110\brl@char_bc100101}%lowercase \x00e2 d-45-146-ae-1 â
+\brl@char_edef[\brl@char@font{ope}{7E}]{\brl@@tilde \brl@@rbrace ^a}{\brl@char_bc000110\brl@char_bc110111}%lowercase \x00e3 d-45-12456-ae-1 ã
+\brl@char_edef[\brl@char@font{ope}{7F}]{\brl@@tilde 3^a}{\brl@char_bc000110\brl@char_bc010010}%lowercase \x00e4 d-45-25-ae-1 ä
+
+
+
+\brl@char_edef[\brl@char_textstack{stroke}{}]{`3^a}{\brl@char_bc000100\brl@char_bc010010}%lowercase \x0111 d-4-25-ae-145 đ
+
+\brl@char_edef[\brl@char_textstack{slash}{}]{`*^a}{\brl@char_bc000100\brl@char_bc100001}%lowercase \x00f8 d-4-16-ae-135 Øø
+
+\brl@char_edef[\brl@char_textstack{合字}{}]{\brl@@tilde 6^a}{\brl@char_bc000110\brl@char_bc011010}%noback pass2 @6-24-6-d-45-235-ae-245 *
+% \let\brl@orig@csgrave\`
+% \let\brl@orig@csacute\'
+% \let\brl@orig@cscircumflex\^
+% \let\brl@orig@cstilde\~
+% \let\brl@orig@csmacron\=
+% \let\brl@orig@csbreve\u
+% \let\brl@orig@cscaron\v
+% \let\brl@orig@cscedilla\c
+% \let\brl@orig@csumlaut\"
+% \let\brl@orig@cshumlaut\H    no
+% \let\brl@orig@csring\r
+% \let\brl@orig@cstie\t        no
+% \let\brl@orig@csdotover\.    no
+% \let\brl@orig@csogonek\k     no
+% \let\brl@orig@csbarunder\b   no
+% \let\brl@orig@csdotunder\d   no
+
+
+\brl@char_edef[0]{j^b}{\brl@char_bc010110}%litdigit 0 d-245-be
+\brl@char_edef[1]{a^b}{\brl@char_bc100000}%litdigit 1 d-1-be
+\brl@char_edef[2]{b^b}{\brl@char_bc110000}%litdigit 2 d-12-be
+\brl@char_edef[3]{c^b}{\brl@char_bc100100}%litdigit 3 d-14-be
+\brl@char_edef[4]{d^b}{\brl@char_bc100110}%litdigit 4 d-145-be
+\brl@char_edef[5]{e^b}{\brl@char_bc100010}%litdigit 5 d-15-be
+\brl@char_edef[6]{f^b}{\brl@char_bc110100}%litdigit 6 d-124-be
+\brl@char_edef[7]{g^b}{\brl@char_bc110110}%litdigit 7 d-1245-be
+\brl@char_edef[8]{h^b}{\brl@char_bc110010}%litdigit 8 d-125-be
+\brl@char_edef[9]{i^b}{\brl@char_bc010100}%litdigit 9 d-24-be
+
+
+%% g1
+
+\brl@char_edef[{it}]{.2^a}{\brl@char_bc000101\brl@char_bc011000}%emphletter italic d-46-23-ae
+\brl@char_edef[{[it}]{.1^a}{\brl@char_bc000101\brl@char_bc010000}%begemphword italic d-46-2-ae
+\brl@char_edef[{it]}]{.'^a}{\brl@char_bc000101\brl@char_bc001000}%endemphword italic d-46-3-ae
+\brl@char_edef[{[it}]{.7^a}{\brl@char_bc000101\brl@char_bc011011}%begemphphrase italic d-46-2356-ae
+\brl@char_edef[{bf}]{\brl@@tilde 2^a}{\brl@char_bc000110\brl@char_bc011000}%emphletter bold d-45-23-ae
+\brl@char_edef[{[bf}]{\brl@@tilde 1^a}{\brl@char_bc000110\brl@char_bc010000}%begemphword bold d-45-2-ae
+\brl@char_edef[{bf]}]{\brl@@tilde '^a}{\brl@char_bc000110\brl@char_bc001000}%endemphword bold d-45-3-ae
+\brl@char_edef[{[bf}]{\brl@@tilde 7^a}{\brl@char_bc000110\brl@char_bc011011}%begemphphrase bold d-45-2356-ae
+\brl@char_edef[{ul}]{_2^a}{\brl@char_bc000111\brl@char_bc011000}%emphletter underline d-456-23-ae
+\brl@char_edef[{[ul}]{_1^a}{\brl@char_bc000111\brl@char_bc010000}%begemphword underline d-456-2-ae
+\brl@char_edef[{ul]}]{_'^a}{\brl@char_bc000111\brl@char_bc001000}%endemphword underline d-456-3-ae
+\brl@char_edef[{[ul}]{_7^a}{\brl@char_bc000111\brl@char_bc011011}%begemphphrase underline d-456-2356-ae
+\brl@char_edef[{sc}]{`2^a}{\brl@char_bc000100\brl@char_bc011000}%emphletter script d-4-23-ae
+\brl@char_edef[{[sc}]{`1^a}{\brl@char_bc000100\brl@char_bc010000}%begemphword script d-4-2-ae
+\brl@char_edef[{sc]}]{`'^a}{\brl@char_bc000100\brl@char_bc001000}%endemphword script d-4-3-ae
+\brl@char_edef[{[sc}]{`7^a}{\brl@char_bc000100\brl@char_bc011011}%begemphphrase script d-4-2356-ae
+
+\brl@char_edef[{[tr}]{`.<^a}{\brl@char_bc000100\brl@char_bc000101\brl@char_bc110001}%begemph transnote d-4-46-126-ae
+\brl@char_edef[{tr]}]{`.>^a}{\brl@char_bc000100\brl@char_bc000101\brl@char_bc001110}%endemph transnote d-4-46-354-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trA}{tr1}]{`\brl@@sharp 2^a}{\brl@char_bc000100\brl@char_bc001111\brl@char_bc011000}%emphletter trans1 d-4-3456-23-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trA}{[tr1}]{`\brl@@sharp 1^a}{\brl@char_bc000100\brl@char_bc001111\brl@char_bc010000}%begemphword trans1 d-4-3456-2-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trA}{tr1]}]{`\brl@@sharp '^a}{\brl@char_bc000100\brl@char_bc001111\brl@char_bc001000}%endemphword trans1 d-4-3456-3-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trA}{[tr1}]{`\brl@@sharp 7^a}{\brl@char_bc000100\brl@char_bc001111\brl@char_bc011011}%begemphphrase trans1 d-4-3456-2356-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trB}{tr2}]{\brl@@tilde \brl@@sharp 2^a}{\brl@char_bc000110\brl@char_bc001111\brl@char_bc011000}%emphletter trans2 d-45-3456-23-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trB}{[tr2}]{\brl@@tilde \brl@@sharp 1^a}{\brl@char_bc000110\brl@char_bc001111\brl@char_bc010000}%begemphword trans2 d-45-3456-2-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trB}{tr2]}]{\brl@@tilde \brl@@sharp '^a}{\brl@char_bc000110\brl@char_bc001111\brl@char_bc001000}%endemphword trans2 d-45-3456-3-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trB}{[tr2}]{\brl@@tilde \brl@@sharp 7^a}{\brl@char_bc000110\brl@char_bc001111\brl@char_bc011011}%begemphphrase trans2 d-45-3456-2356-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trC}{tr3}]{_\brl@@sharp 2^a}{\brl@char_bc000111\brl@char_bc001111\brl@char_bc011000}%emphletter trans3 d-456-3456-23-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trC}{[tr3}]{_\brl@@sharp 1^a}{\brl@char_bc000111\brl@char_bc001111\brl@char_bc010000}%begemphword trans3 d-456-3456-2-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trC}{tr3]}]{_\brl@@sharp '^a}{\brl@char_bc000111\brl@char_bc001111\brl@char_bc001000}%endemphword trans3 d-456-3456-3-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trC}{[tr3}]{_\brl@@sharp 7^a}{\brl@char_bc000111\brl@char_bc001111\brl@char_bc011011}%begemphphrase trans3 d-456-3456-2356-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trD}{tr4}]{"\brl@@sharp 2^a}{\brl@char_bc000010\brl@char_bc001111\brl@char_bc011000}%emphletter trans4 d-5-3456-23-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trD}{[tr4}]{"\brl@@sharp 1^a}{\brl@char_bc000010\brl@char_bc001111\brl@char_bc010000}%begemphword trans4 d-5-3456-2-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trD}{tr4]}]{"\brl@@sharp '^a}{\brl@char_bc000010\brl@char_bc001111\brl@char_bc001000}%endemphword trans4 d-5-3456-3-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trD}{[tr4}]{"\brl@@sharp 7^a}{\brl@char_bc000010\brl@char_bc001111\brl@char_bc011011}%begemphphrase trans4 d-5-3456-2356-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trE}{tr5}]{.\brl@@sharp 2^a}{\brl@char_bc000101\brl@char_bc001111\brl@char_bc011000}%emphletter trans5 d-46-3456-23-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trE}{[tr5}]{.\brl@@sharp 1^a}{\brl@char_bc000101\brl@char_bc001111\brl@char_bc010000}%begemphword trans5 d-46-3456-2-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trE}{tr5]}]{.\brl@@sharp '^a}{\brl@char_bc000101\brl@char_bc001111\brl@char_bc001000}%endemphword trans5 d-46-3456-3-ae
+\brl@char_edef[\brl@char_textstack{\brl@ueb@trE}{[tr5}]{.\brl@@sharp 7^a}{\brl@char_bc000101\brl@char_bc001111\brl@char_bc011011}%begemphphrase trans5 d-46-3456-2356-ae
+
+
+
+%% g2
+\brl@char_edef[\brl@char_textstack{ア縮語}{as}]{z^a}{\brl@char_bc101011}%match %[^_~]%<* as (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1356-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{but}]{b^a}{\brl@char_bc110000}%match %[^_~]%<* but (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-12-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{can}]{c^a}{\brl@char_bc100100}%match %[^_~]%<* can (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-14-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{do}]{d^a}{\brl@char_bc100110}%match %[^_~]%<* do (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-145-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{every}]{e^a}{\brl@char_bc100010}%match %[^_~]%<* every (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-15-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{from}]{f^a}{\brl@char_bc110100}%match %[^_~]%<* from (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-124-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{go}]{g^a}{\brl@char_bc110110}%match %[^_~]%<* go (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1245-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{have}]{h^a}{\brl@char_bc110010}%match %[^_~]%<* have (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-125-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{it}]{x^a}{\brl@char_bc101101}%match %[^_~]%<* it (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1346-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{just}]{j^a}{\brl@char_bc010110}%match %[^_~]%<* just (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-245-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{knowledge}]{k^a}{\brl@char_bc101000}%match %[^_~]%<* knowledge (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-13-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{like}]{l^a}{\brl@char_bc111000}%match %[^_~]%<* like (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-123-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{more}]{m^a}{\brl@char_bc101100}%match %[^_~]%<* more (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-134-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{not}]{n^a}{\brl@char_bc101110}%match %[^_~]%<* not (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1345-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{people}]{p^a}{\brl@char_bc111100}%match %[^_~]%<* people (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1234-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{quite}]{q^a}{\brl@char_bc111110}%match %[^_~]%<* quite (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-12345-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{rather}]{r^a}{\brl@char_bc111010}%match %[^_~]%<* rather (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1235-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{so}]{s^a}{\brl@char_bc011100}%match %[^_~]%<* so (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-234-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{that}]{t^a}{\brl@char_bc011110}%match %[^_~]%<* that (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-2345-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{us}]{u^a}{\brl@char_bc101001}%match %[^_~]%<* us (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-136-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{very}]{v^a}{\brl@char_bc111001}%match %[^_~]%<* very (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1236-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{will}]{w^a}{\brl@char_bc010111}%match %[^_~]%<* will (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-2456-ae
+\brl@char_edef[\brl@char_textstack{ア縮語}{you}]{y^a}{\brl@char_bc101111}%match %[^_~]%<* you (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-13456-ae
+
+\brl@char_edef[\brl@char_textstack{強縮語}{child}]{*^b}{\brl@char_bc100001}%match %[^_~]%<* child (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-16-be
+\brl@char_edef[\brl@char_textstack{強縮語}{out}]{|^b}{\brl@char_bc110011}%match %[^_~]%<* out (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1256-be
+\brl@char_edef[\brl@char_textstack{強縮語}{shall}]{\brl@@percent^b}{\brl@char_bc100101}%match %[^_~]%<* shall (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-146-be
+\brl@char_edef[\brl@char_textstack{強縮語}{still}]{/^b}{\brl@char_bc001100}%match %[^_~]%<* still (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-34-be
+\brl@char_edef[\brl@char_textstack{強縮語}{this}]{?^b}{\brl@char_bc100111}%match %[^_~]%<* this (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-1456-be
+\brl@char_edef[\brl@char_textstack{強縮語}{which}]{:^b}{\brl@char_bc100011}%match %[^_~]%<* which (['’]([DSTdst]|ll|[rv]e|LL|[RV]E))?%>*%[^_~] d-156-be
+
+\brl@char_edef[\brl@char_textstack{下縮語}{be}]{2^a}{\brl@char_bc011000}%match %[^_]|%[^_~]%<*[([{] be %[^_]|[)}\\]]%>*%[^_~] d-23-ae
+\brl@char_edef[\brl@char_textstack{下縮語}{enough}]{5^a}{\brl@char_bc010001}%word enough's d-26-ae-3-234
+\brl@char_edef[\brl@char_textstack{下縮語}{his}]{8^a}{\brl@char_bc011001}%match %[^_]|%[^_~]%<*[([{] his %[^_]|[)}\\]]%>*%[^_~] d-236-ae
+\brl@char_edef[\brl@char_textstack{下縮語}{was}]{0^a}{\brl@char_bc001011}%match %[^_]|%[^_~]%<*[([{] was %[^_]|[)}\\]]%>*%[^_~] d-356-ae
+\brl@char_edef[\brl@char_textstack{下縮語}{were}]{7^a}{\brl@char_bc011011}%match %[^_]|%[^_~]%<*[([{] were %[^_]|[)}\\]]%>*%[^_~] d-2356-ae
+
+\brl@char_edef[\brl@char_textstack{下縮}{bb}]{2^b}{\brl@char_bc011000}%
+\brl@char_edef[\brl@char_textstack{下縮}{cc}]{3^a}{\brl@char_bc010010}%empmatchbefore empmatchafter match %a cc %a d-25-be
+
+\brl@char_edef[\brl@char_textstack{末縮}{ance}]{.e^a}{\brl@char_bc000101\brl@char_bc100010}%sufword cofinance 14-135-124-35-d-46-15-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ence}]{;e^a}{\brl@char_bc000011\brl@char_bc100010}%match %a onence - 135-1345-d-56-15-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ful}]{;l^a}{\brl@char_bc000011\brl@char_bc111000}%match %[_~^]%<* rejoiceful ([Ss]|['’][Ss])?%>*%[_~^] 1235-245-14-d-56-123-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ity}]{;y^a}{\brl@char_bc000011\brl@char_bc101111}%match %[_~^]%<* letterquality ([Ss]|['’][Ss])?%>*%[_~^] 123-1235-12345-136-1-123-d-56-13456-ae
+\brl@char_edef[\brl@char_textstack{末縮}{less}]{.s^a}{\brl@char_bc000101\brl@char_bc011100}%sufword nonetheless 1345-5-135-2346-d-46-234-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ment}]{;t^a}{\brl@char_bc000011\brl@char_bc011110}%sufword coferment 14-135-124-12456-d-56-2345-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ness}]{;s^a}{\brl@char_bc000011\brl@char_bc011100}%word bestness 12-15-34-d-56-234-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ong}]{;g^a}{\brl@char_bc000011\brl@char_bc110110}%ong
+\brl@char_edef[\brl@char_textstack{末縮}{ound}]{.d^a}{\brl@char_bc000101\brl@char_bc100110}%sufword cofound 14-135-124-d-46-145-ae
+\brl@char_edef[\brl@char_textstack{末縮}{ount}]{.t^a}{\brl@char_bc000101\brl@char_bc011110}%ount
+\brl@char_edef[\brl@char_textstack{末縮}{sion}]{.n^a}{\brl@char_bc000101\brl@char_bc101110}%sufword threedimension 1456-1235-15-15-145-24-134-26-d-46-1345-ae
+\brl@char_edef[\brl@char_textstack{末縮}{tion}]{;n^a}{\brl@char_bc000011\brl@char_bc101110}%sufword cofunction 14-135-124-136-1345-14-d-56-1345-ae
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% context : alph
+
+\def\brl@char@context{alph}
+
+\brl@char_def{a}{\brl@char@alias_a}
+\brl@char_def{b}{\brl@char@alias_b}
+\brl@char_def{c}{\brl@char@alias_c}
+\brl@char_def{d}{\brl@char@alias_d}
+\brl@char_def{e}{\brl@char@alias_e}
+\brl@char_def{f}{\brl@char@alias_f}
+\brl@char_def{g}{\brl@char@alias_g}
+\brl@char_def{h}{\brl@char@alias_h}
+\brl@char_def{i}{\brl@char@alias_i}
+\brl@char_def{j}{\brl@char@alias_j}
+\brl@char_def{k}{\brl@char@alias_k}
+\brl@char_def{l}{\brl@char@alias_l}
+\brl@char_def{m}{\brl@char@alias_m}
+\brl@char_def{n}{\brl@char@alias_n}
+\brl@char_def{o}{\brl@char@alias_o}
+\brl@char_def{p}{\brl@char@alias_p}
+\brl@char_def{q}{\brl@char@alias_q}
+\brl@char_def{r}{\brl@char@alias_r}
+\brl@char_def{s}{\brl@char@alias_s}
+\brl@char_def{t}{\brl@char@alias_t}
+\brl@char_def{u}{\brl@char@alias_u}
+\brl@char_def{v}{\brl@char@alias_v}
+\brl@char_def{w}{\brl@char@alias_w}
+\brl@char_def{x}{\brl@char@alias_x}
+\brl@char_def{y}{\brl@char@alias_y}
+\brl@char_def{z}{\brl@char@alias_z}
+
+
+
+
+\brl@char_def{A}{\brl@char@alias_a}
+\brl@char_def{B}{\brl@char@alias_b}
+\brl@char_def{C}{\brl@char@alias_c}
+\brl@char_def{D}{\brl@char@alias_d}
+\brl@char_def{E}{\brl@char@alias_e}
+\brl@char_def{F}{\brl@char@alias_f}
+\brl@char_def{G}{\brl@char@alias_g}
+\brl@char_def{H}{\brl@char@alias_h}
+\brl@char_def{I}{\brl@char@alias_i}
+\brl@char_def{J}{\brl@char@alias_j}
+\brl@char_def{K}{\brl@char@alias_k}
+\brl@char_def{L}{\brl@char@alias_l}
+\brl@char_def{M}{\brl@char@alias_m}
+\brl@char_def{N}{\brl@char@alias_n}
+\brl@char_def{O}{\brl@char@alias_o}
+\brl@char_def{P}{\brl@char@alias_p}
+\brl@char_def{Q}{\brl@char@alias_q}
+\brl@char_def{R}{\brl@char@alias_r}
+\brl@char_def{S}{\brl@char@alias_s}
+\brl@char_def{T}{\brl@char@alias_t}
+\brl@char_def{U}{\brl@char@alias_u}
+\brl@char_def{V}{\brl@char@alias_v}
+\brl@char_def{W}{\brl@char@alias_w}
+\brl@char_def{X}{\brl@char@alias_x}
+\brl@char_def{Y}{\brl@char@alias_y}
+\brl@char_def{Z}{\brl@char@alias_z}
+
+
+\brl@char_edef{0}{\brl@char@alias_zero}
+\brl@char_edef{1}{\brl@char@alias_one}
+\brl@char_edef{2}{\brl@char@alias_two}
+\brl@char_edef{3}{\brl@char@alias_three}
+\brl@char_edef{4}{\brl@char@alias_four}
+\brl@char_edef{5}{\brl@char@alias_five}
+\brl@char_edef{6}{\brl@char@alias_six}
+\brl@char_edef{7}{\brl@char@alias_seven}
+\brl@char_edef{8}{\brl@char@alias_eight}
+\brl@char_edef{9}{\brl@char@alias_nine}
+
+
+%%
+%% EBAE
+%%
+\brl@char_edef{,}{\brl@char_bc010000}
+\brl@char_edef{;}{\brl@char_bc011000}
+\brl@char_edef{:}{\brl@char_bc010010}
+\brl@char_edef{.}{\brl@char_bc010011}
+\brl@char_edef{!}{\brl@char_bc011010}
+\brl@char_edef{?}{\brl@char_bc011001}
+\brl@char_edef{'}{\brl@char_bc001000}
+\brl@char_edef[\brl@char@font{ope}{7B}]{-}{\brl@char_bc001001}
+\brl@char_pdef[…]{\dots}{\brl@char_bc001000\brl@char_bc001000\brl@char_bc001000}
+\brl@char_edef{/}{\brl@char_bc000111\brl@char_bc001100}
+\brl@char_edef{“}{\brl@char@alias_quoteopen}
+\brl@char_edef{”}{\brl@char@alias_quoteclose}
+\brl@char_edef{(}{\brl@char@alias_text}
+\brl@char_edef{)}{\brl@char@alias_text}
+\brl@char_edef{[}{\brl@char_bc000001\brl@char@alias_text}
+\brl@char_edef{]}{\brl@char@alias_text\brl@char_bc001000}
+\brl@char_pdef[\brl@char@font{ope}{26}]{\&}{\brl@char_bc000100\brl@char_bc111101}
+
+
+\brl@char_def[\brl@char_textstack{省略符}{'}]{apostrophe}{\brl@char_bc001000}
+
+\brl@char_def[`]{singlequoteopen}{\brl@char_bc000001\brl@char@alias_quoteopen}
+\brl@char_def[']{singlequoteclose}{\brl@char_bc000001\brl@char@alias_quoteclose}
+
+\brl@char_def[“]{doublequoteopen}{\brl@char_bc000110\brl@char@alias_quoteopen}
+\brl@char_def[”]{doublequoteclose}{\brl@char_bc000110\brl@char@alias_quoteclose}
+
+
+\brl@char_def[\brl@char_textstack{acc.}{}]{englishaccent}{\brl@char_bc000100}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% context : info
+
+\brl@char_context{info}
+
+\brl@char_def[\brl@char_nomean]{infomode}{}
+\brl@char_pdef[]{\ }{\brl@char@alias_nmspace}% used in verb
+
+\brl@char_def[\brl@char_textstack{数}{}]{numbersign}{\brl@char@alias_numbersign}
+\brl@char_def[\brl@char_textstack{小}{}]{small}{\brl@char_bc000011}
+
+\brl@char_def[\brl@char_textstack{大}{}]{capital}{\brl@char@alias_capital}
+\brl@char_def[\brl@char_textstack{大大}{}]{doublecapital}{\brl@char@alias_capital\brl@char@alias_capital}
+\brl@char_def[\brl@char_textstack{a-j}{}]{letteraj}{\brl@char_bc000011}
+
+\brl@char_def[\brl@char_textstack{継}{}]{linebreak}{\brl@char_bc000000\brl@char_bc000000\brl@char_bc000100}
+
+\brl@char_def[\brl@char_textstack{acc.}{}]{englishaccent}{\brl@char_bc000111\brl@char_bc000100}
+
+\brl@char_pdef[yen]{\yen}{\brl@char_bc110101}% texttt
+
+
+
+\brl@char_pdef[\brl@char@font{mtt}{20}]{\brl@info_cmd_altsp}{\brl@char_bc100011}
+\brl@char_edef[\brl@char@font{mtt}{21}]{!}{\brl@char_bc011010}
+\brl@char_edef[\brl@char@font{mtt}{22}]{"}{\brl@char_bc011011}
+\brl@char_pdef[\brl@char@font{mtt}{23}]{\#}{\brl@char_bc100101}
+\brl@char_pdef[\brl@char@font{mtt}{24}]{\$}{\brl@char_bc100111}
+\brl@char_pdef[\brl@char@font{mtt}{25}]{\%}{\brl@char_bc110111}
+\brl@char_pdef[\brl@char@font{mtt}{26}]{\&}{\brl@char_bc111101}
+\brl@char_edef[\brl@char@font{mtt}{27}]{'}{\brl@char_bc001000}
+\brl@char_edef[\brl@char@font{mtt}{28}]{(}{\brl@char_bc011001}
+\brl@char_edef[\brl@char@font{mtt}{29}]{)}{\brl@char_bc001011}
+\brl@char_edef[\brl@char@font{mtt}{2A}]{*}{\brl@char_bc100001}
+\brl@char_edef[\brl@char@font{mtt}{2B}]{+}{\brl@char_bc001101}
+\brl@char_edef[\brl@char@font{mtt}{2C}]{,}{\brl@char_bc010000}
+\brl@char_edef[\brl@char@font{mtt}{2D}]{-}{\brl@char_bc001001}
+\brl@char_edef[\brl@char@font{mtt}{2E}]{.}{\brl@char_bc010011}
+\brl@char_edef[\brl@char@font{mtt}{2F}]{/}{\brl@char_bc001100}
+
+\brl@char_edef[\brl@char@font{mtt}{30}]{0}{\brl@char@alias_zero}
+\brl@char_edef[\brl@char@font{mtt}{31}]{1}{\brl@char@alias_one}
+\brl@char_edef[\brl@char@font{mtt}{32}]{2}{\brl@char@alias_two}
+\brl@char_edef[\brl@char@font{mtt}{33}]{3}{\brl@char@alias_three}
+\brl@char_edef[\brl@char@font{mtt}{34}]{4}{\brl@char@alias_four}
+\brl@char_edef[\brl@char@font{mtt}{35}]{5}{\brl@char@alias_five}
+\brl@char_edef[\brl@char@font{mtt}{36}]{6}{\brl@char@alias_six}
+\brl@char_edef[\brl@char@font{mtt}{37}]{7}{\brl@char@alias_seven}
+\brl@char_edef[\brl@char@font{mtt}{38}]{8}{\brl@char@alias_eight}
+\brl@char_edef[\brl@char@font{mtt}{39}]{9}{\brl@char@alias_nine}
+
+
+\brl@char_edef[\brl@char@font{mtt}{3A}]{:}{\brl@char_bc000010\brl@char_bc010000}
+\brl@char_edef[\brl@char@font{mtt}{3B}]{;}{\brl@char_bc011000}
+\brl@char_edef[\brl@char@font{mtt}{3C}]{<}{\brl@char_bc001010\brl@char_bc001010}
+\brl@char_edef[\brl@char@font{mtt}{3D}]{=}{\brl@char_bc010010\brl@char_bc010010}
+\brl@char_edef[\brl@char@font{mtt}{3D}]{>}{\brl@char_bc010001\brl@char_bc010001}
+\brl@char_edef[\brl@char@font{mtt}{3F}]{?}{\brl@char_bc000010\brl@char_bc011001}
+\brl@char_edef[\brl@char@font{mtt}{40}]{@}{\brl@char_bc010101}
+
+\brl@char_def[\brl@char@font{mtt}{41}]{A}{\brl@char@alias_a}
+\brl@char_def[\brl@char@font{mtt}{42}]{B}{\brl@char@alias_b}
+\brl@char_def[\brl@char@font{mtt}{43}]{C}{\brl@char@alias_c}
+\brl@char_def[\brl@char@font{mtt}{44}]{D}{\brl@char@alias_d}
+\brl@char_def[\brl@char@font{mtt}{45}]{E}{\brl@char@alias_e}
+\brl@char_def[\brl@char@font{mtt}{46}]{F}{\brl@char@alias_f}
+\brl@char_def[\brl@char@font{mtt}{47}]{G}{\brl@char@alias_g}
+\brl@char_def[\brl@char@font{mtt}{48}]{H}{\brl@char@alias_h}
+\brl@char_def[\brl@char@font{mtt}{49}]{I}{\brl@char@alias_i}
+\brl@char_def[\brl@char@font{mtt}{4A}]{J}{\brl@char@alias_j}
+\brl@char_def[\brl@char@font{mtt}{4B}]{K}{\brl@char@alias_k}
+\brl@char_def[\brl@char@font{mtt}{4C}]{L}{\brl@char@alias_l}
+\brl@char_def[\brl@char@font{mtt}{4D}]{M}{\brl@char@alias_m}
+\brl@char_def[\brl@char@font{mtt}{4E}]{N}{\brl@char@alias_n}
+\brl@char_def[\brl@char@font{mtt}{4F}]{O}{\brl@char@alias_o}
+\brl@char_def[\brl@char@font{mtt}{50}]{P}{\brl@char@alias_p}
+\brl@char_def[\brl@char@font{mtt}{51}]{Q}{\brl@char@alias_q}
+\brl@char_def[\brl@char@font{mtt}{52}]{R}{\brl@char@alias_r}
+\brl@char_def[\brl@char@font{mtt}{53}]{S}{\brl@char@alias_s}
+\brl@char_def[\brl@char@font{mtt}{54}]{T}{\brl@char@alias_t}
+\brl@char_def[\brl@char@font{mtt}{55}]{U}{\brl@char@alias_u}
+\brl@char_def[\brl@char@font{mtt}{56}]{V}{\brl@char@alias_v}
+\brl@char_def[\brl@char@font{mtt}{57}]{W}{\brl@char@alias_w}
+\brl@char_def[\brl@char@font{mtt}{58}]{X}{\brl@char@alias_x}
+\brl@char_def[\brl@char@font{mtt}{59}]{Y}{\brl@char@alias_y}
+\brl@char_def[\brl@char@font{mtt}{5A}]{Z}{\brl@char@alias_z}
+
+
+\brl@char_edef[\brl@char@font{mtt}{5B}]{[}{\brl@char_bc111011}
+\brl@char_pdef[\brl@char@font{mtt}{5C}]{\textbackslash}{\brl@char_bc110101}% texttt
+\brl@char_edef[\brl@char@font{mtt}{5D}]{]}{\brl@char_bc011111}
+
+\brl@char_pdef[\brl@char@font{mtt}{5E}]{\textasciicircum}{\brl@char_bc000110}% texttt
+\brl@char_pdef[\brl@char@font{mtt}{5F}]{\_}{\brl@char_bc000010\brl@char_bc001001}
+\brl@char_edef[\brl@char@font{mtt}{60}]{`}{\brl@char_bc000010\brl@char_bc100010}
+
+\brl@char_def[\brl@char@font{mtt}{61}]{a}{\brl@char@alias_a}
+\brl@char_def[\brl@char@font{mtt}{62}]{b}{\brl@char@alias_b}
+\brl@char_def[\brl@char@font{mtt}{63}]{c}{\brl@char@alias_c}
+\brl@char_def[\brl@char@font{mtt}{64}]{d}{\brl@char@alias_d}
+\brl@char_def[\brl@char@font{mtt}{65}]{e}{\brl@char@alias_e}
+\brl@char_def[\brl@char@font{mtt}{66}]{f}{\brl@char@alias_f}
+\brl@char_def[\brl@char@font{mtt}{67}]{g}{\brl@char@alias_g}
+\brl@char_def[\brl@char@font{mtt}{68}]{h}{\brl@char@alias_h}
+\brl@char_def[\brl@char@font{mtt}{69}]{i}{\brl@char@alias_i}
+\brl@char_def[\brl@char@font{mtt}{6A}]{j}{\brl@char@alias_j}
+\brl@char_def[\brl@char@font{mtt}{6B}]{k}{\brl@char@alias_k}
+\brl@char_def[\brl@char@font{mtt}{6C}]{l}{\brl@char@alias_l}
+\brl@char_def[\brl@char@font{mtt}{6D}]{m}{\brl@char@alias_m}
+\brl@char_def[\brl@char@font{mtt}{6E}]{n}{\brl@char@alias_n}
+\brl@char_def[\brl@char@font{mtt}{6F}]{o}{\brl@char@alias_o}
+\brl@char_def[\brl@char@font{mtt}{70}]{p}{\brl@char@alias_p}
+\brl@char_def[\brl@char@font{mtt}{71}]{q}{\brl@char@alias_q}
+\brl@char_def[\brl@char@font{mtt}{72}]{r}{\brl@char@alias_r}
+\brl@char_def[\brl@char@font{mtt}{73}]{s}{\brl@char@alias_s}
+\brl@char_def[\brl@char@font{mtt}{74}]{t}{\brl@char@alias_t}
+\brl@char_def[\brl@char@font{mtt}{75}]{u}{\brl@char@alias_u}
+\brl@char_def[\brl@char@font{mtt}{76}]{v}{\brl@char@alias_v}
+\brl@char_def[\brl@char@font{mtt}{77}]{w}{\brl@char@alias_w}
+\brl@char_def[\brl@char@font{mtt}{78}]{x}{\brl@char@alias_x}
+\brl@char_def[\brl@char@font{mtt}{79}]{y}{\brl@char@alias_y}
+\brl@char_def[\brl@char@font{mtt}{7A}]{z}{\brl@char@alias_z}
+
+\brl@char_pdef[\brl@char@font{mtt}{7B}]{\{}{\brl@char_bc110001}
+\brl@char_edef[\brl@char@font{mtt}{7C}]{|}{\brl@char_bc110011}
+\brl@char_pdef[\brl@char@font{mtt}{7D}]{\}}{\brl@char_bc001110}
+
+\brl@char_pdef[\brl@char@font{mtt}{7E}]{\textasciitilde}{\brl@char_bc000010\brl@char_bc100100}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% context : math
+
+\brl@char_context{math}
+
+\brl@char_def[-]{hfill}{\brl@char@alias_hfill}%
+\brl@char_def[]{space}{\brl@char@alias_space}% space
+\brl@char_def[\brl@char_nomean]{mathmode}{}% empty line in align
+\brl@char_edef{,}{\brl@char_bc010000\brl@char@spacetrue}%
+\brl@char_edef[.]{textperiod}{\brl@char@alias_jmaru\brl@char@spacetrue}%
+\brl@char_edef{;}{\brl@char_bc011000\brl@char@alias_space}
+\brl@char_edef{.}{\brl@char_bc010000}
+
+
+\brl@char_def[\brl@char@font{sym}{01}]{leader_cdot}{\brl@char_bc010000}
+
+
+
+
+
+\brl@char_def[]{spaceu}{\brl@char@alias_space}%
+\brl@char_def[]{spacem}{\brl@char@alias_space}%
+\brl@char_def[]{spaced}{\brl@char@alias_space}%
+
+
+\brl@char_def[\brl@char@font{lsym}{30}]{pmatrix_lu}{\brl@char_ebc01110010}<\brl@char@alias_dbc_pmatrix_lu>
+\brl@char_def[\brl@char@font{lsym}{42}]{pmatrix_lm}{\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[\brl@char@font{lsym}{40}]{pmatrix_ld}{\brl@char_bc110001}<\brl@char@alias_dbc_pmatrix_ld>
+\brl@char_def[\brl@char@font{lsym}{31}]{pmatrix_ru}{\brl@char_ebc10001101}<\brl@char@alias_dbc_pmatrix_ru>
+\brl@char_def[\brl@char@font{lsym}{43}]{pmatrix_rm}{\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_def[\brl@char@font{lsym}{41}]{pmatrix_rd}{\brl@char_bc001110}<\brl@char@alias_dbc_pmatrix_rd>
+
+\brl@char_def[(]{pmatrix_l}{\brl@char@alias_parenopen}
+\brl@char_def[)]{pmatrix_r}{\brl@char@alias_parenclose}
+
+\brl@char_def[\brl@char@font{lsym}{30}]{cmatrix_lu}{\brl@char_ebc01110010}<\brl@char@alias_dbc_cmatrix_lu>
+\brl@char_def[\brl@char@font{lsym}{42}]{cmatrix_lm}{\brl@char_ebc11100010}<\brl@char@alias_dbc_cmatrix_lm>
+\brl@char_def[\brl@char@font{lsym}{40}]{cmatrix_ld}{\brl@char_bc110001}<\brl@char@alias_dbc_cmatrix_ld>
+\brl@char_def[\brl@char@font{lsym}{31}]{cmatrix_ru}{\brl@char_ebc10001101}<\brl@char@alias_dbc_cmatrix_ru>
+\brl@char_def[\brl@char@font{lsym}{43}]{cmatrix_rm}{\brl@char_ebc00011101}<\brl@char@alias_dbc_cmatrix_rm>
+\brl@char_def[\brl@char@font{lsym}{41}]{cmatrix_rd}{\brl@char_bc001110}<\brl@char@alias_dbc_cmatrix_rd>
+
+\brl@char_def[\brl@char@font{sym}{66}]{cmatrix_l}{\brl@char@alias_braceopen}
+\brl@char_def[\brl@char@font{sym}{67}]{cmatrix_r}{\brl@char@alias_braceclose}
+
+
+\brl@char_def[\brl@char@font{lsym}{32}]{bmatrix_lu}{\brl@char_ebc11110010}<\brl@char@alias_dbc_bmatrix_lu>
+\brl@char_def[\brl@char@font{lsym}{36}]{bmatrix_lm}{\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[\brl@char@font{lsym}{34}]{bmatrix_ld}{\brl@char_bc111001}<\brl@char@alias_dbc_bmatrix_ld>
+\brl@char_def[\brl@char@font{lsym}{33}]{bmatrix_ru}{\brl@char_ebc10011101}<\brl@char@alias_dbc_bmatrix_ru>
+\brl@char_def[\brl@char@font{lsym}{37}]{bmatrix_rm}{\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_def[\brl@char@font{lsym}{35}]{bmatrix_rd}{\brl@char_bc001111}<\brl@char@alias_dbc_bmatrix_rd>
+
+\brl@char_def[\brl@char@font{ope}{5B}]{bmatrix_l}{\brl@char@alias_bracketopen}
+\brl@char_def[\brl@char@font{ope}{5D}]{bmatrix_r}{\brl@char@alias_bracketclose}
+
+
+\brl@char_def[|]{vmatrix_lu}{\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[|]{vmatrix_lm}{\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[|]{vmatrix_ld}{\brl@char_bc111000}<\brl@char@alias_dbc_matrix_ld>
+\brl@char_def[|]{vmatrix_ru}{\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_def[|]{vmatrix_rm}{\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_def[|]{vmatrix_rd}{\brl@char_bc000111}<\brl@char@alias_dbc_matrix_rd>
+\brl@char_def[|]{vmatrix_l}{\brl@char@alias_vert}
+\brl@char_def[|]{vmatrix_r}{\brl@char@alias_vert}
+
+
+\brl@char_def[||]{Vmatrix_lu}{\brl@char_ebc11100010\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[||]{Vmatrix_lm}{\brl@char_ebc11100010\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[||]{Vmatrix_ld}{\brl@char_bc111000\brl@char_bc111000}<\brl@char@alias_dbc_matrix_ld\brl@char@alias_dbc_matrix_ld>
+\brl@char_def[||]{Vmatrix_ru}{\brl@char_ebc00011101\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm\brl@char@alias_dbc_matrix_rm>
+\brl@char_def[||]{Vmatrix_rm}{\brl@char_ebc00011101\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm\brl@char@alias_dbc_matrix_rm>
+\brl@char_def[||]{Vmatrix_rd}{\brl@char_bc000111\brl@char_bc000111}<\brl@char@alias_dbc_matrix_rd\brl@char@alias_dbc_matrix_rd>
+
+\brl@char_def[||]{Vmatrix_l}{\brl@char@alias_vert\brl@char@alias_vert}
+\brl@char_def[||]{Vmatrix_r}{\brl@char@alias_vert\brl@char@alias_vert}
+
+
+
+\brl@char_def[\brl@char@font{sym}{68}]{angle_l}{\brl@char_bc010101}
+\brl@char_def[\brl@char@font{sym}{69}]{angle_r}{\brl@char_bc101010}
+
+
+
+%% with hline
+%%
+
+\brl@char_edef[\brl@char@font{lsym}{30}]{pmatrix_lul1}{\brl@char_ebc01111010}<\brl@char@alias_dbc_pmatrix_lu>
+\brl@char_edef[\brl@char@font{lsym}{42}]{pmatrix_lml1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[\brl@char@font{lsym}{40}]{pmatrix_ldl1}{\brl@char_bc110011}<\brl@char@alias_dbc_pmatrix_ld>
+\brl@char_edef[\brl@char@font{lsym}{31}]{pmatrix_rul1}{\brl@char_ebc11001101}<\brl@char@alias_dbc_pmatrix_ru>
+\brl@char_edef[\brl@char@font{lsym}{43}]{pmatrix_rml1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[\brl@char@font{lsym}{41}]{pmatrix_rdl1}{\brl@char_bc011110}<\brl@char@alias_dbc_pmatrix_rd>
+
+\brl@char_edef[\brl@char@font{lsym}{30}]{pmatrix_lul2}{\brl@char_ebc01110110}<\brl@char@alias_dbc_pmatrix_lu>
+\brl@char_edef[\brl@char@font{lsym}{42}]{pmatrix_lml2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[\brl@char@font{lsym}{40}]{pmatrix_ldl2}{\brl@char_bc110101}<\brl@char@alias_dbc_pmatrix_ld>
+\brl@char_edef[\brl@char@font{lsym}{31}]{pmatrix_rul2}{\brl@char_ebc10101101}<\brl@char@alias_dbc_pmatrix_ru>
+\brl@char_edef[\brl@char@font{lsym}{43}]{pmatrix_rml2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[\brl@char@font{lsym}{41}]{pmatrix_rdl2}{\brl@char_bc101110}<\brl@char@alias_dbc_pmatrix_rd>
+
+\brl@char_edef[\brl@char@font{lsym}{30}]{cmatrix_lul1}{\brl@char_ebc01111010}<\brl@char@alias_dbc_pmatrix_lu>
+\brl@char_edef[\brl@char@font{lsym}{42}]{cmatrix_lml1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[\brl@char@font{lsym}{40}]{cmatrix_ldl1}{\brl@char_bc110011}<\brl@char@alias_dbc_pmatrix_ld>
+\brl@char_edef[\brl@char@font{lsym}{31}]{cmatrix_rul1}{\brl@char_ebc11001101}<\brl@char@alias_dbc_pmatrix_ru>
+\brl@char_edef[\brl@char@font{lsym}{43}]{cmatrix_rml1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[\brl@char@font{lsym}{41}]{cmatrix_rdl1}{\brl@char_bc011110}<\brl@char@alias_dbc_pmatrix_rd>
+
+\brl@char_edef[\brl@char@font{lsym}{30}]{cmatrix_lul2}{\brl@char_ebc01110110}<\brl@char@alias_dbc_pmatrix_lu>
+\brl@char_edef[\brl@char@font{lsym}{42}]{cmatrix_lml2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[\brl@char@font{lsym}{40}]{cmatrix_ldl2}{\brl@char_bc110101}<\brl@char@alias_dbc_pmatrix_ld>
+\brl@char_edef[\brl@char@font{lsym}{31}]{cmatrix_rul2}{\brl@char_ebc10101101}<\brl@char@alias_dbc_pmatrix_ru>
+\brl@char_edef[\brl@char@font{lsym}{43}]{cmatrix_rml2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[\brl@char@font{lsym}{41}]{cmatrix_rdl2}{\brl@char_bc101110}<\brl@char@alias_dbc_pmatrix_rd>
+
+\brl@char_edef[\brl@char@font{lsym}{32}]{bmatrix_lul1}{\brl@char_ebc11111010}<\brl@char@alias_dbc_bmatrix_lu>
+\brl@char_edef[\brl@char@font{lsym}{36}]{bmatrix_lml1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[\brl@char@font{lsym}{34}]{bmatrix_ldl1}{\brl@char_bc111011}<\brl@char@alias_dbc_bmatrix_ld>
+\brl@char_edef[\brl@char@font{lsym}{33}]{bmatrix_rul1}{\brl@char_ebc11011101}<\brl@char@alias_dbc_bmatrix_ru>
+\brl@char_edef[\brl@char@font{lsym}{37}]{bmatrix_rml1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[\brl@char@font{lsym}{35}]{bmatrix_rdl1}{\brl@char_bc011111}<\brl@char@alias_dbc_bmatrix_rd>
+
+\brl@char_edef[\brl@char@font{lsym}{32}]{bmatrix_lul2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_bmatrix_lu>
+\brl@char_edef[\brl@char@font{lsym}{36}]{bmatrix_lml2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[\brl@char@font{lsym}{34}]{bmatrix_ldl2}{\brl@char_bc111101}<\brl@char@alias_dbc_bmatrix_ld>
+\brl@char_edef[\brl@char@font{lsym}{33}]{bmatrix_rul2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_bmatrix_ru>
+\brl@char_edef[\brl@char@font{lsym}{37}]{bmatrix_rml2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[\brl@char@font{lsym}{35}]{bmatrix_rdl2}{\brl@char_bc101111}<\brl@char@alias_dbc_bmatrix_rd>
+
+\brl@char_edef[|]{vmatrix_lul1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[|]{vmatrix_lml1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[|]{vmatrix_ldl1}{\brl@char_bc111010}<\brl@char@alias_dbc_matrix_ld>
+\brl@char_edef[|]{vmatrix_rul1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[|]{vmatrix_rml1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[|]{vmatrix_rdl1}{\brl@char_bc010111}<\brl@char@alias_dbc_matrix_rd>
+
+\brl@char_edef[|]{vmatrix_lul2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[|]{vmatrix_lml2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[|]{vmatrix_ldl2}{\brl@char_bc111101}<\brl@char@alias_dbc_matrix_ld>
+\brl@char_edef[|]{vmatrix_rul2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[|]{vmatrix_rml2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[|]{vmatrix_rdl2}{\brl@char_bc101111}<\brl@char@alias_dbc_matrix_rd>
+
+\brl@char_edef[||]{Vmatrix_lul1}{\brl@char_ebc11100010\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[||]{Vmatrix_lml1}{\brl@char_ebc11100010\brl@char_ebc11101010}<\brl@char@alias_dbc_matrix_lm\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[||]{Vmatrix_ldl1}{\brl@char_bc111000\brl@char_bc111010}<\brl@char@alias_dbc_matrix_ld\brl@char@alias_dbc_matrix_ld>
+\brl@char_edef[||]{Vmatrix_rul1}{\brl@char_ebc01011101\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[||]{Vmatrix_rml1}{\brl@char_ebc01011101\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[||]{Vmatrix_rdl1}{\brl@char_bc010111\brl@char_bc000111}<\brl@char@alias_dbc_matrix_rd\brl@char@alias_dbc_matrix_rd>
+
+\brl@char_edef[||]{Vmatrix_lul2}{\brl@char_ebc11100010\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[||]{Vmatrix_lml2}{\brl@char_ebc11100010\brl@char_ebc11110110}<\brl@char@alias_dbc_matrix_lm\brl@char@alias_dbc_matrix_lm>
+\brl@char_edef[||]{Vmatrix_ldl2}{\brl@char_bc111000\brl@char_bc111101}<\brl@char@alias_dbc_matrix_ld\brl@char@alias_dbc_matrix_ld>
+\brl@char_edef[||]{Vmatrix_rul2}{\brl@char_ebc10111101\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[||]{Vmatrix_rml2}{\brl@char_ebc10111101\brl@char_ebc00011101}<\brl@char@alias_dbc_matrix_rm\brl@char@alias_dbc_matrix_rm>
+\brl@char_edef[||]{Vmatrix_rdl2}{\brl@char_bc101111\brl@char_bc000111}<\brl@char@alias_dbc_matrix_rd\brl@char@alias_dbc_matrix_rd>
+
+
+
+\brl@char_def[\brl@orig@vrule\@width\brl@char@meanfontsize\@height 0.1\brl@char@meanfontsize]{bracem}{\brl@char@alias_rulemm}<\brl@char@alias_dbc_bracem>
+
+\brl@char_def[\brl@char@font{lsym}{7A}]{bracelu}{\brl@char@alias_rulelu}<\brl@char@alias_dbc_bracelu>
+\brl@char_def[\brl@char@font{lsym}{7B}]{braceru}{\brl@char@alias_ruleru}<\brl@char@alias_dbc_braceru>
+\brl@char_def[\brl@char@font{lsym}{7C}]{braceld}{\brl@char@alias_ruleld}<\brl@char@alias_dbc_braceld>
+\brl@char_def[\brl@char@font{lsym}{7D}]{bracerd}{\brl@char@alias_rulerd}<\brl@char@alias_dbc_bracerd>
+
+\brl@char_def[\brl@char@font{lsym}{7A}\brl@char@font{lsym}{7B}]{braceu}{\brl@char@alias_ruleu}<\brl@char@alias_dbc_braceu>
+\brl@char_def[\brl@char@font{lsym}{7C}\brl@char@font{lsym}{7D}]{braced}{\brl@char@alias_ruled}<\brl@char@alias_dbc_braced>
+
+
+
+\brl@char_def[\brl@char@font{lsym}{30}]{cases_lu}{\brl@char_ebc01110010}<\brl@char@alias_dbc_pmatrix_lu>
+\brl@char_def[\brl@char@font{lsym}{42}]{cases_lm}{\brl@char_ebc11100010}<\brl@char@alias_dbc_matrix_lm>
+\brl@char_def[\brl@char@font{lsym}{40}]{cases_ld}{\brl@char_bc110001}<\brl@char@alias_dbc_pmatrix_ld>
+\brl@char_def[]{cases_ru}{}
+\brl@char_def[]{cases_rm}{}
+\brl@char_def[]{cases_rd}{}
+
+
+
+\brl@char_def[\brl@char_textstack{大}{}]{capital}{\brl@char@alias_capital}
+\brl@char_def[\brl@char_textstack{大大}{}]{doublecapital}{\brl@char@alias_capital\brl@char@alias_capital}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%%
+
+\brl@char_def[\brl@char@font{sym}{67}]{frace}{\brl@char_bc011111}
+
+
+
+
+
+
+
+%\brl@char_def[{\brl@orig@sqrt[\bullet]{}}]{sqrtm}{\brl@char_bc110111}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{sym}{70}}{}]{sqrtm}{\brl@char_bc110111}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{sym}{70}}{}]{sqrts}{\brl@char_bc001110}
+
+
+
+\brl@char_edef{1}{\brl@char@alias_one}
+\brl@char_edef{2}{\brl@char@alias_two}
+\brl@char_edef{3}{\brl@char@alias_three}
+\brl@char_edef{4}{\brl@char@alias_four}
+\brl@char_edef{5}{\brl@char@alias_five}
+\brl@char_edef{6}{\brl@char@alias_six}
+\brl@char_edef{7}{\brl@char@alias_seven}
+\brl@char_edef{8}{\brl@char@alias_eight}
+\brl@char_edef{9}{\brl@char@alias_nine}
+\brl@char_edef{0}{\brl@char@alias_zero}
+
+
+
+
+%%
+%% \normalfont
+%%
+\brl@char_def[\brl@char@font{let}{41}]{n_A}{\brl@char@alias_capital\brl@char@alias_a}
+\brl@char_def[\brl@char@font{let}{42}]{n_B}{\brl@char@alias_capital\brl@char@alias_b}
+\brl@char_def[\brl@char@font{let}{43}]{n_C}{\brl@char@alias_capital\brl@char@alias_c}
+\brl@char_def[\brl@char@font{let}{44}]{n_D}{\brl@char@alias_capital\brl@char@alias_d}
+\brl@char_def[\brl@char@font{let}{45}]{n_E}{\brl@char@alias_capital\brl@char@alias_e}
+\brl@char_def[\brl@char@font{let}{46}]{n_F}{\brl@char@alias_capital\brl@char@alias_f}
+\brl@char_def[\brl@char@font{let}{47}]{n_G}{\brl@char@alias_capital\brl@char@alias_g}
+\brl@char_def[\brl@char@font{let}{48}]{n_H}{\brl@char@alias_capital\brl@char@alias_h}
+\brl@char_def[\brl@char@font{let}{49}]{n_I}{\brl@char@alias_capital\brl@char@alias_i}
+\brl@char_def[\brl@char@font{let}{4A}]{n_J}{\brl@char@alias_capital\brl@char@alias_j}
+\brl@char_def[\brl@char@font{let}{4B}]{n_K}{\brl@char@alias_capital\brl@char@alias_k}
+\brl@char_def[\brl@char@font{let}{4C}]{n_L}{\brl@char@alias_capital\brl@char@alias_l}
+\brl@char_def[\brl@char@font{let}{4D}]{n_M}{\brl@char@alias_capital\brl@char@alias_m}
+\brl@char_def[\brl@char@font{let}{4E}]{n_N}{\brl@char@alias_capital\brl@char@alias_n}
+\brl@char_def[\brl@char@font{let}{4F}]{n_O}{\brl@char@alias_capital\brl@char@alias_o}
+\brl@char_def[\brl@char@font{let}{50}]{n_P}{\brl@char@alias_capital\brl@char@alias_p}
+\brl@char_def[\brl@char@font{let}{51}]{n_Q}{\brl@char@alias_capital\brl@char@alias_q}
+\brl@char_def[\brl@char@font{let}{52}]{n_R}{\brl@char@alias_capital\brl@char@alias_r}
+\brl@char_def[\brl@char@font{let}{53}]{n_S}{\brl@char@alias_capital\brl@char@alias_s}
+\brl@char_def[\brl@char@font{let}{54}]{n_T}{\brl@char@alias_capital\brl@char@alias_t}
+\brl@char_def[\brl@char@font{let}{55}]{n_U}{\brl@char@alias_capital\brl@char@alias_u}
+\brl@char_def[\brl@char@font{let}{56}]{n_V}{\brl@char@alias_capital\brl@char@alias_v}
+\brl@char_def[\brl@char@font{let}{57}]{n_W}{\brl@char@alias_capital\brl@char@alias_w}
+\brl@char_def[\brl@char@font{let}{58}]{n_X}{\brl@char@alias_capital\brl@char@alias_x}
+\brl@char_def[\brl@char@font{let}{59}]{n_Y}{\brl@char@alias_capital\brl@char@alias_y}
+\brl@char_def[\brl@char@font{let}{5A}]{n_Z}{\brl@char@alias_capital\brl@char@alias_z}
+
+\brl@char_def[\brl@char@font{let}{61}]{n_a}{\brl@char@alias_a}
+\brl@char_def[\brl@char@font{let}{62}]{n_b}{\brl@char@alias_b}
+\brl@char_def[\brl@char@font{let}{63}]{n_c}{\brl@char@alias_c}
+\brl@char_def[\brl@char@font{let}{64}]{n_d}{\brl@char@alias_d}
+\brl@char_def[\brl@char@font{let}{65}]{n_e}{\brl@char@alias_e}
+\brl@char_def[\brl@char@font{let}{66}]{n_f}{\brl@char@alias_f}
+\brl@char_def[\brl@char@font{let}{67}]{n_g}{\brl@char@alias_g}
+\brl@char_def[\brl@char@font{let}{68}]{n_h}{\brl@char@alias_h}
+\brl@char_def[\brl@char@font{let}{69}]{n_i}{\brl@char@alias_i}
+\brl@char_def[\brl@char@font{let}{6A}]{n_j}{\brl@char@alias_j}
+\brl@char_def[\brl@char@font{let}{6B}]{n_k}{\brl@char@alias_k}
+\brl@char_def[\brl@char@font{let}{6C}]{n_l}{\brl@char@alias_l}
+\brl@char_def[\brl@char@font{let}{6D}]{n_m}{\brl@char@alias_m}
+\brl@char_def[\brl@char@font{let}{6E}]{n_n}{\brl@char@alias_n}
+\brl@char_def[\brl@char@font{let}{6F}]{n_o}{\brl@char@alias_o}
+\brl@char_def[\brl@char@font{let}{70}]{n_p}{\brl@char@alias_p}
+\brl@char_def[\brl@char@font{let}{71}]{n_q}{\brl@char@alias_q}
+\brl@char_def[\brl@char@font{let}{72}]{n_r}{\brl@char@alias_r}
+\brl@char_def[\brl@char@font{let}{73}]{n_s}{\brl@char@alias_s}
+\brl@char_def[\brl@char@font{let}{74}]{n_t}{\brl@char@alias_t}
+\brl@char_def[\brl@char@font{let}{75}]{n_u}{\brl@char@alias_u}
+\brl@char_def[\brl@char@font{let}{76}]{n_v}{\brl@char@alias_v}
+\brl@char_def[\brl@char@font{let}{77}]{n_w}{\brl@char@alias_w}
+\brl@char_def[\brl@char@font{let}{78}]{n_x}{\brl@char@alias_x}
+\brl@char_def[\brl@char@font{let}{79}]{n_y}{\brl@char@alias_y}
+\brl@char_def[\brl@char@font{let}{7A}]{n_z}{\brl@char@alias_z}
+
+
+%%
+%% \mathrm
+%%
+\brl@char_def[\brl@char@font{ope}{41}]{r_A}{\brl@char@alias_a}
+\brl@char_def[\brl@char@font{ope}{42}]{r_B}{\brl@char@alias_b}
+\brl@char_def[\brl@char@font{ope}{43}]{r_C}{\brl@char@alias_c}
+\brl@char_def[\brl@char@font{ope}{44}]{r_D}{\brl@char@alias_d}
+\brl@char_def[\brl@char@font{ope}{45}]{r_E}{\brl@char@alias_e}
+\brl@char_def[\brl@char@font{ope}{46}]{r_F}{\brl@char@alias_f}
+\brl@char_def[\brl@char@font{ope}{47}]{r_G}{\brl@char@alias_g}
+\brl@char_def[\brl@char@font{ope}{48}]{r_H}{\brl@char@alias_h}
+\brl@char_def[\brl@char@font{ope}{49}]{r_I}{\brl@char@alias_i}
+\brl@char_def[\brl@char@font{ope}{4A}]{r_J}{\brl@char@alias_j}
+\brl@char_def[\brl@char@font{ope}{4B}]{r_K}{\brl@char@alias_k}
+\brl@char_def[\brl@char@font{ope}{4C}]{r_L}{\brl@char@alias_l}
+\brl@char_def[\brl@char@font{ope}{4D}]{r_M}{\brl@char@alias_m}
+\brl@char_def[\brl@char@font{ope}{4E}]{r_N}{\brl@char@alias_n}
+\brl@char_def[\brl@char@font{ope}{4F}]{r_O}{\brl@char@alias_o}
+\brl@char_def[\brl@char@font{ope}{50}]{r_P}{\brl@char@alias_p}
+\brl@char_def[\brl@char@font{ope}{51}]{r_Q}{\brl@char@alias_q}
+\brl@char_def[\brl@char@font{ope}{52}]{r_R}{\brl@char@alias_r}
+\brl@char_def[\brl@char@font{ope}{53}]{r_S}{\brl@char@alias_s}
+\brl@char_def[\brl@char@font{ope}{54}]{r_T}{\brl@char@alias_t}
+\brl@char_def[\brl@char@font{ope}{55}]{r_U}{\brl@char@alias_u}
+\brl@char_def[\brl@char@font{ope}{56}]{r_V}{\brl@char@alias_v}
+\brl@char_def[\brl@char@font{ope}{57}]{r_W}{\brl@char@alias_w}
+\brl@char_def[\brl@char@font{ope}{58}]{r_X}{\brl@char@alias_x}
+\brl@char_def[\brl@char@font{ope}{59}]{r_Y}{\brl@char@alias_y}
+\brl@char_def[\brl@char@font{ope}{5A}]{r_Z}{\brl@char@alias_z}
+
+\brl@char_def[\brl@char@font{ope}{61}]{r_a}{\brl@char@alias_a}
+\brl@char_def[\brl@char@font{ope}{62}]{r_b}{\brl@char@alias_b}
+\brl@char_def[\brl@char@font{ope}{63}]{r_c}{\brl@char@alias_c}
+\brl@char_def[\brl@char@font{ope}{64}]{r_d}{\brl@char@alias_d}
+\brl@char_def[\brl@char@font{ope}{65}]{r_e}{\brl@char@alias_e}
+\brl@char_def[\brl@char@font{ope}{66}]{r_f}{\brl@char@alias_f}
+\brl@char_def[\brl@char@font{ope}{67}]{r_g}{\brl@char@alias_g}
+\brl@char_def[\brl@char@font{ope}{68}]{r_h}{\brl@char@alias_h}
+\brl@char_def[\brl@char@font{ope}{69}]{r_i}{\brl@char@alias_i}
+\brl@char_def[\brl@char@font{ope}{6A}]{r_j}{\brl@char@alias_j}
+\brl@char_def[\brl@char@font{ope}{6B}]{r_k}{\brl@char@alias_k}
+\brl@char_def[\brl@char@font{ope}{6C}]{r_l}{\brl@char@alias_l}
+\brl@char_def[\brl@char@font{ope}{6D}]{r_m}{\brl@char@alias_m}
+\brl@char_def[\brl@char@font{ope}{6E}]{r_n}{\brl@char@alias_n}
+\brl@char_def[\brl@char@font{ope}{6F}]{r_o}{\brl@char@alias_o}
+\brl@char_def[\brl@char@font{ope}{70}]{r_p}{\brl@char@alias_p}
+\brl@char_def[\brl@char@font{ope}{71}]{r_q}{\brl@char@alias_q}
+\brl@char_def[\brl@char@font{ope}{72}]{r_r}{\brl@char@alias_r}
+\brl@char_def[\brl@char@font{ope}{73}]{r_s}{\brl@char@alias_s}
+\brl@char_def[\brl@char@font{ope}{74}]{r_t}{\brl@char@alias_t}
+\brl@char_def[\brl@char@font{ope}{75}]{r_u}{\brl@char@alias_u}
+\brl@char_def[\brl@char@font{ope}{76}]{r_v}{\brl@char@alias_v}
+\brl@char_def[\brl@char@font{ope}{77}]{r_w}{\brl@char@alias_w}
+\brl@char_def[\brl@char@font{ope}{78}]{r_x}{\brl@char@alias_x}
+\brl@char_def[\brl@char@font{ope}{79}]{r_y}{\brl@char@alias_y}
+\brl@char_def[\brl@char@font{ope}{7A}]{r_z}{\brl@char@alias_z}
+
+
+%% 
+%% \mathfrak
+%%
+\brl@char_def[\brl@char@font{frak}{41}]{f_A}{\brl@char@alias_frakc\brl@char@alias_a}
+\brl@char_def[\brl@char@font{frak}{42}]{f_B}{\brl@char@alias_frakc\brl@char@alias_b}
+\brl@char_def[\brl@char@font{frak}{43}]{f_C}{\brl@char@alias_frakc\brl@char@alias_c}
+\brl@char_def[\brl@char@font{frak}{44}]{f_D}{\brl@char@alias_frakc\brl@char@alias_d}
+\brl@char_def[\brl@char@font{frak}{45}]{f_E}{\brl@char@alias_frakc\brl@char@alias_e}
+\brl@char_def[\brl@char@font{frak}{46}]{f_F}{\brl@char@alias_frakc\brl@char@alias_f}
+\brl@char_def[\brl@char@font{frak}{47}]{f_G}{\brl@char@alias_frakc\brl@char@alias_g}
+\brl@char_def[\brl@char@font{frak}{48}]{f_H}{\brl@char@alias_frakc\brl@char@alias_h}
+\brl@char_def[\brl@char@font{frak}{49}]{f_I}{\brl@char@alias_frakc\brl@char@alias_i}
+\brl@char_def[\brl@char@font{frak}{4A}]{f_J}{\brl@char@alias_frakc\brl@char@alias_j}
+\brl@char_def[\brl@char@font{frak}{4B}]{f_K}{\brl@char@alias_frakc\brl@char@alias_k}
+\brl@char_def[\brl@char@font{frak}{4C}]{f_L}{\brl@char@alias_frakc\brl@char@alias_l}
+\brl@char_def[\brl@char@font{frak}{4D}]{f_M}{\brl@char@alias_frakc\brl@char@alias_m}
+\brl@char_def[\brl@char@font{frak}{4E}]{f_N}{\brl@char@alias_frakc\brl@char@alias_n}
+\brl@char_def[\brl@char@font{frak}{4F}]{f_O}{\brl@char@alias_frakc\brl@char@alias_o}
+\brl@char_def[\brl@char@font{frak}{50}]{f_P}{\brl@char@alias_frakc\brl@char@alias_p}
+\brl@char_def[\brl@char@font{frak}{51}]{f_Q}{\brl@char@alias_frakc\brl@char@alias_q}
+\brl@char_def[\brl@char@font{frak}{52}]{f_R}{\brl@char@alias_frakc\brl@char@alias_r}
+\brl@char_def[\brl@char@font{frak}{53}]{f_S}{\brl@char@alias_frakc\brl@char@alias_s}
+\brl@char_def[\brl@char@font{frak}{54}]{f_T}{\brl@char@alias_frakc\brl@char@alias_t}
+\brl@char_def[\brl@char@font{frak}{55}]{f_U}{\brl@char@alias_frakc\brl@char@alias_u}
+\brl@char_def[\brl@char@font{frak}{56}]{f_V}{\brl@char@alias_frakc\brl@char@alias_v}
+\brl@char_def[\brl@char@font{frak}{57}]{f_W}{\brl@char@alias_frakc\brl@char@alias_w}
+\brl@char_def[\brl@char@font{frak}{58}]{f_X}{\brl@char@alias_frakc\brl@char@alias_x}
+\brl@char_def[\brl@char@font{frak}{59}]{f_Y}{\brl@char@alias_frakc\brl@char@alias_y}
+\brl@char_def[\brl@char@font{frak}{5A}]{f_Z}{\brl@char@alias_frakc\brl@char@alias_z}
+
+\brl@char_def[\brl@char@font{frak}{61}]{f_a}{\brl@char@alias_fraks\brl@char@alias_a}
+\brl@char_def[\brl@char@font{frak}{62}]{f_b}{\brl@char@alias_fraks\brl@char@alias_b}
+\brl@char_def[\brl@char@font{frak}{63}]{f_c}{\brl@char@alias_fraks\brl@char@alias_c}
+\brl@char_def[\brl@char@font{frak}{64}]{f_d}{\brl@char@alias_fraks\brl@char@alias_d}
+\brl@char_def[\brl@char@font{frak}{65}]{f_e}{\brl@char@alias_fraks\brl@char@alias_e}
+\brl@char_def[\brl@char@font{frak}{66}]{f_f}{\brl@char@alias_fraks\brl@char@alias_f}
+\brl@char_def[\brl@char@font{frak}{67}]{f_g}{\brl@char@alias_fraks\brl@char@alias_g}
+\brl@char_def[\brl@char@font{frak}{68}]{f_h}{\brl@char@alias_fraks\brl@char@alias_h}
+\brl@char_def[\brl@char@font{frak}{69}]{f_i}{\brl@char@alias_fraks\brl@char@alias_i}
+\brl@char_def[\brl@char@font{frak}{6A}]{f_j}{\brl@char@alias_fraks\brl@char@alias_j}
+\brl@char_def[\brl@char@font{frak}{6B}]{f_k}{\brl@char@alias_fraks\brl@char@alias_k}
+\brl@char_def[\brl@char@font{frak}{6C}]{f_l}{\brl@char@alias_fraks\brl@char@alias_l}
+\brl@char_def[\brl@char@font{frak}{6D}]{f_m}{\brl@char@alias_fraks\brl@char@alias_m}
+\brl@char_def[\brl@char@font{frak}{6E}]{f_n}{\brl@char@alias_fraks\brl@char@alias_n}
+\brl@char_def[\brl@char@font{frak}{6F}]{f_o}{\brl@char@alias_fraks\brl@char@alias_o}
+\brl@char_def[\brl@char@font{frak}{70}]{f_p}{\brl@char@alias_fraks\brl@char@alias_p}
+\brl@char_def[\brl@char@font{frak}{71}]{f_q}{\brl@char@alias_fraks\brl@char@alias_q}
+\brl@char_def[\brl@char@font{frak}{72}]{f_r}{\brl@char@alias_fraks\brl@char@alias_r}
+\brl@char_def[\brl@char@font{frak}{73}]{f_s}{\brl@char@alias_fraks\brl@char@alias_s}
+\brl@char_def[\brl@char@font{frak}{74}]{f_t}{\brl@char@alias_fraks\brl@char@alias_t}
+\brl@char_def[\brl@char@font{frak}{75}]{f_u}{\brl@char@alias_fraks\brl@char@alias_u}
+\brl@char_def[\brl@char@font{frak}{76}]{f_v}{\brl@char@alias_fraks\brl@char@alias_v}
+\brl@char_def[\brl@char@font{frak}{77}]{f_w}{\brl@char@alias_fraks\brl@char@alias_w}
+\brl@char_def[\brl@char@font{frak}{78}]{f_x}{\brl@char@alias_fraks\brl@char@alias_x}
+\brl@char_def[\brl@char@font{frak}{79}]{f_y}{\brl@char@alias_fraks\brl@char@alias_y}
+\brl@char_def[\brl@char@font{frak}{7A}]{f_z}{\brl@char@alias_fraks\brl@char@alias_z}
+
+
+%% 
+%% \mathbf
+%%
+\brl@char_def[\brl@char@font{blet}{41}]{b_A}{\brl@char@alias_bfc\brl@char@alias_a}
+\brl@char_def[\brl@char@font{blet}{42}]{b_B}{\brl@char@alias_bfc\brl@char@alias_b}
+\brl@char_def[\brl@char@font{blet}{43}]{b_C}{\brl@char@alias_bfc\brl@char@alias_c}
+\brl@char_def[\brl@char@font{blet}{44}]{b_D}{\brl@char@alias_bfc\brl@char@alias_d}
+\brl@char_def[\brl@char@font{blet}{45}]{b_E}{\brl@char@alias_bfc\brl@char@alias_e}
+\brl@char_def[\brl@char@font{blet}{46}]{b_F}{\brl@char@alias_bfc\brl@char@alias_f}
+\brl@char_def[\brl@char@font{blet}{47}]{b_G}{\brl@char@alias_bfc\brl@char@alias_g}
+\brl@char_def[\brl@char@font{blet}{48}]{b_H}{\brl@char@alias_bfc\brl@char@alias_h}
+\brl@char_def[\brl@char@font{blet}{49}]{b_I}{\brl@char@alias_bfc\brl@char@alias_i}
+\brl@char_def[\brl@char@font{blet}{4A}]{b_J}{\brl@char@alias_bfc\brl@char@alias_j}
+\brl@char_def[\brl@char@font{blet}{4B}]{b_K}{\brl@char@alias_bfc\brl@char@alias_k}
+\brl@char_def[\brl@char@font{blet}{4C}]{b_L}{\brl@char@alias_bfc\brl@char@alias_l}
+\brl@char_def[\brl@char@font{blet}{4D}]{b_M}{\brl@char@alias_bfc\brl@char@alias_m}
+\brl@char_def[\brl@char@font{blet}{4E}]{b_N}{\brl@char@alias_bfc\brl@char@alias_n}
+\brl@char_def[\brl@char@font{blet}{4F}]{b_O}{\brl@char@alias_bfc\brl@char@alias_o}
+\brl@char_def[\brl@char@font{blet}{50}]{b_P}{\brl@char@alias_bfc\brl@char@alias_p}
+\brl@char_def[\brl@char@font{blet}{51}]{b_Q}{\brl@char@alias_bfc\brl@char@alias_q}
+\brl@char_def[\brl@char@font{blet}{52}]{b_R}{\brl@char@alias_bfc\brl@char@alias_r}
+\brl@char_def[\brl@char@font{blet}{53}]{b_S}{\brl@char@alias_bfc\brl@char@alias_s}
+\brl@char_def[\brl@char@font{blet}{54}]{b_T}{\brl@char@alias_bfc\brl@char@alias_t}
+\brl@char_def[\brl@char@font{blet}{55}]{b_U}{\brl@char@alias_bfc\brl@char@alias_u}
+\brl@char_def[\brl@char@font{blet}{56}]{b_V}{\brl@char@alias_bfc\brl@char@alias_v}
+\brl@char_def[\brl@char@font{blet}{57}]{b_W}{\brl@char@alias_bfc\brl@char@alias_w}
+\brl@char_def[\brl@char@font{blet}{58}]{b_X}{\brl@char@alias_bfc\brl@char@alias_x}
+\brl@char_def[\brl@char@font{blet}{59}]{b_Y}{\brl@char@alias_bfc\brl@char@alias_y}
+\brl@char_def[\brl@char@font{blet}{5A}]{b_Z}{\brl@char@alias_bfc\brl@char@alias_z}
+
+\brl@char_def[\brl@char@font{blet}{61}]{b_a}{\brl@char@alias_bfs\brl@char@alias_a}
+\brl@char_def[\brl@char@font{blet}{62}]{b_b}{\brl@char@alias_bfs\brl@char@alias_b}
+\brl@char_def[\brl@char@font{blet}{63}]{b_c}{\brl@char@alias_bfs\brl@char@alias_c}
+\brl@char_def[\brl@char@font{blet}{64}]{b_d}{\brl@char@alias_bfs\brl@char@alias_d}
+\brl@char_def[\brl@char@font{blet}{65}]{b_e}{\brl@char@alias_bfs\brl@char@alias_e}
+\brl@char_def[\brl@char@font{blet}{66}]{b_f}{\brl@char@alias_bfs\brl@char@alias_f}
+\brl@char_def[\brl@char@font{blet}{67}]{b_g}{\brl@char@alias_bfs\brl@char@alias_g}
+\brl@char_def[\brl@char@font{blet}{68}]{b_h}{\brl@char@alias_bfs\brl@char@alias_h}
+\brl@char_def[\brl@char@font{blet}{69}]{b_i}{\brl@char@alias_bfs\brl@char@alias_i}
+\brl@char_def[\brl@char@font{blet}{6A}]{b_j}{\brl@char@alias_bfs\brl@char@alias_j}
+\brl@char_def[\brl@char@font{blet}{6B}]{b_k}{\brl@char@alias_bfs\brl@char@alias_k}
+\brl@char_def[\brl@char@font{blet}{6C}]{b_l}{\brl@char@alias_bfs\brl@char@alias_l}
+\brl@char_def[\brl@char@font{blet}{6D}]{b_m}{\brl@char@alias_bfs\brl@char@alias_m}
+\brl@char_def[\brl@char@font{blet}{6E}]{b_n}{\brl@char@alias_bfs\brl@char@alias_n}
+\brl@char_def[\brl@char@font{blet}{6F}]{b_o}{\brl@char@alias_bfs\brl@char@alias_o}
+\brl@char_def[\brl@char@font{blet}{70}]{b_p}{\brl@char@alias_bfs\brl@char@alias_p}
+\brl@char_def[\brl@char@font{blet}{71}]{b_q}{\brl@char@alias_bfs\brl@char@alias_q}
+\brl@char_def[\brl@char@font{blet}{72}]{b_r}{\brl@char@alias_bfs\brl@char@alias_r}
+\brl@char_def[\brl@char@font{blet}{73}]{b_s}{\brl@char@alias_bfs\brl@char@alias_s}
+\brl@char_def[\brl@char@font{blet}{74}]{b_t}{\brl@char@alias_bfs\brl@char@alias_t}
+\brl@char_def[\brl@char@font{blet}{75}]{b_u}{\brl@char@alias_bfs\brl@char@alias_u}
+\brl@char_def[\brl@char@font{blet}{76}]{b_v}{\brl@char@alias_bfs\brl@char@alias_v}
+\brl@char_def[\brl@char@font{blet}{77}]{b_w}{\brl@char@alias_bfs\brl@char@alias_w}
+\brl@char_def[\brl@char@font{blet}{78}]{b_x}{\brl@char@alias_bfs\brl@char@alias_x}
+\brl@char_def[\brl@char@font{blet}{79}]{b_y}{\brl@char@alias_bfs\brl@char@alias_y}
+\brl@char_def[\brl@char@font{blet}{7A}]{b_z}{\brl@char@alias_bfs\brl@char@alias_z}
+
+
+%% 
+%% \mathcal (note that there are no cal small letters.)
+%%
+
+\brl@char_def[\brl@char@font{sym}{41}]{c_A}{\brl@char@alias_calc\brl@char@alias_a}
+\brl@char_def[\brl@char@font{sym}{42}]{c_B}{\brl@char@alias_calc\brl@char@alias_b}
+\brl@char_def[\brl@char@font{sym}{43}]{c_C}{\brl@char@alias_calc\brl@char@alias_c}
+\brl@char_def[\brl@char@font{sym}{44}]{c_D}{\brl@char@alias_calc\brl@char@alias_d}
+\brl@char_def[\brl@char@font{sym}{45}]{c_E}{\brl@char@alias_calc\brl@char@alias_e}
+\brl@char_def[\brl@char@font{sym}{46}]{c_F}{\brl@char@alias_calc\brl@char@alias_f}
+\brl@char_def[\brl@char@font{sym}{47}]{c_G}{\brl@char@alias_calc\brl@char@alias_g}
+\brl@char_def[\brl@char@font{sym}{48}]{c_H}{\brl@char@alias_calc\brl@char@alias_h}
+\brl@char_def[\brl@char@font{sym}{49}]{c_I}{\brl@char@alias_calc\brl@char@alias_i}
+\brl@char_def[\brl@char@font{sym}{4A}]{c_J}{\brl@char@alias_calc\brl@char@alias_j}
+\brl@char_def[\brl@char@font{sym}{4B}]{c_K}{\brl@char@alias_calc\brl@char@alias_k}
+\brl@char_def[\brl@char@font{sym}{4C}]{c_L}{\brl@char@alias_calc\brl@char@alias_l}
+\brl@char_def[\brl@char@font{sym}{4D}]{c_M}{\brl@char@alias_calc\brl@char@alias_m}
+\brl@char_def[\brl@char@font{sym}{4E}]{c_N}{\brl@char@alias_calc\brl@char@alias_n}
+\brl@char_def[\brl@char@font{sym}{4F}]{c_O}{\brl@char@alias_calc\brl@char@alias_o}
+\brl@char_def[\brl@char@font{sym}{50}]{c_P}{\brl@char@alias_calc\brl@char@alias_p}
+\brl@char_def[\brl@char@font{sym}{51}]{c_Q}{\brl@char@alias_calc\brl@char@alias_q}
+\brl@char_def[\brl@char@font{sym}{52}]{c_R}{\brl@char@alias_calc\brl@char@alias_r}
+\brl@char_def[\brl@char@font{sym}{53}]{c_S}{\brl@char@alias_calc\brl@char@alias_s}
+\brl@char_def[\brl@char@font{sym}{54}]{c_T}{\brl@char@alias_calc\brl@char@alias_t}
+\brl@char_def[\brl@char@font{sym}{55}]{c_U}{\brl@char@alias_calc\brl@char@alias_u}
+\brl@char_def[\brl@char@font{sym}{56}]{c_V}{\brl@char@alias_calc\brl@char@alias_v}
+\brl@char_def[\brl@char@font{sym}{57}]{c_W}{\brl@char@alias_calc\brl@char@alias_w}
+\brl@char_def[\brl@char@font{sym}{58}]{c_X}{\brl@char@alias_calc\brl@char@alias_x}
+\brl@char_def[\brl@char@font{sym}{59}]{c_Y}{\brl@char@alias_calc\brl@char@alias_y}
+\brl@char_def[\brl@char@font{sym}{5A}]{c_Z}{\brl@char@alias_calc\brl@char@alias_z}
+
+\brl@char_def[\brl@char@font{sym}{61}]{c_a}{\brl@char@alias_cals\brl@char@alias_a}
+\brl@char_def[\brl@char@font{sym}{62}]{c_b}{\brl@char@alias_cals\brl@char@alias_b}
+\brl@char_def[\brl@char@font{sym}{63}]{c_c}{\brl@char@alias_cals\brl@char@alias_c}
+\brl@char_def[\brl@char@font{sym}{64}]{c_d}{\brl@char@alias_cals\brl@char@alias_d}
+\brl@char_def[\brl@char@font{sym}{65}]{c_e}{\brl@char@alias_cals\brl@char@alias_e}
+\brl@char_def[\brl@char@font{sym}{66}]{c_f}{\brl@char@alias_cals\brl@char@alias_f}
+\brl@char_def[\brl@char@font{sym}{67}]{c_g}{\brl@char@alias_cals\brl@char@alias_g}
+\brl@char_def[\brl@char@font{sym}{68}]{c_h}{\brl@char@alias_cals\brl@char@alias_h}
+\brl@char_def[\brl@char@font{sym}{69}]{c_i}{\brl@char@alias_cals\brl@char@alias_i}
+\brl@char_def[\brl@char@font{sym}{6A}]{c_j}{\brl@char@alias_cals\brl@char@alias_j}
+\brl@char_def[\brl@char@font{sym}{6B}]{c_k}{\brl@char@alias_cals\brl@char@alias_k}
+\brl@char_def[\brl@char@font{sym}{6C}]{c_l}{\brl@char@alias_cals\brl@char@alias_l}
+\brl@char_def[\brl@char@font{sym}{6D}]{c_m}{\brl@char@alias_cals\brl@char@alias_m}
+\brl@char_def[\brl@char@font{sym}{6E}]{c_n}{\brl@char@alias_cals\brl@char@alias_n}
+\brl@char_def[\brl@char@font{sym}{6F}]{c_o}{\brl@char@alias_cals\brl@char@alias_o}
+\brl@char_def[\brl@char@font{sym}{70}]{c_p}{\brl@char@alias_cals\brl@char@alias_p}
+\brl@char_def[\brl@char@font{sym}{71}]{c_q}{\brl@char@alias_cals\brl@char@alias_q}
+\brl@char_def[\brl@char@font{sym}{72}]{c_r}{\brl@char@alias_cals\brl@char@alias_r}
+\brl@char_def[\brl@char@font{sym}{73}]{c_s}{\brl@char@alias_cals\brl@char@alias_s}
+\brl@char_def[\brl@char@font{sym}{74}]{c_t}{\brl@char@alias_cals\brl@char@alias_t}
+\brl@char_def[\brl@char@font{sym}{75}]{c_u}{\brl@char@alias_cals\brl@char@alias_u}
+\brl@char_def[\brl@char@font{sym}{76}]{c_v}{\brl@char@alias_cals\brl@char@alias_v}
+\brl@char_def[\brl@char@font{sym}{77}]{c_w}{\brl@char@alias_cals\brl@char@alias_w}
+\brl@char_def[\brl@char@font{sym}{78}]{c_x}{\brl@char@alias_cals\brl@char@alias_x}
+\brl@char_def[\brl@char@font{sym}{79}]{c_y}{\brl@char@alias_cals\brl@char@alias_y}
+\brl@char_def[\brl@char@font{sym}{7A}]{c_z}{\brl@char@alias_cals\brl@char@alias_z}
+
+
+
+\brl@char_def[Alpha]{Alpha}{\brl@char@alias_Greek\brl@char@alias_alpha}
+\brl@char_def[Beta]{Beta}{\brl@char@alias_Greek\brl@char@alias_beta}
+\brl@char_def[\brl@char@font{let}{00}]{Gamma}{\brl@char@alias_Greek\brl@char@alias_gamma}
+\brl@char_def[\brl@char@font{let}{01}]{Delta}{\brl@char@alias_Greek\brl@char@alias_delta}
+\brl@char_def[Epsilon]{Epsilon}{\brl@char@alias_Greek\brl@char@alias_epsilon}
+\brl@char_def[Zeta]{Zeta}{\brl@char@alias_Greek\brl@char@alias_zeta}
+\brl@char_def[Eta]{Eta}{\brl@char@alias_Greek\brl@char@alias_eta}
+\brl@char_def[\brl@char@font{let}{02}]{Theta}{\brl@char@alias_Greek\brl@char@alias_theta}
+\brl@char_def[Iota]{Iota}{\brl@char@alias_Greek\brl@char@alias_iota}
+\brl@char_def[Kappa]{Kappa}{\brl@char@alias_Greek\brl@char@alias_kappa}
+\brl@char_def[\brl@char@font{let}{03}]{Lambda}{\brl@char@alias_Greek\brl@char@alias_lambda}
+\brl@char_def[Mu]{Mu}{\brl@char@alias_Greek\brl@char@alias_mu}
+\brl@char_def[Nu]{Nu}{\brl@char@alias_Greek\brl@char@alias_nu}
+\brl@char_def[\brl@char@font{let}{04}]{Xi}{\brl@char@alias_Greek\brl@char@alias_xi}
+\brl@char_def[Omicron]{Omicron}{\brl@char@alias_Greek\brl@char@alias_omicron}
+\brl@char_def[\brl@char@font{let}{05}]{Pi}{\brl@char@alias_Greek\brl@char@alias_pi}
+\brl@char_def[Rho]{Rho}{\brl@char@alias_Greek\brl@char@alias_rho}
+\brl@char_def[\brl@char@font{let}{06}]{Sigma}{\brl@char@alias_Greek\brl@char@alias_sigma}
+\brl@char_def[Tau]{Tau}{\brl@char@alias_Greek\brl@char@alias_tau}
+\brl@char_def[\brl@char@font{let}{07}]{Upsilon}{\brl@char@alias_Greek\brl@char@alias_upsilon}
+\brl@char_def[\brl@char@font{let}{08}]{Phi}{\brl@char@alias_Greek\brl@char@alias_phi}
+\brl@char_def[Chi]{Chi}{\brl@char@alias_Greek\brl@char@alias_chi}
+\brl@char_def[\brl@char@font{let}{09}]{Psi}{\brl@char@alias_Greek\brl@char@alias_psi}
+\brl@char_def[\brl@char@font{let}{0A}]{Omega}{\brl@char@alias_Greek\brl@char@alias_omega}
+
+
+\brl@char_def[\brl@char@font{let}{0B}]{alpha}{\brl@char@alias_greek\brl@char@alias_alpha}
+\brl@char_def[\brl@char@font{let}{0C}]{beta}{\brl@char@alias_greek\brl@char@alias_beta}
+\brl@char_def[\brl@char@font{let}{0D}]{gamma}{\brl@char@alias_greek\brl@char@alias_gamma}
+\brl@char_def[\brl@char@font{let}{0E}]{delta}{\brl@char@alias_greek\brl@char@alias_delta}
+\brl@char_def[\brl@char@font{let}{0F}]{epsilon}{\brl@char@alias_greek\brl@char@alias_epsilon}
+\brl@char_def[\brl@char@font{let}{10}]{zeta}{\brl@char@alias_greek\brl@char@alias_zeta}
+\brl@char_def[\brl@char@font{let}{11}]{eta}{\brl@char@alias_greek\brl@char@alias_eta}
+\brl@char_def[\brl@char@font{let}{12}]{theta}{\brl@char@alias_greek\brl@char@alias_theta}
+\brl@char_def[\brl@char@font{let}{13}]{iota}{\brl@char@alias_greek\brl@char@alias_iota}
+\brl@char_def[\brl@char@font{let}{14}]{kappa}{\brl@char@alias_greek\brl@char@alias_kappa}
+\brl@char_def[\brl@char@font{let}{15}]{lambda}{\brl@char@alias_greek\brl@char@alias_lambda}
+\brl@char_def[\brl@char@font{let}{16}]{mu}{\brl@char@alias_greek\brl@char@alias_mu}
+\brl@char_def[\brl@char@font{let}{17}]{nu}{\brl@char@alias_greek\brl@char@alias_nu}
+\brl@char_def[\brl@char@font{let}{18}]{xi}{\brl@char@alias_greek\brl@char@alias_xi}
+\brl@char_def[o]{omicron}{\brl@char@alias_greek\brl@char@alias_omicron}
+\brl@char_def[\brl@char@font{let}{19}]{pi}{\brl@char@alias_greek\brl@char@alias_pi}
+\brl@char_def[\brl@char@font{let}{1A}]{rho}{\brl@char@alias_greek\brl@char@alias_rho}
+\brl@char_def[\brl@char@font{let}{1B}]{sigma}{\brl@char@alias_greek\brl@char@alias_sigma}
+\brl@char_def[\brl@char@font{let}{1C}]{tau}{\brl@char@alias_greek\brl@char@alias_tau}
+\brl@char_def[\brl@char@font{let}{1D}]{upsilon}{\brl@char@alias_greek\brl@char@alias_upsilon}
+\brl@char_def[\brl@char@font{let}{1E}]{phi}{\brl@char@alias_greek\brl@char@alias_phi}
+\brl@char_def[\brl@char@font{let}{1F}]{chi}{\brl@char@alias_greek\brl@char@alias_chi}
+\brl@char_def[\brl@char@font{let}{20}]{psi}{\brl@char@alias_greek\brl@char@alias_psi}
+\brl@char_def[\brl@char@font{let}{21}]{omega}{\brl@char@alias_greek\brl@char@alias_omega}
+
+\brl@char_def[\brl@char@font{let}{22}]{varepsilon}{\brl@char@alias_var\brl@char@alias_greek\brl@char@alias_epsilon}
+\brl@char_def[\brl@char@font{let}{23}]{vartheta}{\brl@char@alias_var\brl@char@alias_greek\brl@char@alias_theta}
+\brl@char_def[\brl@char@font{let}{24}]{varpi}{\brl@char@alias_var\brl@char@alias_greek\brl@char@alias_pi}
+\brl@char_def[\brl@char@font{let}{25}]{varrho}{\brl@char@alias_var\brl@char@alias_greek\brl@char@alias_rho}
+\brl@char_def[\brl@char@font{let}{26}]{varsigma}{\brl@char@alias_var\brl@char@alias_greek\brl@char@alias_sigma}
+\brl@char_def[\brl@char@font{let}{27}]{varphi}{\brl@char@alias_var\brl@char@alias_greek\brl@char@alias_phi}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% binary operators
+%%
+
+
+
+\brl@char_def[\brl@char@font{ope}{2B}]{plus}{\brl@char@alias_plus}
+\brl@char_def[\brl@char@font{sym}{00}]{minus}{\brl@char@alias_minus}
+\brl@char_def[\brl@char@font{sym}{01}]{cdot}{\brl@char_bc001000}
+\brl@char_def[\brl@char@font{sym}{02}]{times}{\brl@char@alias_times}
+\brl@char_def[\brl@char@font{sym}{04}]{div}{\brl@char_bc001100\brl@char_bc001100}
+\brl@char_def[\brl@char@font{sym}{06}]{pm}{\brl@char@alias_plus\brl@char@alias_minus}
+\brl@char_def[\brl@char@font{sym}{07}]{mp}{\brl@char@alias_minus\brl@char@alias_plus}
+\brl@char_def[\brl@char@font{sym}{08}]{oplus}{\brl@char_bc000001\brl@char_bc100011\brl@char@alias_plus}
+\brl@char_def[\brl@char@font{sym}{09}]{ominus}{\brl@char_bc000001\brl@char_bc100011\brl@char@alias_minus}
+\brl@char_def[\brl@char@font{sym}{0A}]{otimes}{\brl@char_bc000001\brl@char_bc100011\brl@char@alias_times}
+\brl@char_def[\brl@char@font{sym}{0B}]{oslash}{\brl@char_bc000001\brl@char_bc100011\brl@char_bc001100}
+\brl@char_def[\brl@char@font{sym}{0E}]{circ}{\brl@char_bc010000}
+\brl@char_def[:]{altcolon}{\brl@char@alias_colon}
+\brl@char_def[\brl@char@font{sym}{5B}]{cup}{\brl@char@alias_cup}
+\brl@char_def[\brl@char@font{sym}{5C}]{cap}{\brl@char@alias_cap}
+\brl@char_def[\brl@char@font{sym}{5F}]{vee}{\brl@char_bc000111\brl@char@alias_cup}
+\brl@char_def[\brl@char@font{sym}{5E}]{wedge}{\brl@char_bc000111\brl@char@alias_cap}
+\brl@char_def[\brl@char@font{sym}{6E}]{backslash}{\brl@char_bc000111\brl@char_bc100001}
+
+
+
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5A}}{}]{int}{\brl@char@alias_int}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5A}\brl@char@font{lsym}{5A}}{}]{iint}{\brl@char@alias_int\brl@char@alias_int}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5A}\brl@char@font{lsym}{5A}\brl@char@font{lsym}{5A}}{}]{iiint}{\brl@char@alias_int\brl@char@alias_int\brl@char@alias_int}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{49}}{}]{oint}{\brl@char_bc000101\brl@char@alias_int}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{58}}{}]{sum}{\brl@char@alias_Greek\brl@char@alias_sigma}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{59}}{}]{prod}{\brl@char@alias_Greek\brl@char@alias_pi}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{61}}{}]{coprod}{\brl@char_bc000101\brl@char_bc001111}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5B}}{}]{bigcup}{\brl@char_bc000101\brl@char@alias_cup}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5C}}{}]{bigcap}{\brl@char_bc000101\brl@char@alias_cap}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5F}}{}]{bigvee}{\brl@char_bc000111\brl@char@alias_cup}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{5E}}{}]{bigwedge}{\brl@char_bc000111\brl@char@alias_cap}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{4D}}{}]{bigoplus}{\brl@char_bc000001\brl@char_bc100011\brl@char@alias_plus}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{4F}}{}]{bigotimes}{\brl@char_bc000001\brl@char_bc100011\brl@char@alias_times}
+
+
+
+\brl@char_def[=]{equal}{\brl@char_bc010010\brl@char_bc010010}
+\brl@char_def[\brl@char@not=]{neq}{\brl@char@alias_not\brl@char_bc010010}
+\brl@char_def[\brl@char_donot\brl@char@font{AMSa}{3B}]{fallingdotseq}{\brl@char_bc000010\brl@char_bc010010}
+\brl@char_def[\brl@char_donot>]{greater}{\brl@char_bc010001\brl@char_bc010001}
+\brl@char_def[\brl@char_donot<]{less}{\brl@char_bc001010\brl@char_bc001010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{15}]{geq}{\brl@char_bc010011\brl@char_bc010011}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{14}]{leq}{\brl@char_bc011010\brl@char_bc011010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{11}]{equiv}{\brl@char_bc011011\brl@char_bc011011}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{6B}]{parallel}{\brl@char_bc000011\brl@char_bc011000}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{3F}]{perp}{\brl@char_bc001011\brl@char_bc001000}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{32}]{in}{\brl@char_bc011010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{33}]{ni}{\brl@char_bc010011}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{1A}]{subset}{\brl@char_bc011010\brl@char_bc010000}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{1B}]{supset}{\brl@char_bc000010\brl@char_bc010011}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{12}]{subseteq}{\brl@char_bc011010\brl@char_bc010010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{13}]{supseteq}{\brl@char_bc010010\brl@char_bc010011}
+\brl@char_def[\brl@char_donot\brl@char@font{AMSa}{43}]{lhd}{\brl@char_bc000010\brl@char_bc010101}
+\brl@char_def[\brl@char_donot\brl@char@font{AMSa}{42}]{rhd}{\brl@char_bc101010\brl@char_bc010000}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{2F}]{triangleleft}{\brl@char_bc000010\brl@char_bc010101}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{2E}]{triangleright}{\brl@char_bc101010\brl@char_bc010000}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{18}]{sim}{\brl@char_bc000010\brl@char_bc001001}
+\brl@char_def[\brl@char_donot\brl@char_mathstack{\brl@char@font{sym}{18}}{=}]{cong}{\brl@char_bc000010\brl@char_bc001001\brl@char_bc010010\brl@char_bc010010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{19}]{approx}{\brl@char_bc000010\brl@char_bc001001\brl@char_bc000010\brl@char_bc001001}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{27}]{simeq}{\brl@char_bc000010\brl@char_bc001001\brl@char_bc010010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{1E}]{prec}{\brl@char_bc000010\brl@char_bc001010\brl@char_bc001010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{1F}]{succ}{\brl@char_bc000010\brl@char_bc010001\brl@char_bc010001}
+\brl@char_def[\brl@char@not\brl@char@font{sym}{32}]{notin}{\brl@char@alias_not\brl@char_bc011010}
+\brl@char_def[\brl@char@not\brl@char@font{sym}{33}]{notni}{\brl@char@alias_not\brl@char_bc010011}
+\brl@char_def[\brl@char@font{AMSb}{28}]{subsetneq}{\brl@char_bc011010\brl@char_bc010010\brl@char@alias_not\brl@char_bc010010}
+\brl@char_def[\brl@char@font{AMSb}{29}]{supsetneq}{\brl@char_bc010010\brl@char_bc010011\brl@char@alias_not\brl@char_bc010010}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{39}]{exists}{\brl@char_bc000101\brl@char_bc010001}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{2F}]{propto}{\brl@char_bc000111\brl@char_bc001100\brl@char_bc001100}
+\brl@char_def[\brl@char_donot|]{vert}{\brl@char@alias_vert}
+\brl@char_def[\brl@char_donot\brl@char@font{sym}{6A}]{mid}{\brl@char@alias_vert}
+\brl@char_def[\brl@char@font{AMSb}{2D}]{nmid}{\brl@char@alias_not\brl@char@alias_vert}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% relation operators
+%%
+%% requires addtional space at the last of the eq
+%% (if not either in sub or sup (tsutsuji)).
+%%
+
+
+%% not
+\brl@char_def[\gdef\brl@char_donot{\brl@char@donot}]{not}{\brl@char@alias_not}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% arrows
+%%
+
+\brl@char_def[\brl@char@font{sym}{21}]{rightarrow}{\brl@char@alias_rightarrow\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{20}]{leftarrow}{\brl@char@alias_leftarrow\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{24}]{leftrightarrow}{\brl@char@alias_leftrightarrow\brl@char@alias_space}
+
+\brl@char_def[\brl@char@font{sym}{29}]{Rightarrow}{\brl@char@alias_Rightarrow}
+\brl@char_def[\brl@char@font{sym}{28}]{Leftarrow}{\brl@char@alias_Leftarrow}
+\brl@char_def[\brl@char@font{sym}{2C}]{Leftrightarrow}{\brl@char@alias_leftarrow\brl@char@alias_rightarrow}
+
+
+\brl@char_def[\brl@char@font{sym}{21}]{xrightarrow}{\brl@char@alias_rightarrow}
+\brl@char_def[\brl@char@font{sym}{20}]{xleftarrow}{\brl@char@alias_leftarrow}
+
+
+
+\brl@char_def[\brl@char@font{sym}{25}]{nearrow}{\brl@char_bc010000\brl@char_bc000001\brl@char@alias_rightarrow\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{26}]{searrow}{\brl@char_bc010000\brl@char_bc000100\brl@char@alias_rightarrow\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{2D}]{nwarrow}{\brl@char_bc010000\brl@char@alias_leftarrow\brl@char_bc001000\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{2E}]{swarrow}{\brl@char_bc010000\brl@char@alias_leftarrow\brl@char_bc100000\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{23}]{downarrow}{\brl@char_bc010000\brl@char_bc000011\brl@char@alias_rightarrow\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{22}]{uparrow}{\brl@char_bc010000\brl@char_bc000110\brl@char@alias_rightarrow\brl@char@alias_space}
+
+\brl@char_def[\brl@char@font{let}{2C}\kern-0.4ex\brl@char@font{sym}{21}]{hookrightarrow}{\brl@char_bc010000\brl@char_bc110010\brl@char@alias_rightarrow\brl@char@alias_space}
+\brl@char_def[\brl@char@font{sym}{20}\kern-0.4ex\brl@char@font{let}{2D}]{hookleftarrow}{\brl@char_bc010000\brl@char@alias_leftarrow\brl@char_bc010110\brl@char@alias_space}
+
+\brl@char_def[\brl@char@font{AMSa}{10}]{twoheadrightarrow}{\brl@char_bc010000\brl@char@alias_rightarrow\brl@char_bc101010\brl@char@alias_space}
+
+
+\brl@char_def[\brl@orig@rcurvearrowse]{rcurvearrowse}{\brl@char_bc000001\brl@char_bc010001\brl@char_bc001010\brl@char_bc101010\brl@char@alias_space}
+\brl@char_def[\brl@orig@rcurvearrowne]{rcurvearrowne}{\brl@char_bc000100\brl@char_bc010001\brl@char_bc001010\brl@char_bc101010\brl@char@alias_space}
+\brl@char_def[\brl@orig@lcurvearrowne]{lcurvearrowne}{\brl@char_bc000001\brl@char_bc001010\brl@char_bc010001\brl@char_bc101010\brl@char@alias_space}
+\brl@char_def[\brl@orig@lcurvearrowse]{lcurvearrowse}{\brl@char_bc000100\brl@char_bc001010\brl@char_bc010001\brl@char_bc101010\brl@char@alias_space}
+
+\brl@char_def[\brl@char@font{sym}{37}\brl@char@font{sym}{21}]{mapsto}{\brl@char_bc010000\brl@char@alias_vert\brl@char_bc010010\brl@char_bc101010\brl@char@alias_space}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% other symbols
+%%
+
+%%
+%% with not
+
+
+
+\brl@char_def[*]{ast}{\brl@char_bc000010\brl@char_bc110001}
+\brl@char_def[*]{subast}{\brl@char_bc110001}
+
+\brl@char_edef{!}{\brl@char_bc000011\brl@char_bc011010}
+\brl@char_edef[\brl@char@font{sym}{30}]{'}{\brl@char_bc001001}
+\brl@char_def[...]{dots}{\brl@char_bc010000\brl@char_bc010000\brl@char_bc010000}
+
+\brl@char_def[\brl@char@vdots]{vdotsc}{\brl@char_bc000101}
+
+\brl@char_def[\brl@char@ddots]{ddotsu}{\brl@char_bc000001\brl@char@alias_space\brl@char@alias_space}
+\brl@char_def[\brl@char@ddots]{ddotsd}{\brl@char@alias_space\brl@char_bc000100\brl@char_bc000001}
+
+\brl@char_def[\brl@char@font{sym}{2B}]{emptyset}{\brl@char@alias_not\brl@char@alias_numbersign\brl@char@alias_zero}
+\brl@char_def[\brl@char@font{let}{5D}]{sharp}{\brl@char_bc100101}
+
+\brl@char_def[\brl@char@font{let}{5B}]{flat}{\brl@char_bc110001}
+\brl@char_def[\brl@char@font{let}{5C}]{natural}{\brl@char_bc000010\brl@char_bc100001}
+\brl@char_def[\brl@char@font{sym}{79}]{dagger}{\brl@char_bc000010\brl@char_bc110101}
+\brl@char_def[\brl@char@font{sym}{38}]{forall}{\brl@char_bc000101\brl@char_bc001000}
+
+\brl@char_def[\brl@char@font{AMSa}{29}]{therefore}{\brl@char@alias_space\brl@char@alias_space\brl@char_bc001100\brl@char_bc001000\brl@char@alias_space\brl@char@alias_space}
+\brl@char_def[\brl@char@font{AMSa}{2A}]{because}{\brl@char@alias_space\brl@char@alias_space\brl@char_bc100001\brl@char_bc100000\brl@char@alias_space\brl@char@alias_space}
+\brl@char_def[\brl@char@font{AMSa}{5C}]{angle}{\brl@char_bc100111}
+\brl@char_def[\brl@char@font{sym}{34}]{triangle}{\brl@char_bc001101}
+\brl@char_def[\brl@char@font{let}{5F}]{frown}{\brl@char_bc010101}
+\brl@char_def[\brl@orig@parallelogram]{parallelogram}{\brl@char_bc000111\brl@char_bc001100\brl@char_bc001100}
+\brl@char_def[\brl@orig@rectangle]{rectangle}{\brl@char_bc000111\brl@char_bc000101\brl@char_bc101000}
+\brl@char_def[\brl@char@font{sym}{31}]{infty}{\brl@char_bc111111}
+
+
+
+%%
+%% new
+%%
+\brl@char_def[\brl@char@font{sym}{3A}]{neg}{\brl@char_bc000111\brl@char_bc010011}
+\brl@char_def[\brl@char@font{let}{40}]{partial}{\brl@char_bc110101}
+\brl@char_def[\brl@char@font{sym}{72}]{nabla}{\brl@char_bc000101\brl@char_bc010110}
+\brl@char_def[\brl@char@font{sym}{40}]{aleph}{\brl@char_bc000101\brl@char_bc110010}
+
+
+\brl@char_def[\brl@char@font{sym}{3C}]{Re}{\brl@char@alias_capital\brl@char@alias_r\brl@char@alias_e}
+\brl@char_def[\brl@char@font{sym}{3D}]{Im}{\brl@char@alias_capital\brl@char@alias_i\brl@char@alias_m}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% delimiters
+%%
+
+
+\brl@char_def[]{emptydelim}{}%
+
+\brl@char_def[|]{mvdelim}{\brl@char_bc000111}%
+
+\brl@char_pdef[||]{\|}{\brl@char@alias_vert\brl@char@alias_vert}% 2015
+
+\brl@char_def[|]{lvert}{\brl@char@alias_vert}% 2015
+\brl@char_def[|]{rvert}{\brl@char@alias_vert}% 2015
+\brl@char_def[||]{lVert}{\brl@char@alias_vert\brl@char@alias_vert}% 2015
+\brl@char_def[||]{rVert}{\brl@char@alias_vert\brl@char@alias_vert}% 2015
+\brl@char_def[(]{parenopen}{\brl@char@alias_parenopen}
+\brl@char_def[)]{parenclose}{\brl@char@alias_parenclose}
+\brl@char_def[\brl@char@font{sym}{66}]{lbrace}{\brl@char@alias_braceopen}
+\brl@char_def[\brl@char@font{sym}{67}]{rbrace}{\brl@char@alias_braceclose}
+\brl@char_def[\brl@char@font{sym}{68}]{langle}{\brl@char_bc010101}
+\brl@char_def[\brl@char@font{sym}{69}]{rangle}{\brl@char_bc101010}
+
+
+\brl@char_def[\brl@char@font{op}{5B}]{lbrack}{\brl@char@alias_bracketopen}
+\brl@char_def[\brl@char@font{op}{5D}]{rbrack}{\brl@char@alias_bracketclose}
+
+
+
+
+% \brl@char_def{\Im}{\brl@char@alias_capital\brl@char@alias_i\brl@char@alias_m}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% accent
+%%
+
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{64}}{\brl@char@font{AMSa}{03}}]{hat}{\brl@char@alias_hat}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{lsym}{67}}{\brl@char@font{AMSa}{03}}]{tilde}{\brl@char@alias_tilde}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{17}}{\brl@char@font{AMSa}{03}}]{mathring}{\brl@char@alias_mathring}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{16}}{\brl@char@font{AMSa}{03}}]{bar}{\brl@char@alias_bar}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{5F}}{\brl@char@font{AMSa}{03}}]{dot}{\brl@char@alias_dot}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{5F}\brl@char@font{ope}{5F}}{\brl@char@font{AMSa}{03}}]{ddot}{\brl@char@alias_dot\brl@char@alias_dot}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{5F}\brl@char@font{ope}{5F}\brl@char@font{ope}{5F}}{\brl@char@font{AMSa}{03}}]{dddot}{\brl@char@alias_dot\brl@char@alias_dot\brl@char@alias_dot}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{5F}\brl@char@font{ope}{5F}\brl@char@font{ope}{5F}\brl@char@font{ope}{5F}}{\brl@char@font{AMSa}{03}}]{ddddot}{\brl@char@alias_dot\brl@char@alias_dot\brl@char@alias_dot\brl@char@alias_dot}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{AMSa}{03}}{\brl@char@font{ope}{7C}}]{underline}{\brl@char@alias_underline}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{ope}{7C}}{\brl@char@font{AMSa}{03}}]{overline}{\brl@char@alias_overline}
+
+\brl@char_def[\brl@char_mathstack{\brl@char@font{sym}{21}}{\brl@char@font{AMSa}{03}}]{overrightarrow}{\brl@char@alias_overarrow\brl@char@alias_rightarrow}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{sym}{20}}{\brl@char@font{AMSa}{03}}]{overleftarrow}{\brl@char@alias_overarrow\brl@char@alias_leftarrow}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{sym}{24}}{\brl@char@font{AMSa}{03}}]{overleftrightarrow}{\brl@char@alias_overarrow\brl@char@alias_leftrightarrow}
+
+
+\brl@char_def[\brl@char_mathstack{\brl@char@font{AMSa}{03}}{\brl@char@font{sym}{21}}]{underrightarrow}{\brl@char@alias_underarrow\brl@char@alias_leftarrow}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{AMSa}{03}}{\brl@char@font{sym}{20}}]{underleftarrow}{\brl@char@alias_underarrow\brl@char@alias_rightarrow}
+\brl@char_def[\brl@char_mathstack{\brl@char@font{AMSa}{03}}{\brl@char@font{sym}{24}}]{underleftrightarrow}{\brl@char@alias_underarrow\brl@char@alias_leftrightarrow}
+
+
+\brl@char_edef[/]{n_slash}{\brl@char_bc000111\brl@char_bc001100}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% functions
+%%
+
+
+\brl@char_def[空]{blank}{\brl@char_bc010010\brl@char_bc010010}
+\brl@char_def[\brl@char_textstack{循環節}{}]{repetend}{\brl@char_bc010000}
+
+\brl@char_def[\brl@char_textstack{式}{}]{equationsign}{\brl@char@alias_equationsign}
+\brl@char_def[\brl@char_textstack{分子}{\brl@char@font{sym}{66}}]{fracb}{\brl@char_bc111011}
+\brl@char_def[\brl@char_textstack{分母}{\brl@char@font{sym}{67}/\brl@char@font{sym}{66}}]{fracm}{\brl@char_bc001100}
+\brl@char_def[\brl@char_textstack{a-j}{}]{letteraj}{\brl@char_bc000011}
+
+\brl@char_def[\brl@char_textstack{区}{}]{stop}{\brl@char_bc001000}
+
+\brl@char_def[\brl@char_textstack{訳}{\brl@char@font{sym}{66}}]{transopen}{\brl@char@alias_parenopen}
+\brl@char_def[\brl@char_textstack{訳}{\brl@char@font{sym}{67}}]{transclose}{\brl@char@alias_parenclose}
+\brl@char_def[\brl@char_textstack{継}{}]{linebreak}{\brl@char@alias_linebreak}
+
+\brl@char_def[\brl@char_textstack{数}{}]{n_numbersign}{\brl@char@alias_numbersign}
+\brl@char_def[\brl@char_textstack{数}{}]{r_numbersign}{\brl@char@alias_numbersign}
+\brl@char_def[\brl@char_textstack{数}{frak}]{f_numbersign}{\brl@char@alias_numbersign}
+\brl@char_def[\brl@char_textstack{数}{bf}]{b_numbersign}{\brl@char@alias_bfns\brl@char@alias_numbersign}
+\brl@char_def[\brl@char_textstack{数}{cal}]{c_numbersign}{\brl@char@alias_calns\brl@char@alias_numbersign}
+\brl@char_def[\brl@char@textunderscore]{substart}{\brl@char_bc000011}
+\brl@char_def[\brl@char@font{ope}{5E}]{supstart}{\brl@char_bc000110}
+\brl@char_def[\brl@char_textstack{写}{:}]{colon}{\brl@char@alias_colon}
+\brl@char_def[\brl@char_textstack{単位}{/}]{r_slash}{\brl@char_bc001100}% / in rm
+
+
+
+
+\brl@char_def{arcsin}{\brl@char@alias_a\brl@char@alias_r\brl@char@alias_c\brl@char@alias_s\brl@char@alias_i\brl@char@alias_n}
+\brl@char_def{arccos}{\brl@char@alias_a\brl@char@alias_r\brl@char@alias_c\brl@char@alias_c\brl@char@alias_o\brl@char@alias_s}
+\brl@char_def{arctan}{\brl@char@alias_a\brl@char@alias_r\brl@char@alias_c\brl@char@alias_t\brl@char@alias_a\brl@char@alias_n}
+\brl@char_def{arg}{\brl@char@alias_a\brl@char@alias_r\brl@char@alias_g}
+\brl@char_def{cos}{\brl@char@alias_c\brl@char@alias_o\brl@char@alias_s}
+\brl@char_def{cosh}{\brl@char@alias_c\brl@char@alias_o\brl@char@alias_s\brl@char@alias_h}
+\brl@char_def{cot}{\brl@char@alias_c\brl@char@alias_o\brl@char@alias_t}
+\brl@char_def{deg}{\brl@char@alias_d\brl@char@alias_e\brl@char@alias_g}
+\brl@char_def{det}{\brl@char@alias_d\brl@char@alias_e\brl@char@alias_t}
+\brl@char_def{dim}{\brl@char@alias_d\brl@char@alias_i\brl@char@alias_m}
+\brl@char_def{exp}{\brl@char@alias_e\brl@char@alias_x\brl@char@alias_p}
+
+\brl@char_def{ker}{\brl@char@alias_k\brl@char@alias_e\brl@char@alias_r}
+\brl@char_def{ln}{\brl@char@alias_l\brl@char@alias_n}
+\brl@char_def{log}{\brl@char@alias_l\brl@char@alias_o\brl@char@alias_g}
+\brl@char_def{sec}{\brl@char@alias_s\brl@char@alias_e\brl@char@alias_c}
+\brl@char_def{sin}{\brl@char@alias_s\brl@char@alias_i\brl@char@alias_n}
+\brl@char_def{sinh}{\brl@char@alias_s\brl@char@alias_i\brl@char@alias_n\brl@char@alias_h}
+\brl@char_def{tan}{\brl@char@alias_t\brl@char@alias_a\brl@char@alias_n}
+\brl@char_def{tanh}{\brl@char@alias_t\brl@char@alias_a\brl@char@alias_n\brl@char@alias_h}
+\brl@char_def{mod}{\brl@char@alias_m\brl@char@alias_o\brl@char@alias_d}
+\brl@char_def[mod]{bmod}{\brl@char@alias_m\brl@char@alias_o\brl@char@alias_d}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% big symbols
+%%
+
+
+
+\brl@char_def{lim}{\brl@char@alias_l\brl@char@alias_i\brl@char@alias_m}
+\brl@char_def[lim\kern0.2ex sup]{limsup}{\brl@char@alias_l\brl@char@alias_i\brl@char@alias_m\brl@char@alias_s\brl@char@alias_u\brl@char@alias_p}
+\brl@char_def[lim\kern0.2ex inf]{liminf}{\brl@char@alias_l\brl@char@alias_i\brl@char@alias_m\brl@char@alias_i\brl@char@alias_n\brl@char@alias_f}
+\brl@char_def{sup}{\brl@char@alias_s\brl@char@alias_u\brl@char@alias_p}
+\brl@char_def{inf}{\brl@char@alias_i\brl@char@alias_n\brl@char@alias_f}
+\brl@char_def{max}{\brl@char@alias_m\brl@char@alias_a\brl@char@alias_x}
+\brl@char_def{min}{\brl@char@alias_m\brl@char@alias_i\brl@char@alias_n}
+\brl@char_def[proj\kern\p@ lim]{projlim}{\brl@char@alias_p\brl@char@alias_r\brl@char@alias_o\brl@char@alias_j\brl@char@alias_l\brl@char@alias_i\brl@char@alias_m}
+\brl@char_def[inj\kern\p@ lim]{injlim}{\brl@char@alias_i\brl@char@alias_n\brl@char@alias_j\brl@char@alias_l\brl@char@alias_i\brl@char@alias_m}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%
+%% context : array
+
+\brl@char_context{array}
+
+
+
+
+%% rules after the first column
+%%
+%%
+\brl@char_edef[]{rule_oooo1}{\brl@char_bc000000}<\brl@char@alias_dbc_ooooa>
+\brl@char_edef[╹]{rule_xooo1}{\brl@char_bc000111}<\brl@char@alias_dbc_xoooa>
+\brl@char_edef[╻]{rule_oxoo1}{\brl@char_ebc00011101}<\brl@char@alias_dbc_oxooa>
+\brl@char_edef[╸]{rule_ooxo1}{\brl@char_bc010010}<\brl@char@alias_dbc_ooxoa>
+\brl@char_edef[╺]{rule_ooox1}{\brl@char_bc010010}<\brl@char@alias_dbc_oooxa>
+\brl@char_edef[┃]{rule_xxoo1}{\brl@char_ebc00011101}<\brl@char@alias_dbc_xxooa>
+\brl@char_edef[┛]{rule_xoxo1}{\brl@char_bc010110}<\brl@char@alias_dbc_xoxoa>
+\brl@char_edef[┗]{rule_xoox1}{\brl@char_bc000110}<\brl@char@alias_dbc_xooxa>
+\brl@char_edef[┓]{rule_oxxo1}{\brl@char_ebc01001101}<\brl@char@alias_dbc_oxxoa>
+\brl@char_edef[┏]{rule_oxox1}{\brl@char_ebc00001101}<\brl@char@alias_dbc_oxoxa>
+\brl@char_edef[━]{rule_ooxx1}{\brl@char_bc010010}<\brl@char@alias_dbc_ooxxa>
+\brl@char_edef[┫]{rule_xxxo1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_xxxoa>
+\brl@char_edef[┣]{rule_xxox1}{\brl@char_ebc00011101}<\brl@char@alias_dbc_xxoxa>
+\brl@char_edef[┻]{rule_xoxx1}{\brl@char_bc010110}<\brl@char@alias_dbc_xoxxa>
+\brl@char_edef[┳]{rule_oxxx1}{\brl@char_ebc01001101}<\brl@char@alias_dbc_oxxxa>
+\brl@char_edef[╋]{rule_xxxx1}{\brl@char_ebc01011101}<\brl@char@alias_dbc_xxxxa>
+
+\brl@char_edef[]{rule_oooo2}{\brl@char_bc000000}<\brl@char@alias_dbc_oooob>
+\brl@char_edef[╹]{rule_xooo2}{\brl@char_bc000111}<\brl@char@alias_dbc_xooob>
+\brl@char_edef[╻]{rule_oxoo2}{\brl@char_ebc00011101}<\brl@char@alias_dbc_oxoob>
+\brl@char_edef[╸]{rule_ooxo2}{\brl@char_bc101101}<\brl@char@alias_dbc_ooxob>
+\brl@char_edef[╺]{rule_ooox2}{\brl@char_bc101101}<\brl@char@alias_dbc_oooxb>
+\brl@char_edef[┃]{rule_xxoo2}{\brl@char_ebc00011101}<\brl@char@alias_dbc_xxoob>
+\brl@char_edef[┛]{rule_xoxo2}{\brl@char_bc101111}<\brl@char@alias_dbc_xoxob>
+\brl@char_edef[┗]{rule_xoox2}{\brl@char_bc000111}<\brl@char@alias_dbc_xooxb>
+\brl@char_edef[┓]{rule_oxxo2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_oxxob>
+\brl@char_edef[┏]{rule_oxox2}{\brl@char_ebc00011101}<\brl@char@alias_dbc_oxoxb>
+\brl@char_edef[━]{rule_ooxx2}{\brl@char_bc101101}<\brl@char@alias_dbc_ooxxb>
+\brl@char_edef[┫]{rule_xxxo2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_xxxob>
+\brl@char_edef[┣]{rule_xxox2}{\brl@char_ebc00011101}<\brl@char@alias_dbc_xxoxb>
+\brl@char_edef[┻]{rule_xoxx2}{\brl@char_bc101101}<\brl@char@alias_dbc_xoxxb>
+\brl@char_edef[┳]{rule_oxxx2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_oxxxb>
+\brl@char_edef[╋]{rule_xxxx2}{\brl@char_ebc10111101}<\brl@char@alias_dbc_xxxxb>
+
+%% rules for the first column
+%%
+%%
+\brl@char_edef[]{rule_1oooo1}{\brl@char_bc000000}<\brl@char@alias_dbc_ooooa>
+\brl@char_edef[╹]{rule_1xooo1}{\brl@char_bc111000}<\brl@char@alias_dbc_xoooa>
+\brl@char_edef[╻]{rule_1oxoo1}{\brl@char_ebc11100010}<\brl@char@alias_dbc_oxooa>
+\brl@char_edef[╸]{rule_1ooxo1}{\brl@char_bc010010}<\brl@char@alias_dbc_ooxoa>
+\brl@char_edef[╺]{rule_1ooox1}{\brl@char_bc010010}<\brl@char@alias_dbc_oooxa>
+\brl@char_edef[┃]{rule_1xxoo1}{\brl@char_ebc11100010}<\brl@char@alias_dbc_xxooa>
+\brl@char_edef[┛]{rule_1xoxo1}{\brl@char_bc110000}<\brl@char@alias_dbc_xoxoa>
+\brl@char_edef[┗]{rule_1xoox1}{\brl@char_bc110010}<\brl@char@alias_dbc_xooxa>
+\brl@char_edef[┓]{rule_1oxxo1}{\brl@char_ebc01100010}<\brl@char@alias_dbc_oxxoa>
+\brl@char_edef[┏]{rule_1oxox1}{\brl@char_ebc01101010}<\brl@char@alias_dbc_oxoxa>
+\brl@char_edef[━]{rule_1ooxx1}{\brl@char_bc010010}<\brl@char@alias_dbc_ooxxa>
+\brl@char_edef[┫]{rule_1xxxo1}{\brl@char_ebc11100010}<\brl@char@alias_dbc_xxxoa>
+\brl@char_edef[┣]{rule_1xxox1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_xxoxa>
+\brl@char_edef[┻]{rule_1xoxx1}{\brl@char_bc110010}<\brl@char@alias_dbc_xoxxa>
+\brl@char_edef[┳]{rule_1oxxx1}{\brl@char_ebc01101010}<\brl@char@alias_dbc_oxxxa>
+\brl@char_edef[╋]{rule_1xxxx1}{\brl@char_ebc11101010}<\brl@char@alias_dbc_xxxxa>
+
+\brl@char_edef[]{rule_1oooo2}{\brl@char_bc000000}<\brl@char@alias_dbc_oooob>
+\brl@char_edef[╹]{rule_1xooo2}{\brl@char_bc111000}<\brl@char@alias_dbc_xooob>
+\brl@char_edef[╻]{rule_1oxoo2}{\brl@char_ebc11100010}<\brl@char@alias_dbc_oxoob>
+\brl@char_edef[╸]{rule_1ooxo2}{\brl@char_bc101101}<\brl@char@alias_dbc_ooxob>
+\brl@char_edef[╺]{rule_1ooox2}{\brl@char_bc101101}<\brl@char@alias_dbc_oooxb>
+\brl@char_edef[┃]{rule_1xxoo2}{\brl@char_ebc11100010}<\brl@char@alias_dbc_xxoob>
+\brl@char_edef[┛]{rule_1xoxo2}{\brl@char_bc111000}<\brl@char@alias_dbc_xoxob>
+\brl@char_edef[┗]{rule_1xoox2}{\brl@char_bc111101}<\brl@char@alias_dbc_xooxb>
+\brl@char_edef[┓]{rule_1oxxo2}{\brl@char_ebc11100010}<\brl@char@alias_dbc_oxxob>
+\brl@char_edef[┏]{rule_1oxox2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_oxoxb>
+\brl@char_edef[━]{rule_1ooxx2}{\brl@char_bc101101}<\brl@char@alias_dbc_ooxxb>
+\brl@char_edef[┫]{rule_1xxxo2}{\brl@char_ebc11100010}<\brl@char@alias_dbc_xxxob>
+\brl@char_edef[┣]{rule_1xxox2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_xxoxb>
+\brl@char_edef[┻]{rule_1xoxx2}{\brl@char_bc111101}<\brl@char@alias_dbc_xoxxb>
+\brl@char_edef[┳]{rule_1oxxx2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_oxxxb>
+\brl@char_edef[╋]{rule_1xxxx2}{\brl@char_ebc11110110}<\brl@char@alias_dbc_xxxxb>
+
+%%
+%% tsutsuji
+%%
+% \brl@char_context{text}
+% \brl@char_edef{*}{\brl@char_bc111111}%
+% \brl@char_pdef[(]{\brl@text_cmd_eqquoteopen}{\brl@char_bc011011}%
+% \brl@char_pdef[)]{\brl@text_cmd_eqquoteclose}{\brl@char_bc011011}%
+%%
+%% tsutsuji
+%%
+
+\immediate\write\brl@char@file{%
+  \brl@char@keynum\the\brl@char@keynum\relax%
+}
+
+\immediate\closeout\brl@char@file
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

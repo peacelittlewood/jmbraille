@@ -1,0 +1,1045 @@
+% Time-stamp: <2026-09-15 23:39:35 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% construct the following toks list.
+%%
+%% input : leftmargin
+%%         indent
+%%         token list
+%%         the least number of leader
+%%         width
+%%
+%% switch : \brl@format@allowspreadtrue, false
+%%
+%% output : \brl@format@alltoks
+%% {num of sclines}{charnum}{toks} ... {charnum}{toks} ... {charnum}{toks} ...
+%% {num of sclines}{charnum}{toks} ... {charnum}{toks} ... {charnum}{toks}
+%% 
+%% {1}{0}{} : the vglue is skipped when the scline is the boundary of pages.
+%% 
+%%          \brl@format@totalheight <=0, \brl@format@totaldepth >0 :
+%%          \brl@format@totalheight <= X < \brl@format@totaldepth
+%%
+%%          \brl@format@allmaxcharnum : width
+%%
+%%          \brl@format@bvskip : \brl@char@bvskip@true, false
+%%          \brl@format@avskip : \brl@char@avskip@true, false
+%%          \brl@format@firstvskiptrue, false : whether the last line requires vskip or not (true if the last line consists of newline label.)
+%%
+%%
+%%          \totalheight, \totaldepth is used in
+%% (1)
+%% \overbrace, \underbrace, cases with the width \bse@width-4
+%% 
+%%
+%% (2)
+%% \brl@array_cons_element_sub with the width 10000
+%%
+%%
+%% example : in formatted texted, we have
+%% {3}{18}{XXXX XXX XXX XXXXX}{12}{         XXX}{12}{         XXX}{1}{4}{YYYY}{1}{0}{}{1}{6}{ZZZZZZ}
+%%
+%% 12345678901234567890
+%% XXXX XXX XXX XXXXX
+%%          XXX
+%%          XXX
+%% YYYY
+%% vglue
+%% ZZZZZZ
+%%          
+%%  via \brl@format_chunk
+%%
+%% \brl@format@linetoks
+%%
+%% {charnum}{t,m,M,i,Z}{penalty}{spaces}.
+%% or
+%% {charnum}{t,m,M,i,Z}{\brl@char@break_lineend}{}
+%% or
+%% {charnum}{t,m,M,i,Z}{\brl@char@break_lineend}{{label}{leader}{leadersp}{leastleadernum}}
+%%
+%%
+%% \brl@format@dattoks
+%% {sptoks}{sptoks}{sptoks}...
+
+\def\brl@format_appendlinetoks#1{\brl@format@linetoks\expandafter{\the\brl@format@linetoks#1}}
+\newtoks\brl@format@linetoks
+
+\def\brl@format_appendtoks#1{\brl@format@toks\expandafter{\the\brl@format@toks#1}}
+\newtoks\brl@format@toks
+
+\def\brl@format_appendalltoks#1{\brl@format@alltoks\expandafter{\the\brl@format@alltoks#1}}
+\newtoks\brl@format@alltoks
+
+\def\brl@format_appendrecttoks#1{\brl@format@recttoks\expandafter{\the\brl@format@recttoks#1}}
+\newtoks\brl@format@recttoks
+
+%\def\brl@format_appenddattoks#1{\brl@format@dattoks\expandafter{\the\brl@format@dattoks#1}}
+\def\brl@format_appenddattoks#1{\brl@format@dattoks\expandafter{\the\brl@format@dattoks{#1}}}
+\newtoks\brl@format@dattoks
+
+
+
+
+\newcount\brl@format@linepenalty
+\newcount\brl@format@linepenaltypos
+\newcount\brl@format@linecharnum
+
+\newcount\brl@format@totalheight
+\newcount\brl@format@totaldepth
+\newcount\brl@format@allmaxcharnum
+
+\newcount\brl@format@height
+\newcount\brl@format@depth
+\newcount\brl@format@maxcharnum
+
+\newcount\brl@format@scline
+\newcount\brl@format@currscline
+\newcount\brl@format@charnum
+
+
+
+\newif\ifbrl@format@firstvskip
+
+
+\def\brl@format@maxpenalty{\brl@char@break_never}% never
+\def\brl@format@firstline{-10000}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+\def\brl@format#1#2#3#4{%
+  \edef\brl@format@leftmargin{#1}%
+  \edef\brl@format@indent{#2}%
+  \edef\brl@format@width{#4}%
+  \edef\brl@format@widthspread{\the\numexpr\tw@*\brl@format@width\relax}%
+  \brl@format@alltoks{}% output
+  \brl@format@linetoks{}%
+  %
+  \let\brl@format@bvskip\empty% output
+  \let\brl@format@avskip\empty% output
+  %
+  \brl@format@totalheight\brl@format@firstline\relax% dummy. This means the first line.
+  \brl@format@firstvskiptrue%
+  %
+  \brl@format@allmaxcharnum\z@%
+  %
+  % \showthe#3
+  %
+  % \expandafter\brl@format_loop\the#3\brl@char@breakable\brl@end\brl@end\brl@end%
+  \expandafter\brl@format_loop\the#3\brl@char@breakable{}Z\brl@end%
+  %
+  % \showthe\brl@format@alltoks
+}
+
+
+
+\def\brl@format_loop#1\brl@char@breakable{%
+  %
+  %
+  \def\brl@tmp{#1}%
+  % \show\brl@tmp%
+  %
+  \ifx\brl@tmp\empty% 
+    %
+    % this happens only when
+    % \brl@char@breakable{...}\brl@char@breakable
+    %
+    % such as \end{proof}, \[...\]
+    %
+    % in particular, 
+    % \[...\] \qquad
+    % \[...\]
+    % gives rise to ... \breakable\breakable ...
+    % the first breakable is the last breakable of eq
+    % the second breakable is that in text_dospecial_\cmd_env
+    % (see text_dospecial_\cmd_env)
+    % -> simply ignore the second \breakable
+    %
+    %
+    % gobble \brl@end\brl@end\brl@end
+    %
+    \expandafter\brl@format_loop_ignorebreakable%
+  \else%
+    %
+    %
+    \brl@char_count{#1}%
+%    \brl@format_appenddattoks{{#1}}%
+    \brl@format_appenddattoks{#1}%
+    %
+    \expandafter\brl@format_setpenalty%
+  \fi%
+}
+
+
+\def\brl@format_loop_ignorebreakable#1#2#3{%
+  \def\brl@tmp{#3}%
+  \ifx\brl@tmp\brl@@end% multiple \breakable.
+    % exit
+  \else%
+    \expandafter\brl@format_loop% behave as if there were no second breakable
+  \fi%
+}
+
+%% \brl@char@breakable#1#2#3
+%%
+%% #1:mode
+%% #2:penalty : never -> automatically ignorespaces
+%% #3:spaces
+%%
+%% if #2 = lineend -> #1 = {label}{leader}{sp}{leastleadernum} 
+%% \brl@char@breakable
+%% {{\brl@code_text_space\the\brl@text@toks}{\brl@code_text_space}{1}{3}}
+%% {\brl@char@break_lineend}
+%% {}
+
+% \def\brl@format_setpenalty#1#2#3{%
+%   \def\brl@tmp{#1}%
+%   % 
+%   \ifx\brl@tmp\brl@@end% end line : exit
+%     %
+%     % \brl@format_appenddattoks{{}}%
+%     \brl@format_appenddattoks{}%
+%     %
+%     \edef\brl@tmp{{{\the\brl@char@charnum}Z}}% Z is not used
+%     \expandafter\brl@format_appendlinetoks\brl@tmp%
+%     \expandafter\brl@format_chunk\the\brl@format@linetoks{\brl@char@break_lineend}{}%
+%     %
+%   \else%
+%     % 
+%     \ifnum#2=\brl@char@break_lineend\relax% line end. #3=\empty
+%       %
+%       % \brl@format_appenddattoks{{}}%
+%       \brl@format_appenddattoks{}%
+%       %
+%       \edef\brl@tmp{{{\the\brl@char@charnum}Z}}% Z is not used
+%       \expandafter\brl@format_appendlinetoks\brl@tmp%
+%       \expandafter\brl@format_chunk\the\brl@format@linetoks{\brl@char@break_lineend}{#1}%
+%       %
+%       % 
+%       \brl@format@linetoks{}%
+%       % 
+%     \else%
+%       %
+%       %
+%       \brl@format_maketspace{#3}%
+%       % \expandafter\brl@format_appenddattoks\expandafter{\expandafter{\brl@format@fillspace}}%
+%       \expandafter\brl@format_appenddattoks\expandafter{\brl@format@fillspace}%
+%       % 
+%       \edef\brl@tmp{{{\the\brl@char@charnum}#1{#2}{#3}}}%
+%       \expandafter\brl@format_appendlinetoks\brl@tmp%
+%       % \brl@format_appendlinetoks{{#2}{#3}}%
+%     \fi%
+%     \expandafter\brl@format_loop%
+%   \fi%
+% }
+
+
+\let\brl@format_setpenalty_Z\empty% exit
+\@namedef{brl@format_setpenalty_\brl@char@break_lineend}{% lineend
+  \brl@format@linetoks{}%
+  \brl@format_loop%
+}
+
+\def\brl@format_setpenalty#1#2#3{%
+  \ifcsname brl@format_setpenalty_#2\endcsname%
+    % 
+    \brl@format_appenddattoks{}%
+    %
+    \edef\brl@tmp{{{\the\brl@char@charnum}Z}}% Z is not used
+    \expandafter\brl@format_appendlinetoks\brl@tmp%
+    \expandafter\brl@format_chunk\the\brl@format@linetoks{\brl@char@break_lineend}{#1}%
+    %
+    \csname brl@format_setpenalty_#2\expandafter\endcsname%
+    % 
+  \else%
+    % 
+    % 
+    \brl@format_maketspace{#3}%
+    %
+    \expandafter\brl@format_appenddattoks\expandafter{\brl@format@fillspace}%
+    % 
+    \edef\brl@tmp{{{\the\brl@char@charnum}#1{#2}{#3}}}%
+    \expandafter\brl@format_appendlinetoks\brl@tmp%
+    %
+    \expandafter\brl@format_loop%
+  \fi%
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% chunk
+%%
+%% concatinate toks with maximum char numbers <= width or 2*width.
+%%
+%% input  : {charnum}{t,m,M,i,Z}{penalty}{spaces}...
+%%          \brl@format@dattoks = {{toks}{spacechars}...}
+%%
+%% output : \brl@format@linetoks = {{toks}{charnum}{t,m,M,i}{penalty}{spaces}...}
+%%
+
+
+%% format_chunk@prevXXXX : data for the previous line
+%% format_chunk@currXXXX : data for the current line
+%% format_chunk@nextXXXX : data for the next line
+%% format_chunk@XXXX : temporary data for the current line
+
+
+\def\brl@format_appendprevtoks#1{\brl@format@prevtoks\expandafter{\the\brl@format@prevtoks#1}}
+\newtoks\brl@format@prevtoks
+
+
+\newif\ifbrl@format@allowspread
+
+
+\def\brl@format_chunk_pulltoksws{%
+  \expandafter\brl@format_chunk_pulltoksws_\the\brl@format@dattoks\brl@end%
+}
+
+\def\brl@format_chunk_pulltoksws_#1#2#3\brl@end{%
+  \brl@format@dattoks{#3}%
+  \brl@format_appendprevtoks{#1#2}%
+}
+
+\def\brl@format_chunk_pulltokswos{%
+  \expandafter\brl@format_chunk_pulltokswos_\the\brl@format@dattoks\brl@end%
+}
+
+\def\brl@format_chunk_pulltokswos_#1#2#3\brl@end{%
+  \brl@format@dattoks{#3}%
+  \brl@format_appendprevtoks{#1}%
+  \def\brl@format_chunk@space{#2}%
+}
+
+
+%% determine the width. 
+%%
+
+
+\def\brl@format_chunk_widthspread{% first time
+  % 
+  \edef\brl@format_chunk@bsecharnum{\the\numexpr\brl@format_chunk@bsecharnum_base-\brl@format_chunk@lineend\relax}%
+  %
+  \ifnum\brl@format_chunk@wordwidth>\brl@format_chunk@bsecharnum\relax% requires double spread
+    \let\brl@format_chunk@bsecharnum_base\brl@format@widthspread%
+    \brl@format_chunk_width_%
+    \def\brl@format_chunk_width{\brl@format_chunk_width_}%
+  \fi%
+}
+
+\def\brl@format_chunk_width_{%
+  \edef\brl@format_chunk@bsecharnum{\the\numexpr\brl@format_chunk@bsecharnum_base-\brl@format_chunk@lineend\relax}%
+  \ifnum\brl@format_chunk@wordwidth>\brl@format_chunk@bsecharnum\relax%
+    \PackageError{jmbraille}{The braille is too long. Try \string\BrailleBreak}{}%
+  \fi%
+}
+
+\def\brl@format_chunk{%
+  % 
+  \ifbrl@format@allowspread%
+    \def\brl@format_chunk_width_default{\brl@format_chunk_widthspread}%
+  \else%
+    \def\brl@format_chunk_width_default{\brl@format_chunk_width_}%
+  \fi%
+  % 
+  %
+  \def\brl@format_chunk@prevlinecharnum{\m@ne}%
+  \def\brl@format_chunk@currlinestart{0}%
+  \edef\brl@format_chunk@currleftmargin{\the\numexpr\brl@format@leftmargin+\brl@format@indent\relax}%
+  % 
+  %
+  \def\brl@format@indent{0}%
+  %
+  %
+  \brl@format_chunk_loop%
+}
+
+\def\brl@format_chunk_loop{% start the construction of a line.
+  %
+  \brl@format@linecharnum\numexpr\brl@format_chunk@currleftmargin+\brl@format_chunk@currlinestart\relax% nonexpr
+  %
+  \let\brl@format_chunk@linestart\brl@format_chunk@currlinestart%
+  \let\brl@format_chunk@leftmargin\brl@format_chunk@currleftmargin%
+  %
+  % 
+  \brl@format@linetoks{}%
+  \brl@format@linepenaltypos\z@%
+  \brl@format@linepenalty\brl@format@maxpenalty\relax%
+  %
+  \let\brl@format_chunk@bsecharnum_base\brl@format@width%
+  %
+  \let\brl@format_chunk_width\brl@format_chunk_width_default%
+  %
+  \brl@format_chunk_%
+}
+
+%% input  : {charnum}{t,m,M,i,Z}{penalty}{spaces}...
+
+\def\brl@format_chunk_#1#2#3#4{%
+  %
+  \advance\brl@format@linepenaltypos\@ne%
+  \brl@format_appendlinetoks{{#1}{#2}{#3}{#4}}%
+  %
+  \edef\brl@format_chunk@wordwidth{\the\numexpr\brl@format_chunk@leftmargin+\brl@format_chunk@linestart+#1\relax}%
+  % 
+  % 
+  \let\brl@format_chunk@leftmargin\brl@format@leftmargin%
+  \edef\brl@format_chunk@linestart{\if#2i\thr@@\else\if#2M\m@ne\else\z@\fi\fi}%
+  \edef\brl@format_chunk@lineend{\ifnum\brl@char@break_lineend=#3\z@\else\if#2m\@ne\else\if#2M\@ne\else\z@\fi\fi\fi}%
+  %
+  %
+  \brl@format_chunk_width%
+  %
+  % 
+  \advance\brl@format@linecharnum#1\relax% add number of chars
+  % 
+  \ifnum\brl@format_chunk@bsecharnum<\brl@format@linecharnum% if width<number of chars
+    \def\brl@format_chunk_next{\brl@format_chunk_break}% linebreak
+  \else% width>=number of chars
+    \ifnum#3>\brl@char@break_break\relax% linebreak
+      \ifnum#3>\brl@format@linepenalty%
+      \else%
+        \edef\brl@format_chunk@maxpos{\the\brl@format@linepenaltypos}%
+        \brl@format@linepenalty#3\relax% change min penalty
+        %
+        %
+        %
+        \def\brl@format_chunk@currspacenum{#4}%
+        \edef\brl@format_chunk@currlinecharnum{\the\brl@format@linecharnum}% save width
+        \let\brl@format_chunk@currbsecharnum\brl@format_chunk@bsecharnum_base% 32 or 64
+        \let\brl@format_chunk@currlineend\brl@format_chunk@lineend%
+        \let\brl@format_chunk@nextlinestart\brl@format_chunk@linestart%
+        \brl@format@linetoks{}% clear 
+        %
+      \fi%
+      \advance\brl@format@linecharnum#4\relax% add number of spaces
+      \def\brl@format_chunk_next{\brl@format_chunk_}%
+    \else% line_break
+      \edef\brl@format_chunk@maxpos{\the\brl@format@linepenaltypos}%
+      %
+      %
+      \def\brl@format_chunk@currspacenum{0}%
+      \def\brl@format_chunk@currlinecharnum{10000}% save width
+      \let\brl@format_chunk@currbsecharnum\brl@format_chunk@bsecharnum_base% 32 or 64
+      \let\brl@format_chunk@currlineend\brl@format_chunk@lineend%
+      \let\brl@format_chunk@nextlinestart\brl@format_chunk@linestart%
+      \brl@format@linetoks{}% clear 
+      % 
+      \ifnum#3=\brl@char@break_lineend\relax% lineend
+        \def\brl@format_chunk@label{#4}% needs for leaders
+        \def\brl@format_chunk_next{\brl@format_chunk_end}% lineend
+      \else% forced linebreak
+        % 
+        %
+        %
+        \def\brl@format_chunk_next{\brl@format_chunk_break}% forced linebreak
+      \fi%
+    \fi%
+  \fi%
+  \brl@format_chunk_next%
+}
+
+
+\def\brl@format_chunk_break{%
+  \brl@format_chunk_break_sub%
+  %
+  \expandafter\brl@format_chunk_loop\the\brl@format@linetoks%
+}
+
+\def\brl@format_chunk_newline{%
+  \brl@format_maketspace{\brl@format_chunk@currleftmargin}%
+  \brl@format@prevtoks\expandafter{\brl@format@fillspace}%
+  % 
+  \ifnum\brl@format_chunk@currlinestart=\thr@@%
+    \brl@format_appendprevtoks{\brl@code_info_linebreak}%
+  \else%
+    \ifnum\brl@format_chunk@currlinestart=\m@ne%
+      \brl@format_appendprevtoks{\@gobble}%
+    \fi%
+  \fi%
+  %
+  %
+  %
+  \let\brl@format_chunk@currleftmargin\brl@format@leftmargin% the next is always noindent.
+  \let\brl@format_chunk@currlinestart\brl@format_chunk@nextlinestart%
+  %
+  \brl@format_chunk_newline_append%
+}
+
+
+\def\brl@format_chunk_newline_append{%
+%  
+  \let\brl@format_chunk@prevspacenum\brl@format_chunk@currspacenum%
+  \let\brl@format_chunk@prevlinecharnum\brl@format_chunk@currlinecharnum%
+  \let\brl@format_chunk@prevbsecharnum\brl@format_chunk@currbsecharnum% 32 or 64
+  \let\brl@format_chunk@prevlineend\brl@format_chunk@currlineend%
+%
+  \brl@format@linepenaltypos\z@%
+  \brl@format_chunk_cons%
+}
+
+
+\def\brl@format_chunk_break_sub{%
+  \ifnum\brl@format_chunk@prevlinecharnum=\m@ne%
+    \brl@format_chunk_newline%
+  \else%
+    \count@\numexpr\brl@format_chunk@prevlinecharnum+\brl@format_chunk@prevspacenum+\brl@format_chunk@currlinecharnum-\brl@format_chunk@currleftmargin-\brl@format_chunk@currlinestart\relax%
+    %
+    \ifnum\count@>\numexpr\brl@format_chunk@prevbsecharnum-\brl@format_chunk@currlineend\relax%
+      % line is over, thus the previous line is fixed.
+      %
+      \ifnum\brl@format_chunk@prevlineend=\@ne%
+        \brl@format_appendprevtoks{\brl@code_math_linebreak}% in math mode.
+      \fi%
+      %
+      \brl@format_oneline% <- prevtoks
+      %
+      %
+      \brl@format_calcminmax%
+      % 
+      \brl@format_chunk_newline%
+      % 
+    \else%
+      %
+      \edef\brl@format_chunk@currlinecharnum{\the\count@}%
+      \expandafter\brl@format_appendprevtoks\expandafter{\brl@format_chunk@space}%
+      \brl@format_chunk_newline_append%
+    \fi%
+  \fi%
+}
+
+
+\def\brl@format_chunk_end{%
+  \brl@format_chunk_break_sub%
+  \ifx\brl@format_chunk@label\empty%
+    \brl@format_oneline%
+  \else%
+    \expandafter\brl@format_oneline_withlabel\brl@format_chunk@label%
+  \fi%
+  %
+  %
+  \brl@format_calcminmax% exit
+  % 
+}
+
+
+\def\brl@format_calcminmax{% 
+  \ifnum\brl@format@firstline=\brl@format@totalheight% this means the first line.
+    \brl@format@totalheight\brl@format@height%
+    \brl@format@totaldepth\brl@format@depth%
+    %
+    \edef\brl@format@bvskip{\ifbrl@format@bvskip\brl@char@bvskip@true\else\brl@char@bvskip@false\fi}%
+    % 
+  \else%
+    %
+    \advance\brl@format@totaldepth\numexpr\brl@format@depth-\brl@format@height\relax%
+    %
+  \fi%
+  % 
+  \edef\brl@format@avskip{\ifbrl@format@avskip\brl@char@avskip@true\else\brl@char@avskip@false\fi}%
+  % 
+  %
+  % \showthe\brl@format@alltoks
+  % \showthe\brl@format@totalheight
+  % \showthe\brl@format@totaldepth
+  %% 
+  %% 
+  %% 
+  %% Caution!
+  %% output : \brl@format@totalheight <= X < \brl@format@totaldepth
+}
+
+\def\brl@format_chunk_cons{%
+  \advance\brl@format@linepenaltypos\@ne%
+  \ifnum\brl@format_chunk@maxpos=\brl@format@linepenaltypos%
+    \brl@format_chunk_pulltokswos%
+  \else%
+    \brl@format_chunk_pulltoksws%
+    \expandafter\brl@format_chunk_cons%
+  \fi%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% format one line : one line is translated into some sclines.
+%%
+%% input : \brl@format@prevtoks
+%%         \brl@format@allmaxcharnum
+%%         \brl@format@firstvskiptrue, false
+%%     \ifbrl@format@firstvskip is false,
+%%         \brl@format@avskip : the previous avskip
+%%
+%% output : append to \brl@format@alltoks, {total sclines}{\brl@format@currpos_X}{\brl@format@content_X}...{...}{...}
+%%          \brl@format@height
+%%          \brl@format@depth
+%%          \brl@format@allmaxcharnum
+%%          \brl@format@firstvskiptrue, false
+%%          \brl@format@bvskiptrue, false
+%%          \brl@format@avskiptrue, false
+
+%% use \brl@format@scline
+
+\def\brl@format_oneline{%
+  %
+  \expandafter\brl@format_oneline_\the\brl@format@prevtoks\brl@end%
+  %
+  \brl@format@scline\brl@format@height%
+  %
+  % 
+  %
+  \edef\brl@tmp{{{\the\numexpr\brl@format@depth-\brl@format@height\relax}}}%
+  \expandafter\brl@format_appendalltoks\brl@tmp%
+  \brl@format_allsclines%
+}
+
+\brl@def{brl@format@content_0}{brl@format@currpos_0}\brl@end{%
+  \def\brl@format_oneline_withlabel##1##2##3##4{%
+    \def\brl@format_oneline@charlabel{##1}%
+    \def\brl@format_oneline@charleader{##2}%
+    \def\brl@format_oneline@leadersp{##3}%
+    \def\brl@format_oneline@leastleadernum{##4}%
+    %
+    %
+    \expandafter\brl@format_oneline_\the\brl@format@prevtoks\brl@end%
+    % 
+    % search a row which can contain the label.
+    % 
+    \toks@\expandafter{\brl@format_oneline@charlabel}% format
+    {%
+      \let#1\empty% support only oneline label
+      \def#2{0}% support only oneline label
+      \brl@format{0}{0}{\toks@}{10000}%
+      \expandafter\brl@format_oneline_withlabel_label\the\brl@format@alltoks%
+    }%
+    \brl@format@scline\z@%
+    \def\brl@format_next{\brl@format_oneline_withlabel_}%
+    \brl@format_oneline_withlabel_%
+    % 
+    % 
+    \brl@format@scline\brl@format@height%
+    % 
+    % 
+    %
+    \edef\brl@tmp{{{\the\numexpr\brl@format@depth-\brl@format@height\relax}}}%
+    \expandafter\brl@format_appendalltoks\brl@tmp%
+    \brl@format_allsclines%
+  }
+}
+
+
+\def\brl@format_oneline_withlabel_label#1#2#3{% support only oneline label
+  \xdef\brl@format_oneline@charlabelnum{#2}%
+  \xdef\brl@format_oneline@charlabel{#3}%
+  \ifnum#1>\@ne%
+    % 
+    \PackageError{jmbraille}{This tag is not supported. Change \string\tag}{}%
+  \fi%
+}
+
+
+%% output : \brl@format@height <= X < \brl@format@depth
+%%
+%% {\brl@format@currpos_X}{\brl@format@content_X}...{...}{...}
+%% 
+
+\def\brl@format_allsclines{%
+  \ifnum\brl@format@scline<\brl@format@depth%
+    \edef\brl@tmp{\csname brl@format@currpos_\the\brl@format@scline\endcsname}%
+    %
+    \ifnum\brl@tmp>\brl@format@allmaxcharnum%
+      %
+      \brl@format@allmaxcharnum\brl@tmp\relax% renew
+    \fi%
+    % 
+    \edef\brl@tmp{{{\brl@tmp}{\csname brl@format@content_\the\brl@format@scline\endcsname}}}%
+    %
+    \expandafter\brl@format_appendalltoks\brl@tmp%
+    % clear the screen explicitly
+    \@namedef{brl@format@content_\the\brl@format@scline}{}%
+    \@namedef{brl@format@currpos_\the\brl@format@scline}{0}%
+    % 
+    \advance\brl@format@scline\@ne%
+    \expandafter\brl@format_allsclines%
+  \fi%
+}
+
+
+%%
+%% the width is the \brl@bse@width
+%%
+\def\brl@format_oneline_withlabel_{%
+  %
+  \ifnum\brl@format@scline<\brl@format@depth%
+  % 
+  % content + space (=\brl@format_oneline@leadersp) + leader (=\brl@format_oneline@leastleadernum) + label
+    \brl@format@charnum\csname brl@format@currpos_\the\brl@format@scline\endcsname\relax%
+    \ifnum\brl@bse@width<\numexpr\brl@format@charnum+\brl@format_oneline@leadersp+\brl@format_oneline@leastleadernum+\brl@format_oneline@charlabelnum\relax%
+      %
+      % 
+    \else%
+    %
+    % found
+      \brl@format_maketspace{\brl@format_oneline@leadersp}%
+      \expandafter\brl@format_appendchar\expandafter{\brl@format@fillspace}%
+      % 
+      %
+      %
+      \brl@def_fill{\numexpr\brl@bse@width-\brl@format@charnum-\brl@format_oneline@leadersp-\brl@format_oneline@charlabelnum}{\brl@format_oneline@leader}{\brl@format_oneline@charleader}%
+      %
+      %
+      \expandafter\brl@format_appendchar\expandafter{\brl@format_oneline@leader}%
+      \expandafter\brl@format_appendchar\expandafter{\brl@format_oneline@charlabel}%
+      \expandafter\edef\csname brl@format@currpos_\the\brl@format@scline\endcsname{\brl@bse@width}%
+      %
+      \let\brl@format_next\relax%
+    \fi%
+    \advance\brl@format@scline\@ne%
+  \else%
+    % not found
+    % create newline
+    \advance\brl@format@depth\@ne%
+    \brl@format_appendchar{% 14 spaces
+      \brl@code_text_space\brl@code_text_space%
+      \brl@code_text_space\brl@code_text_space%
+      \brl@code_text_space\brl@code_text_space%
+      \brl@code_text_space\brl@code_text_space%
+      \brl@code_text_space\brl@code_text_space%
+      \brl@code_text_space\brl@code_text_space%
+      \brl@code_text_space\brl@code_text_space%
+    }%
+    % 
+    %
+    %
+    \brl@def_fill{\numexpr\brl@bse@width-14-\brl@format_oneline@charlabelnum}{\brl@format_oneline@leader}{\brl@format_oneline@charleader}%
+    %
+    %
+    \expandafter\brl@format_appendchar\expandafter{\brl@format_oneline@leader}%
+    \expandafter\brl@format_appendchar\expandafter{\brl@format_oneline@charlabel}%
+    \expandafter\edef\csname brl@format@currpos_\the\brl@format@scline\endcsname{\brl@bse@width}%
+    \let\brl@format_next\relax%
+    %
+    % do not forget to renew depth.
+    %
+    %
+    %
+    \brl@format@avskipfalse% clear avskip
+    \brl@format@firstvskiptrue% skip the next bvskip
+    %
+    %
+  \fi%
+  \brl@format_next%
+}
+
+
+% \@tempcnta\numexpr\brl@bse@height*10\relax% prepare +- 220 lines
+% \count@-\@tempcnta%%\brl@bse@height\relax%
+\count@-\brl@bse@height_virtual\relax%
+\def\brl@format_screendef{%
+  % \ifnum\count@<\@tempcnta%\brl@bse@height\relax%
+  \ifnum\count@<\brl@bse@height_virtual\relax%
+    \@namedef{brl@format@content_\the\count@}{}%
+    \@namedef{brl@format@currpos_\the\count@}{0}%
+    \advance\count@\@ne%
+    \expandafter\brl@format_screendef%
+  \fi%
+}
+\brl@format_screendef
+
+
+\def\brl@format_appendchar{% append #1 to \csname brl@format@content_\brl@format@scline\endcsname
+  \expandafter\brl@format_appendchar_\csname brl@format@content_\the\brl@format@scline\endcsname%
+}
+
+\def\brl@format_appendchar_#1#2{% append #1 to \csname brl@format@content_\brl@format@scline\endcsname
+  \edef#1{#1#2}%
+}
+
+%%
+%% input : \brl@format@firstvskiptrue, false : vskip attached before the contents.
+%%         \brl@format@avskip : previous avskip
+%% 
+%% output : \brl@format@height <= X < \brl@format@depth
+%%
+%% \brl@format@content_X 
+%% \brl@format@currpos_X
+%% \brl@format@bvskiptrue, false
+%% \brl@format@avskiptrue, false
+%% \brl@format@firstvskipfalse
+%%
+%% use \brl@format@toks
+
+
+\newif\ifbrl@format@bvskip% before vskip
+\newif\ifbrl@format@avskip% after vskip
+
+\def\brl@format_oneline_{%
+  \brl@format@toks{}%
+  \brl@format@height\z@%
+  \brl@format@depth\@ne%
+  \brl@format@maxcharnum\z@%
+  %
+  \brl@format@bvskipfalse%
+  \brl@format@avskipfalse%
+  %
+  %
+  \brl@format_oneline__%
+}
+
+
+\def\brl@format_oneline__#1{%
+  % \show\ifbrl@char@avskip
+  \ifcsname brl@format_oneline_\string#1\endcsname%
+    \csname brl@format_oneline_\string#1\expandafter\endcsname%
+  \else%
+  % 
+  % 
+    \brl@format@scline\z@%
+    \brl@format_appendchar{#1}% append elements
+    {% only ordinary char
+      \brl@char@charnum\z@%
+      \let\brl@do\brl@do_count%
+      % 
+      #1%
+      % 
+      \xdef\brl@tmp{\the\brl@char@charnum}%
+    }%
+    \advance\brl@format@maxcharnum\brl@tmp\relax%
+    % 
+    \expandafter\brl@format_oneline__%
+  % 
+  \fi%
+}
+
+
+
+%%
+%% \brl@format@maxcharnum may not be \brl@format@allmaxcharnum, because over(under)braces may be overhang.
+%%
+
+
+%%
+%%
+%% \brl@format@bvskiptrue, false
+%% \brl@format@avskiptrue, false
+
+\brl@def{brl@format@currpos_0}\brl@end{%
+  \@namedef{brl@format_oneline_\string\brl@end}{%
+    \edef#1{\the\brl@format@maxcharnum}%
+    % 
+    % 
+    \ifbrl@format@firstvskip% if the line is the first, then bvskip is ignored.
+      \brl@format@firstvskipfalse%
+    \else%
+      \ifbrl@format@bvskip% current bvskiptrue
+        \advance\brl@format@height\m@ne% vglue is counted. This does not affect in the case of the first line because of \ifbrl@format@firstvskip
+      \else%
+        \brl@format@avskip% previous avskiptrue
+        \ifbrl@char@avskip%
+          \advance\brl@format@height\m@ne%
+        \fi%
+      \fi%
+    \fi% exit
+  }
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\@namedef{brl@format_oneline_\string\@gobble}#1{%
+  \brl@format_oneline__%
+}
+
+
+\@namedef{brl@format_oneline_\string\brl@char@cmd_direct}#1{%
+  \brl@format@scline\z@%
+  \brl@format_appendchar{\brl@char@cmd_direct{#1}}% append elements
+  \brl@format_oneline__%
+}
+
+\brl@def{brl@format@currpos_0}\brl@end{%
+  \@namedef{brl@format_oneline_\string\brl@char@block}##1##2##3##4##5##6{%
+    \edef#1{\the\brl@format@maxcharnum}%
+    \def\brl@format_oneline@currwidth{##3}%
+    \brl@format@scline##1\relax%
+    \def\brl@format_oneline@currdepth{##2}%
+    % 
+    \brl@char@bvskipfalse%
+    \brl@char@avskipfalse%
+    ##4% \empty or \brl@char@bvskiptrue or \brl@char@avskiptrue (ignoring space)
+    \ifnum\brl@format@scline>\brl@format@height%
+    \else%
+      \brl@format@height\brl@format@scline% renew height
+      \ifbrl@char@bvskip%
+        \brl@format@bvskiptrue% if bvskiptrue and higher than before, bvskiptrue
+      \else%
+        \ifnum\brl@format@scline<\brl@format@height%
+          \brl@format@bvskipfalse% if bvskipfalse and strictly higher than before, avskipfalse
+        \fi%
+      \fi%
+    \fi%
+    \ifnum\brl@format_oneline@currdepth<\brl@format@depth%
+    \else%
+      \brl@format@depth\brl@format_oneline@currdepth\relax% renew depth
+      \ifbrl@char@avskip%
+        \brl@format@avskiptrue% if avskiptrue and deeper than before, avskiptrue
+      \else%
+        \ifnum\brl@format_oneline@currdepth>\brl@format@depth%
+          \brl@format@avskipfalse% if avskipfalse and strictly deeper than before, avskipfalse
+        \fi%
+      \fi%
+    \fi%
+    % 
+    % 
+    % 
+    \brl@format_appendrowdown##6%
+    \advance\brl@format@maxcharnum##3\relax%% add the matrix width = next charnum
+    % 
+    % 
+    \brl@format_oneline__%
+  }
+}
+
+\def\brl@format_appendrowdown#1#2#3{%
+  %
+  \if#1c% center
+    \count@\numexpr\brl@format_oneline@currwidth-#2\relax% nonexpr
+    \divide\count@\tw@%
+  \else% left
+    \count@\z@%
+  \fi%
+  % 
+  %
+  \brl@format@charnum\numexpr\brl@format@maxcharnum-\csname brl@format@currpos_\the\brl@format@scline\endcsname+\count@\relax% number to fill spaces
+  % 
+  % 
+%  \ifnum\brl@format@scline=\z@%
+  \ifcase\brl@format@scline%
+  \else%
+    \ifnum\brl@format@charnum<\z@%
+      \brl@format@charnum\z@% too left
+    \fi%
+    \expandafter\edef\csname brl@format@currpos_\the\brl@format@scline\endcsname{\the\numexpr\csname brl@format@currpos_\the\brl@format@scline\endcsname+\brl@format@charnum+#2\relax}%
+  \fi%
+  \brl@format_maketspace{\the\brl@format@charnum}%
+  \expandafter\brl@format_appendchar\expandafter{\brl@format@fillspace#3}%
+  % 
+  % %
+  \advance\brl@format@scline\@ne%
+  \ifnum\brl@format_oneline@currdepth>\brl@format@scline%
+    \expandafter\brl@format_appendrowdown%
+  \fi%
+}
+
+
+%%
+%% input : #1
+%% create #1 spaces and keep it as \brl@format@filltspace_#1
+%%
+
+\def\brl@format_maketspace#1{%
+  \expandafter\let\expandafter\brl@format@fillspace\csname brl@format@filltspace_#1\endcsname%
+  \ifx\brl@format@fillspace\relax%
+    \brl@def_fill{#1}{\brl@format@fillspace}{\brl@code_text_space}%
+    \global\expandafter\let\csname brl@format@filltspace_#1\endcsname\brl@format@fillspace%
+  \fi%
+}
+
+
+%%
+%% if #1<0, then empty.
+%%
+\def\brl@format_makemspace#1{%
+  \expandafter\let\expandafter\brl@format@fillspace\csname brl@format@fillmspace_#1\endcsname%
+  \ifx\brl@format@fillspace\relax%
+    \brl@def_fill{#1}{\brl@format@fillspace}{\brl@code_math_space}%
+    \global\expandafter\let\csname brl@format@fillmspace_#1\endcsname\brl@format@fillspace%
+  \fi%
+}
+
+
+%% input: \brl@format@allmaxcharnum,
+%% \brl@format@totalheight
+%% #1 : align l or c
+%% #2 : formatted toks
+%%
+%% output: \brl@format@recttoks :
+%%
+%% {align}{width}{chars} ... {align}{width}{chars}
+%%
+%% \brl@format@spacetrue, false : check the line of height = 0.
+%%
+%% rectangle : fill spaces width \brl@format@allmaxcharnum.
+%% if the width is already greater than maxcharnum, then no space is added.
+%%
+%% rectangle is used for \char@block 
+%%
+%%
+\newif\ifbrl@format@space
+
+\def\brl@format_rectangle#1#2{%
+  % 
+  \brl@format@recttoks{}%
+  \brl@format@spacefalse%
+  \brl@format@currscline\brl@format@totalheight%
+  \def\brl@format@align{#1}%
+  %
+  \expandafter\brl@format_rectangle_\the#2\brl@end%
+  %
+}
+
+\def\brl@format_rectangle_#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \brl@format@scline#1\relax%
+    \expandafter\brl@format_rectangle__%
+  \fi%
+}
+
+\def\brl@format_rectangle__#1#2{%
+  \brl@format_makemspace{\the\numexpr\brl@format@allmaxcharnum-#1\relax}% number to fill.
+  %
+  %
+  % \ifnum\brl@format@currscline=\z@%
+  \ifcase\brl@format@currscline%
+    \brl@char_space{#2\brl@format@fillspace}%
+    \ifbrl@char@space%
+      \brl@format@spacetrue%
+    \fi%
+  \fi%
+  \advance\brl@format@currscline\@ne%
+  % 
+  \edef\brl@tmp{{{\brl@format@align}{\the\brl@format@allmaxcharnum}{#2\brl@format@fillspace}}}%
+  \expandafter\brl@format_appendrecttoks\brl@tmp%
+  \ifnum\brl@format@scline>\@ne%
+    \advance\brl@format@scline\m@ne%
+    \expandafter\brl@format_rectangle__%
+  \else%
+    \expandafter\brl@format_rectangle_%
+  \fi%
+}
+
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

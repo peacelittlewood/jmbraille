@@ -1,0 +1,562 @@
+% Time-stamp: <2026-09-16 21:00:02 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@char
+\def\brl@char_appendtoks#1{\brl@char@toks\expandafter{\the\brl@char@toks#1}}
+\newtoks\brl@char@toks%
+\newdimen\brl@char@meanfontsize%
+
+
+\def\brl@char@font#1#2{%
+  {\csname brl@font@#1\endcsname\char"#2}%
+}
+
+% \protected\def\brl@char@textunderscore{\vbox{\brl@orig@hrule width 0.5em height 0.5pt}}%
+\protected\def\brl@char@textunderscore{\char"5F}%
+\def\brl@char@ddots{%
+  {\kern0.1ex\raise7\p@\vbox{\kern7\p@\hbox{.}}\kern0.2ex\raise4\p@\hbox{.}\kern0.2ex\raise\p@\hbox{.}}%
+}
+\def\brl@char@vdots{%
+  \vbox{\baselineskip4\p@\lineskiplimit\z@\hbox{.}\hbox{.}\hbox{.}}%
+}
+
+
+
+\def\brl@char@not{\brl@char@font{sym}{36}}
+\def\brl@char@donot{\global\let\brl@char_donot\empty\brl@char@not}
+
+\def\brl@font@load{%
+  \font\brl@font@dft=ecrm0700 at \brl@char@meanfontsize%
+  \font\brl@font@ope=cmr7 at \brl@char@meanfontsize%
+  \font\brl@font@let=cmmi7 at \brl@char@meanfontsize%
+  \font\brl@font@sym=cmsy7 at \brl@char@meanfontsize%
+  \font\brl@font@lsym=cmex7 at \brl@char@meanfontsize%
+  \font\brl@font@blet=cmmib7 at \brl@char@meanfontsize%
+  \font\brl@font@AMSa=msam7 at \brl@char@meanfontsize%
+  \font\brl@font@AMSb=msbm7 at \brl@char@meanfontsize%
+  \font\brl@font@frak=eufm7 at \brl@char@meanfontsize%
+  \font\brl@font@mtt=cmtt8 at \brl@char@meanfontsize%
+}
+
+
+\let\brl@char_donot\empty% default
+
+%%
+%% \brl@char@cmd_direct{#1}
+%% #1 : \brl@char@cmd_print, \brl@char@cmd_label, \brl@char@cmd_remark,
+%%
+%% \brl@char@cmd_direct -> either \@gobble, \brl@@asis
+%%                            or \unexpanded{\brl@char@cmd_direct{#1}} : default
+%%
+%% 
+
+
+
+%%
+%% \brl@char@breakable#1#2#3
+%%
+%% #1:mode
+%% #2:penalty : never -> automatically ignorespaces
+%% #3:spaces
+%%
+%% if #2 is lineend, then break here and restart.
+%%      and  {#1} = {{label}{leader}{leadersp}{leastleadernum}} or {}
+%%
+%% if #2 is block, then take it into account in the last process -> see (*)
+%%
+%% if #2 is never or first, then all the rest breakable are ignored.
+%%
+%% in math mode, breakable does not give rise to spaces
+%% and spaces in text are not meaningful ones (not counted).
+%%
+%% algorithm : #2, #3
+%%
+%% if #2=lineend or break
+%%   restart
+%% else
+%%   if #2>\z@ (break_never),
+%%   then
+%%     ignorespaces and ignore all the consecutive breakable.
+%%   else
+%%     add spaces
+%%
+%% (*) after all, if the break is never and there is break_block, it is replaced by break_almostnever.
+%% this is to avoid "braille too long."
+%% first = never except that it is not replaced by almostnever.
+%%
+%%       
+
+% #2 lineend < break < bigger < ... < small < almostnever < never < first
+
+\def\brl@char@break_first{20000}
+\def\brl@char@break_never{10000}
+\def\brl@char@break_almostnever{9999}
+\def\brl@char@break_small{-1}
+\def\brl@char@break_block{-2}
+\def\brl@char@break_middle{-3}
+\def\brl@char@break_big{-4}
+\def\brl@char@break_bigger{-5}
+
+\def\brl@char@break_break{-10}
+\def\brl@char@break_lineend{-50}
+
+%
+% for calculation
+%
+\def\brl@char@break_base{10}
+
+
+
+%%
+%% \brl@char@block#1#2#3#4#5#6
+%%
+%% #1 : height
+%% #2 : depth
+%% #3 : width
+%% #4 : flags \space, \bvskip, \avskip
+%% #5 : hline rows
+%% #6 : data
+%% 
+%% data : component...component
+%%
+%% component : {c or l}{width}{chars}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@char_space
+%%
+%% input: chars
+%%
+%% output:
+%%   \ifbrl@char@space: if brl@toks contains chars with some spaces
+%%
+%% caller:
+%%   \brl@text_dospecial_\brl@text_cmd_dollar (math in text. Only check whether there is a meaningful space.)
+%%   \brl@text_alph_subM (math in text. Only check whether there is a meaningful space.)
+%%   \brl@math_matrix_prep_rowcol_element (matrix element. Only check whether there is a meaningful space.)
+%%
+%% breakable:
+%%
+%% in math mode, breakable does not give rise to spaces
+%% and spaces in text are not meaningful ones (not counted).
+%%
+%% to do (?): period, comma, arrow, vert
+
+%%
+%%
+%% flags :
+%% \brl@char@spacetrue, \brl@char@bvskiptrue, \brl@char@avskiptrue
+
+\newif\ifbrl@char@space% meaningful space
+\brl@def_protectedlet\brl@char@space@true\brl@char@spacetrue
+
+\newif\ifbrl@char@bvskip% before vskip
+\brl@def_protectedlet\brl@char@bvskip@true\brl@char@bvskiptrue
+\brl@def_protectedlet\brl@char@bvskip@false\brl@char@bvskipfalse
+
+
+\newif\ifbrl@char@avskip% after vskip
+\brl@def_protectedlet\brl@char@avskip@true\brl@char@avskiptrue
+\brl@def_protectedlet\brl@char@avskip@false\brl@char@avskipfalse
+
+
+
+
+\newif\ifbrl@char@draw
+
+
+\def\brl@char_space#1{%
+  \brl@char@spacefalse%
+  {%
+    \let\brl@do\brl@do_space%
+    \let\brl@char@cmd_direct\@gobble%
+    % \block is #4 (default).
+    % \breakable is ignored (default).
+    %
+    #1%
+    %
+    \ifbrl@char@space%
+      \aftergroup\brl@char@spacetrue%
+    \fi%
+  }%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@char_count
+%%
+%% input: chars
+%%
+%% output:
+%%   \ifbrl@char@space: if brl@toks contains chars with some spaces
+%%   \brl@char@charnum: the total number of chars
+%%
+%% caller:
+%%   \brl@print_shipout (nonbraille page number. breakable is meaningless and should be ignored.)
+%%   \brl@format_concat_appendlinetoks (breakable is already treated, that is, no breakable)
+%%   \rectbox
+%%   \ovalbox
+%%   \frame
+%%
+%%   no lineend
+%% 
+\newcount\brl@char@charnum
+\def\brl@char_count#1{%
+  {%
+    \brl@char@charnum\z@%
+    \let\brl@do\brl@do_count%
+    \let\brl@char@cmd_direct\@gobble%
+    \def\brl@char@block{\brl@char@block_count}%
+    \def\brl@char@breakable{\brl@char@breakable_count}%
+    %
+    #1%
+    %
+    \xdef\brl@tmp{\the\brl@char@charnum}%
+  }%
+  \brl@char@charnum\brl@tmp\relax%
+}
+
+
+\def\brl@char@block_count#1#2#3#4#5#6{%
+  \advance\brl@char@charnum#3\relax%
+}
+
+\def\brl@char@breakable_count#1#2#3{%
+  \ifnum#3>\z@%
+    \advance\brl@char@charnum#3\relax%
+  \fi%
+}%
+
+
+
+
+%% 
+%%
+%% \brl@char_spcount
+%%
+%% caller : \brl@ueb
+%%
+%%
+%% count the number of gaps among japaneses words.
+%%
+%% にほんご　です。 -> one.
+
+\newcount\brl@char@spnum
+\def\brl@char_spcount#1{%
+  {%
+    \brl@char@spnum\z@%
+    \let\brl@do\@gobble%
+    \let\brl@char@cmd_direct\@gobble%
+    \def\brl@char@block{\brl@char@block_spnum}%
+    \def\brl@char@breakable{\brl@char@breakable_spnum}%
+    %
+    #1%
+    %
+    \xdef\brl@tmp{\the\brl@char@spnum}%
+  }%
+  \brl@char@spnum\brl@tmp\relax%
+}
+
+
+\def\brl@char@block_spnum#1#2#3#4#5#6{}
+
+\def\brl@char@breakable_spnum#1#2#3{%
+  \ifnum#3>\z@%
+    \advance\brl@char@spnum\@ne%
+  \fi%
+}%
+
+\def\brl@char@breakable_ueb#1#2#3{%
+  \unexpanded{\brl@char@breakable{#1}{#2}{#3}}%
+  \ifnum#3>\z@%
+    \brl@code_ueb_nonuebword%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\brl@char_aliasdef#1#2{%
+  \@namedef{brl@char@alias_#1}{#2}%
+}
+
+\def\brl@char_alias_dbcdef#1#2{%
+  \@namedef{brl@char@alias_dbc_#1}{\noexpand\brl@dbc{#2}}%
+}
+
+
+
+
+
+\protected\def\brl@char_textstack#1#2{%
+%
+  \vbox{%
+    \offinterlineskip% is needed in tikz. tikz reset the offinterlineskip
+    \halign{%
+      \hss\vbox to \brl@char@meanfontsize{\vss\hbox{##}}\hss\cr% center
+      #1\cr%
+      #2\cr%
+    }%
+  }%
+}
+
+\protected\def\brl@char_mathstack#1#2{%
+%
+  \vbox{%
+    \offinterlineskip% is needed in tikz. tikz reset the offinterlineskip
+    \halign{%
+      \hss\vbox{\hbox{##}}\hss\cr% center
+      #1\cr%
+      #2\cr%
+      % \brl@orig@eq#1\brl@orig@eq\cr%
+      % \brl@orig@eq#2\brl@orig@eq\cr
+    }%
+  }%
+}
+
+
+\protected\def\brl@char_bcstack#1#2{%
+%
+  \vbox{%
+    \halign{%
+      \hss##\hss\cr% center
+      \brl@@pdf_invoke{/Span<</ActualText()>>BDC}% invalidate all letters.
+      #1%
+      \brl@@pdf_invoke{EMC}%
+      \cr%
+      #2%
+      \cr%
+    }%
+  }%
+}
+
+
+
+
+\protected\def\brl@char_bc#1#2#3#4#5#6{%
+  \advance\brl@char@charnum\@ne%
+  \edef\brl@tmp{{\noexpand\brl@bc{\the\numexpr #1+2*#2+4*#3+8*#4+16*#5+32*#6\relax}}}%
+  \expandafter\brl@char_appendtoks\brl@tmp%
+}%
+
+\protected\def\brl@char_ebc#1#2#3#4#5#6#7#8{%
+  \advance\brl@char@charnum\@ne%
+  \edef\brl@tmp{{\noexpand\brl@ebc{\the\numexpr #1+2*#2+4*#3+8*#4+16*#5+32*#6\relax}#7#8}}%
+  \expandafter\brl@char_appendtoks\brl@tmp%
+}%
+
+\def\brl@char@@nomean{\brl@char_nomean}
+
+
+%%
+%% \brl@char_def___{[}{[}{\brl@char_bc111011}
+%%
+%% #1: mean
+%% #2: char
+%% #3: bc  (with rawcode)
+
+
+\def\brl@char_context#1{%
+  \def\brl@char@context{#1}%
+}
+
+\edef\brl@ueb_char_bsbs{{\string\\\string\\}}
+\edef\brl@ueb_char_sharp{{\brl@@sharp}}%
+\edef\brl@ueb_char_dollar{{\brl@@dollar}}%
+\edef\brl@ueb_char_percent{{\brl@@percent}}%
+\edef\brl@ueb_char_ampersand{{\brl@@ampersand}}%
+\edef\brl@ueb_char_ul{{\brl@@ul}}%
+\edef\brl@ueb_char_lbrace{{\brl@@lbrace}}%
+\edef\brl@ueb_char_rbrace{{\brl@@rbrace}}%
+\edef\brl@ueb_char_circum{{\brl@@circum}}%
+\edef\brl@ueb_char_tilde{{\brl@@tilde}}%
+
+
+%% \brl@char_getkey
+%%
+%% output : brl@char@key
+%%
+\newcount\brl@char@keynum
+\def\brl@char_getnewkey{%
+  \begingroup%
+    \lccode`\0=`\A%
+    \lccode`\1=`\B%
+    \lccode`\2=`\C%
+    \lccode`\3=`\D%
+    \lccode`\4=`\E%
+    \lccode`\5=`\F%
+    \lccode`\6=`\G%
+    \lccode`\7=`\H%
+    \lccode`\8=`\I%
+    \lccode`\9=`\J%
+    \edef\brl@tmp{\xdef\noexpand\brl@char@key{\the\brl@char@keynum}}%
+    \lowercase\expandafter{\brl@tmp}%
+  \endgroup%
+  \global\advance\brl@char@keynum\@ne%
+}
+
+
+
+
+\IfFileExists{jmbraille/codes/brl_char_def.tex}{}{\input{jmbraille/codes/brl_char_source.tex}}
+
+%\input{jmbraille/codes/brl_char_source.tex}% temporary
+\input{jmbraille/codes/brl_char_def.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% user definition
+
+
+\@namedef{brl@char_user@bc0}{0}
+\@namedef{brl@char_user@bc1}{1}
+\@namedef{brl@char_user@bc2}{2}
+\@namedef{brl@char_user@bc3}{4}
+\@namedef{brl@char_user@bc4}{8}
+\@namedef{brl@char_user@bc5}{16}
+\@namedef{brl@char_user@bc6}{32}
+
+\def\brl@char_user@empty{00}
+
+
+%% output : \brl@char@toks, \brl@char@spacetrue or false
+\def\brl@char_user#1-{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \advance\brl@char@charnum\@ne%
+    %
+    \def\brl@char_user@bca{0}%
+    \def\brl@char_user@bcb{0}%
+    \count@\z@%
+    % 
+    \brl@char_user_setbit#1\brl@end%
+    %
+    \edef\brl@char_user@two{\brl@char_user@bca\brl@char_user@bcb}%
+    \ifx\brl@char_user@two\brl@char_user@empty%
+      \edef\brl@tmp{{\noexpand\brl@bc{\the\count@}}}%
+      % \ifnum\count@=\z@% space
+      \ifcase\count@% space
+        \brl@char@spacetrue%
+      \fi%
+    \else%
+      \edef\brl@tmp{{\noexpand\brl@ebc{\the\count@}\brl@char_user@two}}%
+    \fi%
+    \expandafter\brl@char_appendtoks\brl@tmp%
+    % 
+    \expandafter\brl@char_user%
+  \fi%
+}
+
+\def\brl@char_user#1-{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \ifx\brl@tmp\empty%
+    \else%
+      \advance\brl@char@charnum\@ne%
+      % 
+      \def\brl@char_user@bca{0}%
+      \def\brl@char_user@bcb{0}%
+      \count@\z@%
+      % 
+      \brl@char_user_setbit#1\brl@end%
+      % 
+      \edef\brl@char_user@two{\brl@char_user@bca\brl@char_user@bcb}%
+      \ifx\brl@char_user@two\brl@char_user@empty%
+        \edef\brl@tmp{{\noexpand\brl@bc{\the\count@}}}%
+        % \ifnum\count@=\z@% space
+        \ifcase\count@% space
+          \brl@char@spacetrue%
+        \fi%
+      \else%
+        \edef\brl@tmp{{\noexpand\brl@ebc{\the\count@}\brl@char_user@two}}%
+      \fi%
+      \expandafter\brl@char_appendtoks\brl@tmp%
+    \fi%
+    % 
+    \expandafter\brl@char_user%
+  \fi%
+}
+
+
+\def\brl@char_user_setbit#1{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+    \ifnum#1=7\relax%
+      \def\brl@char_user@bca{1}%
+    \else%
+      \ifnum#1=8\relax%
+        \def\brl@char_user@bcb{1}%
+      \else%
+        \advance\count@\csname brl@char_user@bc#1\endcsname\relax%
+      \fi%
+    \fi%
+    \expandafter\brl@char_user_setbit%
+  \fi%
+}
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% command like char
+%%
+%% cmd_direct is a capsule of
+%%
+%% print
+%% label
+%% remark
+
+\def\brl@char@cmd_direct#1{%
+  \unexpanded{\brl@char@cmd_direct{#1}}%
+}
+
+%%
+
+\protected\def\brl@char@cmd_print#1{%
+  \setbox\z@\hbox{\brl@orig@vrule\@width\z@\@height\brl@braille@lineheight}%
+  \setbox\@ne\hbox{{\fontsize{\brl@char@meanfontsize}{\z@}\selectfont\brl@orig@color{\brl@char@origcolor}#1}}%
+  \setbox\tw@\hbox to \z@{\brl@char_bcstack{\box\@ne}{\box\z@}\hss}%
+  \ht\tw@\brl@braille@charheight%
+  \box\tw@%
+}
+
+\protected\def\brl@char@cmd_label#1#2{%
+  \write\@auxout{\string\newlabel{#1}{{#2}{\thepage}}}%
+}
+
+\protected\def\brl@char@cmd_remark#1{%
+  \brl@print_appendremtoks{%
+    \brl@text_cmd_transopen#1\brl@text_cmd_transclose\brl@text_cmd_space}%
+}
+
+\protected\def\brl@char@cmd_meaning#1{\brl@orig@hskip1.75\brl@char@meanfontsize #1}
+\protected\def\brl@char@cmd_yomiothers#1{\fontsize{0.75\brl@char@meanfontsize}{\z@}\selectfont(#1)}%
+
+\protected\def\brl@char@cmd_ueb#1{\brl@orig@hskip2em\relax #1}%
+
+
+%% \brl@char@breakable is executed in \char_space
+\protected\def\brl@char@breakable#1#2#3{}% default
+
+%% \brl@char@block is executed in \char_space
+\protected\def\brl@char@block#1#2#3#4#5#6{#4}% default
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

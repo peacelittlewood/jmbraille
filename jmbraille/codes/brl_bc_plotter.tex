@@ -1,0 +1,181 @@
+% Time-stamp: <2024-09-26 21:58:28 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+\@namedef{brl@bc_plot@x0}{4}
+\@namedef{brl@bc_plot@y0}{14}
+\@namedef{brl@bc_plot@x1}{4}
+\@namedef{brl@bc_plot@y1}{7}
+\@namedef{brl@bc_plot@x2}{4}
+\@namedef{brl@bc_plot@y2}{0}
+\@namedef{brl@bc_plot@x3}{10}
+\@namedef{brl@bc_plot@y3}{14}
+\@namedef{brl@bc_plot@x4}{10}
+\@namedef{brl@bc_plot@y4}{7}
+\@namedef{brl@bc_plot@x5}{10}
+\@namedef{brl@bc_plot@y5}{0}
+
+%% point: posx, posy
+%%
+%% 1: 4,14
+%% 2: 4,7
+%% 3: 4,0
+%% 4: 10,14
+%% 5: 10,7
+%% 6: 10,0
+%% 7: 4,-6 4,-11
+%% 8: 10,-6 10,-11
+%%
+%% 15 x 31
+%% height : 14
+%% depth : 16
+%%
+%% remove all dots around texts.
+%%
+
+\newcount\brl@bc_plot_clear@x
+\newcount\brl@bc_plot_clear@y
+
+\def\brl@bc_plot_clear{%
+  %
+  {%
+    \def\brl@pgf@pointsize{0}%
+    \brl@bc_plot_clear@x\z@%
+    \brl@bc_plot_clear_x%
+  }%
+}
+
+\def\brl@bc_plot_clear_x{%
+  % 0 ... 14 (\brl@plot@braillewidth{15})
+%  \brl@pgf@currx\numexpr\brl@pgf@ptx+\brl@bc_plot_clear@x\relax%
+  \brl@pgf@currx\brl@pgf@ptx\advance\brl@pgf@currx\brl@bc_plot_clear@x\relax%
+  %
+  \brl@bc_plot_clear@y\z@%  
+  \brl@bc_plot_clear_y%
+  \advance\brl@bc_plot_clear@x\@ne%
+  \ifnum\brl@plot@braillewidth>\brl@bc_plot_clear@x%
+    \expandafter\brl@bc_plot_clear_x%
+  \fi%
+}
+
+% a letter with 8 dots consists of -11 ... 14
+% a letter with 6 dots consists of   0 ... 14
+\def\brl@bc_plot_clear_y{%
+  % -11 ... -11 + 30 = 19 (\brl@plot@braillewidth{31})
+  \brl@pgf@curry\numexpr\brl@pgf@pty-11+\brl@bc_plot_clear@y\relax%
+  \brl@pgf_drawpoint%
+  % 
+  \advance\brl@bc_plot_clear@y\@ne%
+  \ifnum\brl@plot@brailleheight>\brl@bc_plot_clear@y%
+    \expandafter\brl@bc_plot_clear_y%
+  \fi%
+}
+
+%% for plotter
+
+\def\brl@bc_plot#1{%
+  %
+  \ifnum#1>\z@%
+    \brl@bc_plot_clear%
+  \fi%
+  %
+  \count@#1\relax%
+  \brl@pgf@dnum\z@%  
+  \brl@bc_plot_loop%
+  %
+  \global\advance\brl@pgf@ptx\brl@plot@braillewidth\relax% advance one letter.
+  \hbox to \brl@plot@braillewidth bp{\brl@orig@vrule\@width\z@\@height\brl@braille@height\hss}% set the position of the meanings. depth is not needed.
+}%
+
+
+\def\brl@ebc_plot#1#2#3{%
+  %
+  \ifnum#1>\z@%
+    \brl@bc_plot_clear%
+  \fi%
+  %
+  \count@#1\relax%
+  \brl@pgf@dnum\z@%  
+  \brl@bc_plot_loop%
+  %
+  \ifodd#2\relax% 7
+    % \brl@pgf@currx\numexpr\brl@pgf@ptx+4\relax%
+    % \brl@pgf@curry\numexpr\brl@pgf@pty-6\relax%
+    \brl@pgf@currx\brl@pgf@ptx\advance\brl@pgf@currx4\relax%
+    \brl@pgf@curry\brl@pgf@pty\advance\brl@pgf@curry-6\relax%
+    %
+    \brl@pgf_drawpoint%
+    %
+    % \brl@pgf@curry\numexpr\brl@pgf@pty-11\relax%
+    \brl@pgf@curry\brl@pgf@pty\advance\brl@pgf@curry-11\relax%
+    %
+    \brl@pgf_drawpoint%
+  \fi%
+  \ifodd#3\relax% 8
+    %
+    % \brl@pgf@currx\numexpr\brl@pgf@ptx+10\relax%
+    % \brl@pgf@curry\numexpr\brl@pgf@pty-6\relax%
+    \brl@pgf@currx\brl@pgf@ptx\advance\brl@pgf@currx10\relax%
+    \brl@pgf@curry\brl@pgf@pty\advance\brl@pgf@curry-6\relax%
+    %
+    \brl@pgf_drawpoint%
+    %
+    % \brl@pgf@curry\numexpr\brl@pgf@pty-11\relax%
+    \brl@pgf@curry\brl@pgf@pty\advance\brl@pgf@curry-11\relax%
+    % 
+    \brl@pgf_drawpoint%
+  \fi%
+  \global\advance\brl@pgf@ptx\brl@plot@braillewidth\relax% advance one letter.
+  \hbox to \brl@plot@braillewidth bp{\brl@orig@vrule\@width\z@\@height\brl@braille@height\hss}%
+}%
+
+%%
+%%
+
+\def\brl@bc_plot_loop{%
+  \ifodd\count@%
+    % \brl@pgf@currx\numexpr\brl@pgf@ptx+\csname brl@bc_plot@x\the\brl@pgf@dnum\endcsname\relax%
+    % \brl@pgf@curry\numexpr\brl@pgf@pty+\csname brl@bc_plot@y\the\brl@pgf@dnum\endcsname\relax%
+    \brl@pgf@currx\brl@pgf@ptx\advance\brl@pgf@currx\csname brl@bc_plot@x\the\brl@pgf@dnum\endcsname\relax%
+    \brl@pgf@curry\brl@pgf@pty\advance\brl@pgf@curry\csname brl@bc_plot@y\the\brl@pgf@dnum\endcsname\relax%
+     %
+    \brl@pgf_drawpoint%
+    %
+  \fi%
+  \advance\brl@pgf@dnum\@ne%
+  \divide\count@\tw@%
+  \ifnum\count@>\z@%
+    \expandafter\brl@bc_plot_loop%
+  \fi%
+}
+
+
+\def\brl@dbc_plot#1{%
+  \brl@bc{0}%
+  \def\brl@pgf@pointsize{1}%
+  \brl@dbc_plot_#1\brl@end\brl@end%
+}
+
+\def\brl@dbc_plot_#1#2{%
+  \def\brl@tmp{#1}%
+  \ifx\brl@tmp\brl@@end%
+  \else%
+%    \brl@pgf@currx\numexpr\brl@pgf@ptx-\brl@dbc@width+#1\relax%
+    \brl@pgf@currx\numexpr\brl@pgf@ptx-\brl@plot@braillewidth+#1\relax%
+    \brl@pgf@curry\numexpr\brl@pgf@pty+\brl@pgf@dbcht-#2\relax%
+    % 
+    \brl@pgf_drawpoint%
+    \expandafter\brl@dbc_plot_%
+  \fi%
+}
+
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

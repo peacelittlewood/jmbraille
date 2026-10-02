@@ -1,0 +1,166 @@
+% Time-stamp: <2024-09-11 18:05:16 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{jmbraille}[2026/09/15 22:54:03]
+
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+
+% \RequirePackage{amsmath}
+% \RequirePackage{amsfonts}
+% \RequirePackage{amssymb}
+
+\RequirePackage{anyfontsize}
+%\RequirePackage[T1]{fontenc}% OT1 does not contain "_"
+
+
+\makeatletter
+
+
+\newif\ifbrl@option@file
+\newif\ifbrl@option@oswin
+\newif\ifbrl@option@oslin
+\newif\ifbrl@option@osmac
+\newif\ifbrl@option@overfull
+\newif\ifbrl@option@cache
+\newif\ifbrl@option@corpus
+\newif\ifbrl@option@braille
+\newif\ifbrl@option@pindisplay
+\newif\ifbrl@option@hires
+\newif\ifbrl@option@multihline
+\newif\ifbrl@option@nospread
+\newif\ifbrl@option@jplog
+\newif\ifbrl@option@mathlog
+
+\def\brl@option@ueb{2}%
+\let\brl@option@os\empty
+
+\DeclareOption{file}{\brl@option@filetrue}
+\DeclareOption{windows}{\def\brl@option@os{win}\brl@option@oswintrue\brl@option@filetrue}
+\DeclareOption{linux}{\def\brl@option@os{lin}\brl@option@oslintrue}
+\DeclareOption{mac}{\def\brl@option@os{mac}\brl@option@osmactrue}
+\DeclareOption{overfull}{\brl@option@overfulltrue}
+\DeclareOption{cache}{\brl@option@cachetrue}
+\DeclareOption{corpus}{\brl@option@corpustrue}
+\DeclareOption{jplog}{\brl@option@jplogtrue}
+\DeclareOption{mathlog}{\brl@option@mathlogtrue}
+\DeclareOption{braille}{\brl@option@brailletrue}
+\DeclareOption{pindisplay}{\brl@option@hiresfalse\brl@option@brailletrue\brl@option@pindisplaytrue}
+\DeclareOption{hires}{\brl@option@hirestrue\brl@option@brailletrue\brl@option@pindisplayfalse}
+\DeclareOption{uebg1}{\def\brl@option@ueb{1}}
+\DeclareOption{uebg2}{\def\brl@option@ueb{2}}
+\DeclareOption{multihline}{\brl@option@multihlinetrue}
+\DeclareOption{nospread}{\brl@option@nospreadtrue}
+
+
+
+\ProcessOptions
+
+\catcode`\_=11\relax
+% UNIX / Linux / Mac 環境では LF
+% Windows 環境では CR+LF
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@mainproc_subproc_...@var
+%%
+%% \brl@def : define cs with \csname ... \endcsname
+%% \brl@orig : original environment
+%% \brl@rectbox : rectbox
+%% \brl@ovalbox : ovalbox
+%% \brl@draft : macros in draft mode (non braille mode)
+%% \brl@bse : bse, nab
+%% \brl@ebse : gnb
+%% \brl@base : base64
+%% \brl@plot : output figure codes for either pindisplay or edel, which is determined by the option pindisplay
+%% \brl@pgfsys : interface for pgf
+%% \brl@pgf : driver for pgf
+%% \brl@qs : quick sort
+%% \brl@char : abstract characters
+%% \brl@braille : fonts of braille characters
+%% \brl@do : do
+%% \brl@bc : braille codes (6bits) (UTF)
+%% \brl@ebc : extended braille codes (8bits) (UTF)
+%% \brl@dbc : drawable braille (sequence of (x,y))
+%% \brl@Ucode : Unicode characters
+%% \brl@env : override
+%% \brl@figure : figure, tabular
+%% \brl@document : document parser
+%% \brl@mecab : mecab parser
+%% \brl@text : text parser
+%% \brl@info : info parser
+%% \brl@math : math parser
+%% \brl@array : array constructor
+%% \brl@ueb : ueb parser
+%% \brl@print : print braille characters
+%% \brl@format : arrange braille characters
+
+
+
+\input{jmbraille/codes/brl_common.tex}
+\ifbrl@option@braille
+  \input{jmbraille/codes/brl_init.tex}
+  \input{jmbraille/codes/brl_bse.tex}
+  \input{jmbraille/codes/brl_Ucode.tex}
+  \input{jmbraille/codes/brl_plot.tex}
+  \input{jmbraille/codes/brl_pgfsys.tex}
+  \input{jmbraille/codes/brl_qs.tex}
+  \input{jmbraille/codes/brl_char.tex}
+  \input{jmbraille/codes/brl_format.tex}
+  \input{jmbraille/codes/brl_print.tex}
+  \input{jmbraille/codes/brl_braille.tex}
+  \input{jmbraille/codes/brl_do.tex}
+  \input{jmbraille/codes/brl_bc.tex}
+  \input{jmbraille/codes/brl_env.tex}
+  \input{jmbraille/codes/brl_document.tex}
+  \input{jmbraille/codes/brl_mecab.tex}
+  \input{jmbraille/codes/brl_text.tex}
+  \input{jmbraille/codes/brl_alph.tex}
+  \input{jmbraille/codes/brl_ueb.tex}
+  \input{jmbraille/codes/brl_info.tex}
+  \input{jmbraille/codes/brl_math.tex}
+  \input{jmbraille/codes/brl_array.tex}
+  \input{jmbraille/codes/brl_userif.tex}
+  \input{jmbraille/codes/brl_atbegdoc.tex}
+  \input{jmbraille/codes/brl_atenddoc.tex}
+  \input{jmbraille/codes/brl_patches.tex}
+  \input{jmbraille/codes/brl_aliases.tex}
+\else
+  \input{jmbraille/codes/brl_nonbraille.tex}
+\fi%
+
+
+\catcode`\_=8\relax
+
+%%
+%%
+%%
+
+\endinput
+
+% About the license of corpus :
+% https://www.itmedia.co.jp/news/articles/1809/06/news017.html
+%
+
+% 
+% no cache
+% 30.34s user 1.67s system 99% cpu 32.315 total
+
+% 29.30s user 1.57s system 98% cpu 31.184 total
+
+
+% cache
+% 31.30s user 1.75s system 99% cpu 33.336 total (first)
+% 19.05s user 0.18s system 99% cpu 19.295 total (second)
+
+% 29.62s user 1.62s system 98% cpu 31.645 total
+% 18.33s user 0.17s system 99% cpu 18.621 total
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% time-stamp-pattern: "8/\\\\ProvidesPackage{jmbraille}\\[%Y/%02m/%02d %02H:%02M:%02S\\]"
+%%% End:

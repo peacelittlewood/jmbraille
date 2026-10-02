@@ -1,0 +1,164 @@
+% Time-stamp: <2026-09-12 15:38:45 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+
+% in \enddocument
+%  \UseOneTimeHook{enddocument}% <- \AtEndDocument
+% ...
+%  \UseOneTimeHook{enddocument/afterlastpage}%
+%  \begingroup
+%    \if@filesw
+%      \immediate\closeout\@mainaux
+%      \let\@setckpt\@gobbletwo
+%      \let\@newl@bel\@testdef
+%      \@tempswafalse
+%      \makeatletter \@@input\jobname.aux
+%    \fi
+%    \UseOneTimeHook{enddocument/afteraux}%
+%    \UseOneTimeHook{enddocument/info}%
+%  \endgroup
+%  \UseOneTimeHook{enddocument/end}%
+%  \deadcycles\z@\@@end
+
+\AddToHook{enddocument/afterlastpage}{\@fileswfalse}% invalidate \input .aux
+\AddToHook{enddocument/afteraux}{%
+  \ifbrl@@filesw% original switch
+    \immediate\closeout\@mainaux%
+    \let\@setckpt\@gobbletwo%
+    \let\@newl@bel\@testdef%
+    \@tempswafalse%
+    \makeatletter\@@input\jobname.bux%
+  \fi%
+  \brl@option@exec{\brl@option@endserver}%
+}
+
+\AtEndDocument{%
+  %
+  \brl@print_shipout% shipout lastpage.
+  %
+  % script for printer or nab file.
+  %
+  % 
+  \brl@document_output_nab%
+  %%
+  % Unicode
+  \immediate\openout\brl@Ucode@file\jobname.txt\relax%
+  \immediate\write\brl@Ucode@file{\the\brl@Ucode@toks}%
+  \immediate\closeout\brl@Ucode@file%
+  %
+  \brl@option@exec{\brl@option@maketxt}%
+  %
+  % 
+  \brl@print@psingle%
+  \count@\z@%
+  \brl@print_float_end%
+  %
+  %
+  % predominant quotation marks
+  \if@filesw%
+    \immediate\write\@auxout{%
+      \gdef\noexpand\brl@ueb@auxsqnum{\the\brl@ueb@totalsqnum}%
+      \gdef\noexpand\brl@ueb@auxdqnum{\the\brl@ueb@totaldqnum}%
+    }%
+  \fi%
+  %
+  \let\newpage\brl@orig@newpage% used to finish latex.
+  \let\clearpage\brl@orig@clearpage% used to finish latex.
+}
+
+\ifbrl@option@hires%
+
+\def\brl@document_output_nab{%
+  %
+  % ps1 or sh
+  \ifdefined\brl@bse_output@ext% This is needed since ifundefined, then the masterfile is overwritten.
+    \immediate\openout\brl@bse@file\jobname\brl@bse_output@ext\relax%
+    \immediate\write\brl@bse@file{\brl@bse_output@filebegin\the\brl@bse@toks\brl@bse_output@fileend}%
+    \immediate\closeout\brl@bse@file%
+    %% 
+    % 
+    \ifnum\brl@bse@expagenum>\z@%
+      \immediate\openout\brl@bse@file\jobname-l\brl@bse_output@ext\relax%
+      \immediate\write\brl@bse@file{\brl@bse_output@filebegin\the\brl@bse@extoks\brl@bse_output@fileend}%
+      \immediate\closeout\brl@bse@file%
+    \fi%
+  \fi%
+}
+
+\else%
+
+
+\ifbrl@lualatex% to do : directly write binary.
+  \def\brl@document_savegnb#1{%
+    \directlua{%
+      local file = io.open("#1.gnb", "wb");
+      file:write((mime.unb64("\brl@ebse@gnb")));
+      file:close();
+    }%
+  }%
+\else%
+  \ifbrl@option@oswin%
+    \def\brl@document_savegnb#1{%
+      \immediate\openout\brl@ebse@file#1.b64\relax%
+      \immediate\write\brl@ebse@file{\brl@ebse@gnb}%
+      \immediate\closeout\brl@ebse@file%
+      % 
+      \immediate\write18{certutil -f -decode #1.b64 #1.gnb}%
+    }%
+  \else%
+    \def\brl@document_savegnb#1{%
+      \immediate\write18{echo \brl@ebse@gnb | base64 -d > #1.gnb}%
+    }%
+  \fi%
+\fi%
+
+  
+\def\brl@document_output_nab{%
+  % for gnb
+  \edef\brl@tmp{\the\brl@ebse@toks}%
+  \ifx\brl@tmp\empty% in this case, delete gnb ?
+  \else%
+    %
+    \brl@ebse_parse{\brl@ebse@toks}%
+    \brl@document_savegnb{\jobname}%
+  \fi%
+  %
+  \edef\brl@tmp{\the\brl@ebse@extoks}%
+  \ifx\brl@tmp\empty% in this case, delete gnb ?
+  \else%
+    %
+    \brl@ebse_parse{\brl@ebse@extoks}%
+    \brl@document_savegnb{\jobname-l}%
+  \fi%
+  %
+  % for nab
+  \immediate\openout\brl@bse@file\jobname.nab\relax%
+  \immediate\write\brl@bse@file{\brl@bse@headspaces\brl@bse_formatlastpage\brl@bse@pagenum\brl@bse@width\brl@bse@height}%
+  \immediate\write\brl@bse@file{\the\brl@bse@toks}%
+  \immediate\closeout\brl@bse@file%
+  %%
+  % for nab
+  \ifnum\brl@bse@expagenum>\z@%
+    \immediate\openout\brl@bse@file\jobname-l.nab\relax%
+    \immediate\write\brl@bse@file{\brl@bse@headspaces\brl@bse_formatlastpage\brl@bse@expagenum\brl@bse@width\brl@bse@height}%
+    \immediate\write\brl@bse@file{\the\brl@bse@extoks}%
+    \immediate\closeout\brl@bse@file%
+  \fi%
+}
+\fi
+
+\newwrite\brl@ebse@file%
+\newwrite\brl@bse@file%
+\newwrite\brl@Ucode@file%
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

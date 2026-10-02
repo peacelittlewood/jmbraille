@@ -1,0 +1,616 @@
+% Time-stamp: <2026-09-11 16:36:36 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@plot
+%%
+%% input: 
+%%
+% \brl@pgf@size_x_y : size at (x,y), size>0 implies a dot.
+% \brl@pgf@minxaty_y : min of x at y
+% \brl@pgf@maxxaty_y : max of x at y
+% \brl@pgf@minx : min of x
+% \brl@pgf@miny : min of y
+% \brl@pgf@maxx : max of x
+% \brl@pgf@maxy : max of y
+% \brl@plot@page : header
+
+%% output:
+% picture
+% files
+
+
+
+%\edef\brl@plot@width_single{\the\numexpr\brl@bse@width-\tw@\relax}% 32-2
+\edef\brl@plot@width_single{\the\numexpr\brl@bse@width-\@ne\relax}% 32-1
+\edef\brl@plot@width_double{\the\numexpr\brl@plot@width_single*\tw@\relax}% *2
+
+\edef\brl@plot@maxlinex_single{\the\numexpr\brl@plot@width_single*\tw@\relax}% 2*30
+\edef\brl@plot@maxlinex_double{\the\numexpr\brl@plot@width_double*\tw@\relax}% 2*60
+\edef\brl@plot@maxliney{\the\numexpr\brl@bse@height*4\relax}% 4*22
+\def\brl@plot@headsep{0}% 
+\def\brl@plot@leftsidemargin{0}% must be even
+
+% \def\brl@plot@braillewidth{16}%
+% \def\brl@plot@brailleheight{32}%
+\def\brl@plot@braillewidth{2}%
+\def\brl@plot@brailleheight{4}%
+\def\brl@plot@braillebaseline{3}%
+%
+\newwrite\brl@plot@file
+
+\newtoks\brl@plot@pintoks% for pindisplay
+\def\brl@plot_appendpintoks#1{\brl@plot@pintoks\expandafter{\the\brl@plot@pintoks#1}}
+
+
+% \@tempdima\brl@plot@draw_ratio\dimexpr\brl@plot@maxlinex_single\p@/480\relax% 0.1343
+% \edef\brl@plot@ratiox{\expandafter\brl@@strip@pt\the\@tempdima}% 60/480
+
+% \@tempdima\brl@plot@draw_ratio\dimexpr\brl@plot@maxliney\p@/684\relax% 0.1338
+% \edef\brl@plot@ratioy{\expandafter\brl@@strip@pt\the\@tempdima}%
+
+\def\brl@plot@pindisplayratio{0.1338}
+
+
+\def\brl@plot{%
+  %
+  \brl@plot_init%
+  \the\brl@pgf@invoketoks%
+  % 
+  % treat nodes
+  %
+  %
+  \let\brl@bc\brl@bc_plot%
+  \let\brl@ebc\brl@ebc_plot%
+  % dbc is never used
+  \let\brl@pgf@pointsize\empty% it is sufficient if this cs is defined.
+  \let\brl@char@cmd_direct\brl@@asis%
+  %
+  \global\setbox\brl@plot@nodebox\hbox{\kern-4bp\the\brl@pgf@nodetoks}% -4bp means 8bp/2, where 8bp is the space between two letters.
+  % 
+  % 
+  % treat header
+  % 
+  % 
+  \global\setbox\brl@plot@headerbox\hbox{%
+    \kern-4bp%
+    % 
+    % 
+    \brl@pgf_hbox{\numexpr\brl@pgf@minx+50\relax}{\numexpr\brl@pgf@maxy+2\relax}{\brl@plot@page}% 2 * 24 spaces = 48, 4 * 1 = 4 - 2 (1 lineskip)
+    % 
+    % \@namedef{brl@bc_plot@x0}{0}
+    % \@namedef{brl@bc_plot@y0}{2}
+    % 
+  }%
+  % 
+  % 
+  % 
+  \edef\brl@plot@boundingboxx{\the\numexpr\brl@plot@maxlinex+\brl@pgf@minx-\brl@plot@leftsidemargin\relax}%
+  \edef\brl@plot@boundingboxy{\the\numexpr\brl@pgf@maxy+\brl@plot@headsep-\brl@plot@maxliney\relax}%
+  % 
+  \brl@plot@liney\brl@pgf@maxy\relax%
+  % 
+  % 
+  % 
+  % 
+  % 
+  \brl@@pdf_bcontent%
+  \brl@@pdf_invoke{q 0 G 0 g 0 w}%
+  \brl@@pdf_invoke{q 1 0 0 1 \the\numexpr(\brl@plot@leftsidemargin-\brl@pgf@minx)*8\relax\brl@@space%
+    \the\numexpr(-\brl@pgf@maxy-\brl@plot@headsep)*8\relax\brl@@space cm}%
+  % 
+  \brl@plot_writepts%
+  \brl@@pdf_invoke{Q 1 0 0 1 -4 0 cm}%
+  \brl@plot_drawrect%
+  % 
+  \brl@@pdf_invoke{Q}%
+  \brl@@pdf_econtent%
+  % 
+  \brl@plot@liney\thr@@%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
+  \brl@plot_sclinedef{0}%
+  \brl@plot_sclinedef{1}%
+  \brl@plot_sclinedef{2}%
+  \brl@plot_sclinedef{3}%
+  % 
+  \immediate\openout\brl@plot@file=\jobname-\brl@figure@figurenum_plot.txt\relax%
+  \expandafter\brl@plot_determiney\the\brl@plot@pintoks{-1}%
+  \immediate\closeout\brl@plot@file%
+  % 
+}
+
+
+\def\brl@plot_drawrect{%
+  \count@\brl@plot@maxlinex_single%
+  \brl@plot_drawrect_%
+}
+
+\def\brl@plot_drawrect_{%
+  \brl@@pdf_invoke{\the\numexpr(\count@-\brl@plot@maxlinex_single)*8\relax\brl@@space 4 \the\numexpr\brl@plot@maxlinex_single*8\relax\brl@@space-\the\numexpr\brl@plot@maxliney*8\relax\brl@@space re S}%
+  \advance\count@\brl@plot@maxlinex_single%
+  \ifnum\count@<\brl@plot@maxlinex%
+    \expandafter\brl@plot_drawrect_%
+  \fi%
+}
+
+
+
+\def\brl@plot_writepts{%
+  \ifcsname brl@pgf@minxaty_\the\brl@plot@liney\endcsname%
+    \edef\brl@plot@maxxaty{\csname brl@pgf@maxxaty_\the\brl@plot@liney\endcsname}%
+    \brl@plot@linex\csname brl@pgf@minxaty_\the\brl@plot@liney\endcsname\relax%
+    %
+    \global\expandafter\let\csname brl@pgf@minxaty_\the\brl@plot@liney\endcsname\@undefined% clear
+    % 
+    \ifnum\brl@plot@boundingboxy<\brl@plot@liney%
+      % 
+      \edef\brl@tmp{{{\the\numexpr\brl@pgf@maxy-\brl@plot@liney+\brl@plot@headsep\relax}}}% for pindisplay
+      \expandafter\brl@plot_appendpintoks\brl@tmp% for pindisplay
+      %
+      \brl@plot_writepts_loop%
+      %
+      \brl@plot_appendpintoks{{-1}}% for pindisplay
+    \else%
+      \brl@plot_writepts_outy_loop%
+    \fi%
+  \fi%
+  %
+  % \advance\brl@plot@liney\m@ne%
+  % \ifnum\brl@pgf@miny>\brl@plot@liney%
+  % \else%
+  \ifnum\brl@pgf@miny<\brl@plot@liney%
+    \advance\brl@plot@liney\m@ne%
+    \expandafter\brl@plot_writepts%
+  \fi%
+}
+
+\def\brl@plot_writepts_outy_loop{% out of range of y
+  \ifcsname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname%
+    %
+    \brl@@pdf_invoke{q 1 0 0 1 \the\numexpr\brl@plot@linex*8\relax\brl@@space\the\numexpr\brl@plot@liney*8\relax\brl@@space cm}%
+    %
+    \brl@plot@circler% draw circle
+    \brl@@pdf_invoke{Q}%
+    % 
+    %
+    \global\expandafter\let\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname\@undefined% clear
+    %
+  \fi%
+  % \advance\brl@plot@linex\@ne%
+  % \ifnum\brl@plot@maxxaty<\brl@plot@linex%
+  % \else%
+  \ifnum\brl@plot@maxxaty>\brl@plot@linex%
+    \advance\brl@plot@linex\@ne%
+    \expandafter\brl@plot_writepts_outy_loop%
+  \fi%
+}
+
+\def\brl@plot_writepts_loop{%
+  \ifcsname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname%
+    %
+    \brl@@pdf_invoke{q 1 0 0 1 \the\numexpr\brl@plot@linex*8\relax\brl@@space\the\numexpr\brl@plot@liney*8\relax\brl@@space cm}%
+    % whether out of range or not 
+    \ifnum\brl@plot@boundingboxx>\brl@plot@linex%
+      \brl@plot@circle% draw circle
+      \edef\brl@tmp{{{\the\numexpr\brl@plot@linex-\brl@pgf@minx+\brl@plot@leftsidemargin\relax}}}% for pindisplay
+      \expandafter\brl@plot_appendpintoks\brl@tmp% for pindisplay
+    \else%
+      \brl@plot@circler% draw circle
+    \fi%
+    %
+    \brl@@pdf_invoke{Q}%
+    %
+    \global\expandafter\let\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname\@undefined% clear
+    %
+  \fi%
+  % \advance\brl@plot@linex\@ne%
+  % \ifnum\brl@plot@maxxaty<\brl@plot@linex%
+  % \else%
+  \ifnum\brl@plot@maxxaty>\brl@plot@linex%
+    \advance\brl@plot@linex\@ne%
+    \expandafter\brl@plot_writepts_loop%
+  \fi%
+}
+
+
+
+\def\brl@plot_sclinedef#1{%
+  \count@\z@%
+  \def\brl@tmp{#1}%
+  \brl@plot_sclinedef_%
+}
+
+\def\brl@plot_sclinedef_{%
+  \ifnum\count@<\brl@plot@width\relax%
+    \@namedef{brl@plot@scline\the\count@ _\brl@tmp}{00}%
+    \advance\count@\@ne%
+    \expandafter\brl@plot_sclinedef_%
+  \fi%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% main loop
+%
+\def\brl@plot_determiney#1{%
+  \def\brl@plot@curry{#1}%
+  \ifnum#1=\m@ne%
+    \expandafter\brl@plot_oneline_end% the last line    
+  \else%
+    \expandafter\brl@plot_determiney_%
+  \fi%
+}
+
+\def\brl@plot_determiney_{%
+  \ifnum\brl@plot@curry>\brl@plot@liney%
+    \brl@plot_oneline%
+    \expandafter\brl@plot_determiney_%
+  \else%
+    \count@\brl@plot@curry\relax%
+    \divide\count@4\relax%
+    \edef\brl@plot@currmody{\the\numexpr\brl@plot@curry-4*\count@\relax}%
+    \expandafter\brl@plot_determinex%
+  \fi%
+}
+
+% write the point at (x,y)
+% \def\brl@plot_determinex#1{%
+%   \ifnum#1=\m@ne%
+%     \expandafter\brl@plot_determiney%
+%   \else%
+%     \count@#1\relax%
+%     \ifodd\count@%
+%       \let\brl@plot_setx\brl@plot_setx_second%
+%     \else%
+%       \let\brl@plot_setx\brl@plot_setx_first%
+%     \fi%
+%     \divide\count@\tw@%
+%     \edef\brl@tmp{\expandafter\noexpand\csname brl@plot@scline\the\count@ _\brl@plot@currmody\endcsname}%
+%     \edef\brl@tmpdata{\brl@tmp}% 00 etc.
+%     \expandafter\edef\brl@tmp{\expandafter\brl@plot_setx\brl@tmpdata}%
+%     \expandafter\brl@plot_determinex%
+%   \fi%
+% }
+
+\def\brl@plot_determinex#1{%
+  \ifnum#1=\m@ne%
+    \expandafter\brl@plot_determiney%
+  \else%
+    \count@#1\relax%
+    \ifodd\count@%
+      \let\brl@plot_setx\brl@plot_setx_second%
+    \else%
+      \let\brl@plot_setx\brl@plot_setx_first%
+    \fi%
+    \divide\count@\tw@%
+    \edef\brl@tmp{\csname brl@plot@scline\the\count@ _\brl@plot@currmody\endcsname}% 00 etc.
+    \expandafter\edef\csname brl@plot@scline\the\count@ _\brl@plot@currmody\endcsname{\expandafter\brl@plot_setx\brl@tmp}%
+    \expandafter\brl@plot_determinex%
+  \fi%
+}
+
+\def\brl@plot_setx_first#1#2{1#2}
+\def\brl@plot_setx_second#1#2{#11}
+
+
+\def\brl@plot_oneline{%
+  \advance\brl@plot@liney\@ne%
+  \brl@plot@linex\z@%
+  \count@\z@%
+  % 
+  \brl@plot_maxcmd%
+  \brl@plot_drawpoint%
+  % 
+  % 
+  \brl@plot_sclinedef{\brl@plot@maxmody}%
+}
+
+\def\brl@plot_oneline_end{%
+  \advance\brl@plot@liney\@ne%
+  \brl@plot@linex\z@%
+  \count@\z@%
+  % 
+  \brl@plot_maxcmd%
+  \brl@plot_drawpoint%
+  %
+  %
+  \ifnum\brl@plot@maxmody=\z@%
+  \else%
+    \brl@plot_sclinedef{\brl@plot@maxmody}%
+    \expandafter\brl@plot_oneline_end%
+  \fi%
+}
+
+\def\brl@plot_oneline_start{%
+  {%
+    \aftergroup\immediate%
+    \aftergroup\write%
+    \aftergroup\brl@plot@file%
+    \aftergroup{%
+      \expandafter\aftergroup\brl@plot@tick%
+      \brl@plot_oneline_%
+    \aftergroup}%
+  }%
+}
+
+% \brl@def{brl@bc@Ucode_0}\brl@end{%
+%   \def\brl@plot_oneline_{%
+%     \edef\brl@plot@cs{brl@plot@scline\the\brl@plot@linex _}%
+%     %
+%     \brl@plot_conschar% construct brl@tmp = 00000000
+%     \edef\brl@tmp{\expandafter\brl@plot_conschar_Ucode\brl@tmp}%
+%     \expandafter\aftergroup\brl@tmp%
+%     \advance\brl@plot@linex\@ne%
+%     % 
+%     % 
+%     % 
+%     % 
+%     \ifnum\brl@plot@width>\brl@plot@linex%
+%       \advance\count@\@ne%
+%       \ifnum\brl@plot@width_single=\count@%
+%         \aftergroup#1%
+%         \expandafter\aftergroup\brl@plot@tick%
+%         % \expandafter\aftergroup#1%
+%         % \expandafter\aftergroup\brl@plot@tick%
+%         \count@\z@%
+%       \fi%
+%       % 
+%       \expandafter\brl@plot_oneline_%
+%     \fi%
+%   }%
+% }
+
+\def\brl@plot_oneline_{%
+  \edef\brl@plot@cs{brl@plot@scline\the\brl@plot@linex _}%
+  % 
+  \brl@plot_conschar% construct brl@tmp = 00000000
+  \edef\brl@tmp{\expandafter\brl@plot_conschar_Ucode\brl@tmp}%
+  \expandafter\aftergroup\brl@tmp%
+  \advance\brl@plot@linex\@ne%
+  % 
+  % 
+  % 
+  % 
+  \ifnum\brl@plot@width>\brl@plot@linex%
+    \advance\count@\@ne%
+    \ifnum\brl@plot@width_single=\count@%
+      \aftergroup⠀%
+      \expandafter\aftergroup\brl@plot@tick%
+      % \expandafter\aftergroup#1%
+      % \expandafter\aftergroup\brl@plot@tick%
+      \count@\z@%
+    \fi%
+    % 
+    \expandafter\brl@plot_oneline_%
+  \fi%
+}%
+
+
+
+
+
+
+
+
+\protected\@namedef{brl@plot_drawpoint_1}{%
+  \brl@plot_oneline_start%
+}
+
+% \protected\@namedef{brl@plot_drawpoint_2}{%
+%   \ifcase\brl@plot@maxmody\relax%
+%     \expandafter\brl@plot_oneline_start% 0
+%   \or%
+%     % 1
+%   \or% 
+%     \expandafter\brl@plot_oneline_start% 2
+%   \fi%
+% }
+
+\protected\@namedef{brl@plot_drawpoint_2}{%
+  \ifodd\brl@plot@maxmody\relax%
+  \else%
+    \expandafter\brl@plot_oneline_start%
+  \fi%
+}
+
+\protected\@namedef{brl@plot_drawpoint_4}{%
+  \ifnum\brl@plot@maxmody=\z@%
+    \expandafter\brl@plot_oneline_start%
+  \fi%
+}
+
+
+\ifdefined\Uchar% if \Uchar can be used, we use it.
+  \def\brl@plot_conschar_Ucode#1#2#3#4#5#6#7#8{%
+    \Uchar\numexpr10240+#1+#2*8+#3*2+#4*16+#5*4+#6*32+#7*64+#8*128\relax%
+  }
+\else%
+  \def\brl@plot_conschar_Ucode#1#2#3#4#5#6#7#8{%
+    \csname brl@bc@Ucode_\the\numexpr#1+#2*8+#3*2+#4*16+#5*4+#6*32+#7*64+#8*128\endcsname%
+  }
+\fi
+
+% \brl@def{brl@bc@Ucode_64}\brl@end{% 7
+%   \def\brl@plot_maxcmd_a{%
+%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_b}%
+%     \let\brl@plot_conschar\brl@plot_conschar_a%
+%     \def\brl@plot@maxmody{0}%
+%     % \def\brl@plot@tick{#1}%
+%     \let\brl@plot@tick#1%
+%   }%
+% }
+
+% \brl@def{brl@bc@Ucode_4}\brl@end{% 3
+%   \def\brl@plot_maxcmd_b{%
+%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_c}%
+%     \let\brl@plot_conschar\brl@plot_conschar_b%
+%     \def\brl@plot@maxmody{1}%
+%     % \def\brl@plot@tick{#1}%
+%     \let\brl@plot@tick#1%
+%   }%
+% }
+
+% \brl@def{brl@bc@Ucode_2}\brl@end{% 2
+%   \def\brl@plot_maxcmd_c{%
+%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_d}%
+%     \let\brl@plot_conschar\brl@plot_conschar_c%
+%     \def\brl@plot@maxmody{2}%
+%     % \def\brl@plot@tick{#1}%
+%     \let\brl@plot@tick#1%
+%   }%
+% }
+
+% \brl@def{brl@bc@Ucode_1}\brl@end{% 1
+%   \def\brl@plot_maxcmd_d{%
+%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
+%     \let\brl@plot_conschar\brl@plot_conschar_d%
+%     \def\brl@plot@maxmody{3}%
+%     % \def\brl@plot@tick{#1}%
+%     \let\brl@plot@tick#1%
+%   }%
+% }
+
+\def\brl@plot_maxcmd_a{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_b}%
+  \let\brl@plot_conschar\brl@plot_conschar_a%
+  \def\brl@plot@maxmody{0}%
+  \def\brl@plot@tick{⡀}%
+}%
+
+\def\brl@plot_maxcmd_b{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_c}%
+  \let\brl@plot_conschar\brl@plot_conschar_b%
+  \def\brl@plot@maxmody{1}%
+  \def\brl@plot@tick{⠄}%
+}%
+
+\def\brl@plot_maxcmd_c{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_d}%
+  \let\brl@plot_conschar\brl@plot_conschar_c%
+  \def\brl@plot@maxmody{2}%
+  \def\brl@plot@tick{⠂}%
+}%
+
+\def\brl@plot_maxcmd_d{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
+  \let\brl@plot_conschar\brl@plot_conschar_d%
+  \def\brl@plot@maxmody{3}%
+  \def\brl@plot@tick{⠁}%
+}%
+
+
+
+\def\brl@plot_conschar_a{%
+  \edef\brl@tmp{\csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs3\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_b{%
+  \edef\brl@tmp{\csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs3\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_c{%
+  \edef\brl@tmp{\csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs3\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_d{%
+  \edef\brl@tmp{\csname\brl@plot@cs3\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+  }%
+}
+
+
+
+
+\ifbrl@lualatex%
+  %
+\newbox\brl@plot@circle_
+\newbox\brl@plot@circler_
+\def\brl@plot_resource{%
+  %
+  \setbox\@ne\hbox{}\wd\@ne\p@\ht\@ne\p@%
+  \setbox\z@\hbox{%
+    \pdfextension literal{0 g \brl@@cirb}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-2 -2 2 2]}\z@%
+  \setbox\brl@plot@circle_\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\brl@plot@circle_\z@%
+  \ht\brl@plot@circle_\z@%
+  \dp\brl@plot@circle_\z@%
+  % 
+  \setbox\z@\hbox{%
+    \pdfextension literal{1 0 0 rg \brl@@cirb}%
+    \copy\@ne%
+  }%
+  \saveboxresource type 2 attr{%
+/Subtype /Form
+/Type /XObject
+/FormType 1
+/BBox[-2 -2 2 2]}\z@%
+  \setbox\brl@plot@circler_\hbox{\useboxresource\lastsavedboxresourceindex}%
+  \wd\brl@plot@circler_\z@%
+  \ht\brl@plot@circler_\z@%
+  \dp\brl@plot@circler_\z@%
+  %
+}
+\def\brl@plot@circle{%
+  \copy\brl@plot@circle_% draw circle
+}%
+\def\brl@plot@circler{%
+  \copy\brl@plot@circler_% draw circle
+}%
+
+
+\else%
+  
+\def\brl@plot_resource{%
+  \AtBeginDvi{%
+    \special{pdf:bxobj @circle bbox -2 -2 2 2}%
+    \special{pdf:code 0 g \brl@@cirb}%
+    \special{pdf:exobj}%
+    % 
+    \special{pdf:bxobj @circler bbox -2 -2 2 2}%
+    \special{pdf:code 1 0 0 rg \brl@@cirb}%
+    \special{pdf:exobj}%
+  }%
+}
+
+\def\brl@plot@circle{%
+  \special{pdf:uxobj @circle}% draw circle
+}%
+\def\brl@plot@circler{%
+  \special{pdf:uxobj @circler}% draw circle
+}%
+
+\fi
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

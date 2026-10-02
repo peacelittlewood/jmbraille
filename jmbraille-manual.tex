@@ -1,0 +1,461 @@
+\ifdefined\directlua
+  \documentclass[lualatex,ja=standard,jafont=haranoaji]{bxjsarticle}
+  \def\pgfsysdriver{pgfsys-luatex.def}
+\else%
+  \ifdefined\kanjiskip
+    \documentclass[dvipdfmx,uplatex,ja=standard,jafont=haranoaji]{bxjsarticle}
+    \def\pgfsysdriver{pgfsys-dvipdfmx.def}
+  \else%
+    \documentclass[xelatex,ja=standard,jafont=haranoaji,prefercjk]{bxjsarticle}
+    \def\pgfsysdriver{pgfsys-xetex.def}
+  \fi%
+\fi%
+
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{tikz}
+\usepackage[braille,nospread]{jmbraille}
+%\usepackage{jmbraille}
+
+\def\dep{(*)}
+
+\makeatletter
+
+\def\Msty{\texttt{jmbraille.sty}}
+\def\eg{\par\emph{例} :  }
+\def\rem{\par\emph{注意} : }
+%\def\emph#1{{\gtfamily\bfseries #1}}
+
+\catcode`\@=11\relax
+\def\@author{Yasushi Komori}
+\edef\@copyright{(c)Copyright 2021 \@author. All Rights Reserved.}
+\def\@date{2024/08/25}
+\edef\@message{ver.\@date\space jmbraille style by \@author.}
+
+\def\labelenumi{(\arabic{enumi})}
+
+
+
+
+\BrailleSetJpContext{,}
+\BrailleSetJpContext{:}
+
+\pagestyle{plain}
+
+
+\begin{document}%
+\BrailleFigurePlotOn
+{\LARGE \Msty\ の使い方}\\
+
+\section{更新履歴}
+
+\begin{tabular}{cl}
+  2026/09/20 & 大幅に変更. \\
+  2026/01/25 & 英語改良. \\
+  2024/08/25 & 一新. \\
+  2024/05/19 & 一新. \\
+  2022/07/27 & 初版.
+\end{tabular}
+
+\section{用語}
+\begin{itemize}
+\item 晴眼者 : 視覚障害がない者.
+\item 墨字(すみじ) : 点字の対語.
+\item jmbraille の j は japanese, m は mathematics, braille は点字 (人名).
+数学用の点字は統一規格がなく, ここで扱うのは日本独自のものである.
+\item mecab : 形態素解析を行うアプリ. 形態素解析とは日本語を品詞分解して読み方を与えること.
+\item liblouis : 英語の点訳を与えるアプリ (ライブラリ).
+\end{itemize}
+
+\section{使い方}
+\subsection{最初の準備}
+\begin{enumerate}
+\item Windows, Mac: 解凍し, \verb|jmbraile/exec/| にあるバイナリが実行可能か確認.  (必要に応じてパーミッションの変更などを行う.) 
+\item Linux: 各自 source にあるソースをコンパイル (要 mecab, liblouis).
+\item latex システムを確認する. \verb|uplatex|, \verb|xelatex|, \verb|lualatex| で動作する. 古いと動かない可能性がある.
+  2015 以降なら(多分)動作する.  ただし, システムが 2021 以前の場合, jmbraille の option に file を追加する必要がある. つまり \verb|\usepackage[file,...]{jmbraille}| とすること. (Windows は不要)
+\end{enumerate}
+
+
+\subsection{毎回の作業}
+以下 \texttt{uplatex} とするが, 最初の部分を変更すれば \texttt{xelatex}, \texttt{lualatex} でも同じ.
+\begin{enumerate}
+\item \verb|jmbraille-sample.tex| がテンプレファイル.
+\item \verb|jmbraille|スタイルのオプションがない場合は
+  \verb|uplatex filename.tex| で墨字用の資料ができる. (墨字用のスタイルは「点字用の命令の無効化」「墨字のページ情報の収集」「箱環境の提供」である.)
+\item オプション \verb|braille| 付きの場合は点字用の資料ができる.
+  \emph{必ず \texttt{uplatex -shell-escape -8bit filename.tex} でコンパイルすること.}  相互参照のため, 数回コンパイルが必要.
+
+  無事コンパイルできたならば, \verb|dvipdfmx filename| を行い, pdf を作成する.\\
+  \verb|filename.nab| (点字本体) \\
+  \verb|filename.gnb| (行列や場合分けがある場合に作成される)\\
+  \verb|filename-l.nab| (見開きページがある場合に作成される)\\
+  \verb|filename-l.gnb| (見開きページに行列などがある場合) \\
+  \verb|filename.pdf| (図や表がある場合は立体コピーするために必要)\\
+  \verb|filename.txt| (Unicode 8点点字が読めるピンディスプレイ用)
+\end{enumerate}
+
+\rem 墨字用をコンパイル後,
+ 点字用をコンパイルすると, 墨字用のページ情報が左上に自動的に入る. 
+
+\rem
+  上手くいかないのは以下の場合である. (3)〜(5) はご連絡ください.
+  \begin{enumerate}
+  \item TeX ソースのエラー.
+  \item 外部プログラム \texttt{server, client} の実行権限の設定がされていない.
+  \item 辞書に登録されていない言葉を使った. (\verb|BrailleReading| で対応可能.)
+  \item 記号や TeX command の点訳が存在しない. (スタイルファイルでサポートされていない.)
+  \item スタイルファイルのバグ.
+  \end{enumerate}
+
+
+\bigskip
+\section{作成上の重要な注意}
+
+\begin{itemize}
+\item 点訳は dvi や pdf ではなく tex のソースファイルを元に行う.
+  従って, pdf 上正しく見えるものであるかどうかではなく, 正しいソースコードを書くことが必要である.
+
+  \eg
+  \begin{enumerate}
+  \item 
+    $\{x\in\mathbb{R}~|~\text{$x$ は無理数.}\}$ \qquad \verb!$\{x\in\mathbb{R}\,|\,\text{$x$ は無理数.}\}$! \quad (1つの式)
+  \item
+    $\{x\in\mathbb{R}~|~x$ は無理数.$\}$
+    \qquad \verb!$\{x\in\mathbb{R}\,|\,x$ は無理数.$\}$! \quad (2つの式)
+  \end{enumerate}
+  上の2つは pdf 上同じように見えるが, 点訳が異なってしまう. (当然後者は意味不明.)
+
+
+\item 数式中にそのまま日本語は書けない.\footnote{コンパイルすることができる場合もあるかもしれないが, 公式には現在の LaTeX では禁止されている.} 必ず \verb|$ ... \text{日本語} ... $| などのように書くこと.
+
+\item 適切な点訳が用意されていないものに関してはエラーになるか、または不自然な点訳になってしまうので, 例えば勝手な記号や関数を使う際は (勝手な記号 $\sum\!\!\!\!\!\circ$ の場合)
+\begin{verbatim}
+$a+\sum\!\!\!\!\!\circ+c$
+\end{verbatim}
+などのように直接書くのではなく, preamble で \verb|\newcommand{\sumcirc}{\sum\!\!\!\!\!\circ}| などのように定義しておき,
+\begin{verbatim}
+$a+\sumcirc+c$
+\end{verbatim}
+と書く方が良い. (後で点字用に定義し直すことが簡単になる.)
+
+\item 墨字と点字は「多対多」である.
+  \eg
+  \begin{enumerate}
+  \item   あ, 1, A, a は全て同じ点字である.
+    (ただし「モード変換記号」\footnote{モードは大きく分けると以下の3つ: 通常の文章, 数式, 情報. 適切に変更されるのであまり気にする必要はない.}が前につく.)
+  \item 「,」は点字では文章中と数式中では異なる.
+  \end{enumerate}
+  このように「モード」%
+  によって点訳が異なるので, 適切に使う必要がある.
+
+  \eg 数式番号として (*) を使うと,
+  \begin{enumerate}
+  \item \verb|$(*)$|
+  \item \verb|(*)|
+  \end{enumerate}
+  は全く別物になってしまう. 使うのであれば (2) を使うこと.
+  
+  \eg メールアドレスは \verb|\texttt{komori@rikkyo.ac.jp}| などのように書くこと. \\
+  (\verb|\begin{verbatim}...\end{verbatim}|, \verb|\verb|, \verb|\texttt|, \verb|\tt| は (プログラムのソースなどの) 情報モードになる.)
+
+  \eg (正しい) \texttt{komori@rikkyo.ac.jp}
+
+  \eg (正しくない) komori@rikkyo.ac.jp
+
+
+\eg 証明終了は \verb|\qed| という記号があるので, それを使うこと.
+
+\eg 矢印 \verb|$\rightarrow$| などは, 単独であれば, 自動的に文章中の矢印に変換されるので, これは使っても良い.
+
+\item \verb|\mathrm{...}| や \verb|{\rm ...}| について. 連続した大文字の場合に違いがある.
+  \begin{enumerate}
+  \item \verb|$\mathrm{ABC}$| : 三角形 ABC などの場合. 一つづきのもの.
+  \item \verb|$ABC$| : 行列 $A$, $B$, $C$ の掛け算.
+  \item \verb|ABC| : 文章中の場合.
+  \end{enumerate}
+  
+\item tikz で入れた文章や数式は文字の大きさが違うので点字では, ずれる可能性が高い. 点字では微修正する必要がある.
+
+\end{itemize}
+
+\section{使える命令}
+
+\subsection{オプション}
+
+\begin{itemize}
+\item \verb|braille| : 点字, 図や表は立体印刷, edel など.
+\item \verb|pindisplay| : 全てピンディスプレイ用に出力.
+\item \verb|cache| : 一度点訳した文章を保存しておく. 変更がない文章は以前の点訳を用いるので多少早い. おかしくなったら \verb|.brd| を削除すること.
+\item \verb|windows| : Windows 用.
+\item \verb|mac| : Mac 用.
+\item \verb|linux| : Linux 用.
+\item \verb|file| : うまく動かなかった時用の設定. 外部プログラム (mecab など) のやり取りをファイルで行う. 
+\item \verb|corpus| : 辞書改善用. 小森に送ってくれたら点訳の改善ができる.
+\item \verb|overfull| : 墨字用コンパイルのとき, 横にはみ出た行を出力. ファイルは \verb|.ovfl|.
+\item \verb|hires| : 行列などをプロッタプリンタで精密に印刷する時用. ESA721 専用.
+\item \verb|uebg1| : 英語1級点訳する場合. 
+\item \verb|uebg2| : 英語2級点訳する場合. 
+\item \verb|multihline| : 行列や tabular 環境で \verb|\hline| の線の引き方を変更.
+\item \verb|nospread| : 必ず１ページに納め, 見開きページを作らない.
+\end{itemize}
+
+\subsection{文章}
+\subsubsection{使える環境}
+
+
+\begin{itemize}
+\item \verb|tabular|, \verb|tabular*| : 表. 立体コピーが必要となる. 
+  (オプションとして \verb|pindisplay| を選んだ場合や, 以下で説明する \verb|\BrailleFigurePlotOn| の場合は点字文章内に出力.)
+\item \verb|tikzpicture| : 図. 立体コピーが必要となる.
+  (\verb|usepackage| のオプションとして \verb|pindisplay| を選んだ場合はテキストファイルに出力. 以下で説明する \verb|\BrailleFigurePlotOn| の場合はプロッタプリンタ用に出力.)
+\item \verb|itembox|, \verb|shadebox|, \verb|screen| : ascmac
+\item \verb|frame| : beamer
+\item \verb|alertblock|, \verb|block|, \verb|exampleblock| : beamer
+\item \verb|itemize| : 箇条書き. (星類を割り当てている.)
+\item \verb|enumerate| : 番号付きの箇条書き.
+\item \verb|description| : 番号付きの箇条書き. 必ず \verb|\item[...]| という形で使うこと.
+\item \verb|theorem|, \verb|proof| など : \verb|\newtheorem| で定義したものは使える.
+\item \verb|verbatim|, \verb|verbatim*| : 情報モード. 全角文字は普通文章と認識する.
+\item \verb|thebibliography|
+\item \verb|center|, \verb|flushright|, \verb|flushleft| : 無視. (点
+字は基本全て左寄せ. 例外は数式番号, 証明終了印くらい.)
+\item \verb|wrapfigure| : 無視.
+\end{itemize}
+
+\subsubsection{使える命令}
+
+\begin{itemize}
+\item \verb|\author|, \verb|\title|, \verb|\date|, \verb|\maketitle|
+\item \verb|\tableofcontents|
+\item \verb|\chapter|, \verb|\section|, \verb|\subsection|, \verb|\subsubsection|
+\item \verb|\ref|, \verb|\eqref|, \verb|\label|,
+  \verb|\pageref|, \verb|\setcounter|, \verb|\addtocounter|
+\item \verb|\cite|
+\item \verb|\includegraphics| : 立体コピーが必要となる. 文字がある場合は別途対応が必要.
+\item \verb|\footnote|, \verb|\footnotetext|, \verb|\footnotemark|
+\item \verb|\!|, \verb|\,|, \verb|\>|, \verb|\:|, \verb|\;|, \verb|\ |, \verb|~|, \verb|\quad|, \verb|\qquad|
+\item \verb|\underline|, \verb|\emph|,   \verb|\textbf| : 日本語の点字には太字や下線はない. その代わりに強調の記号がつく.
+\item   \verb|\textrm|,
+  \verb|\textit|,
+  \verb|\textsf| : 日本語では強調, 英語ではそのフォントを表す記号がつく.
+\item   \verb|\texttt| : フォントの変更ではなく, 情報モードになる.
+\item \verb|\verb|
+\item \verb|\bf|,
+  \verb|\em|, \verb|\it|, \verb|\tt|, \verb|\rm|, \verb|\sf| : 上と同じ. \dep\footnote{使用できるが, 現在 LaTeX としては非推奨となっている. 以下このような命令は \dep と記す.}
+\item \verb|\smallskip|,
+  \verb|\medskip|, \verb|\bigskip|,
+  \verb|\vspace|, \verb|\vskip| : 無視
+\item \verb|\hspace|, \verb|\hskip| : 無視
+\item \verb|\color|, \verb|\textcolor| : 無視
+\item \verb|\centering| : 無視
+\item \verb|\Huge|, \dots, \verb|\tiny| : 無視
+\item \verb|\dots|
+\item \verb|\mainmatter|, \verb|\frontmatter|
+\item \verb|\indent|, \verb|\noindent|
+\item \verb|\newpage| : 無視 (点字では改ページのタイミングが異なる)
+  
+\end{itemize}
+
+
+\subsection{数式}
+\subsubsection{使える環境}
+
+\begin{itemize}
+\item \verb|equation|, \verb|equation*| : 数式.
+\item \verb|split|, \verb|split*| : 一つの数式の分割.
+\item \verb|align|, \verb|align*| : 数式を揃えて並べる.
+\item \verb|gather|, \verb|gather*| : 数式を列挙.
+\item \verb|eqnarray|, \verb|eqnarray*| : 数式を揃えて並べる. \dep
+
+\item \verb|pmatrix|,
+  \verb|matrix|,
+  \verb|bmatrix|,
+  \verb|vmatrix|,
+  \verb|Vmatrix|: 行列.
+\item \verb|array|: 行列. (\verb|\hline|, \verb|\cline| 使用可.)
+\item \verb|cases|: 場合わけ.
+\item \verb|$$...$$|, \verb|\[...\]| : 数式. \dep
+\end{itemize}
+  
+\subsubsection{使える命令}
+
+\begin{itemize}
+\item \verb|\tag|, \verb|\notag|
+\item \verb|\nonumber| \dep
+\item \verb|\underbrace|, \verb|\overbrace|
+\item \verb|\substack|
+\item \verb|\left|, \verb|\right|, \verb|\middle|
+\item \verb|\displaystyle|, \verb|\big| 等大きさ指定 : 無視
+\item \verb|\mathbb|, \verb|\mathbf|, \verb|\mathcal|, \verb|\mathfrak|, \verb|\mathrm| : \verb|\mathbb| は \verb|\mathbf| と同じ.
+\item \verb|\bb|, \verb|\bf|, \verb|\frak|, \verb|\cal|, \verb|\rm| : 上と同じ. \dep
+\item \verb|\text|
+\item \verb|\frac|, \verb|\tfrac|, \verb|\dfrac|
+\item \verb|\sqrt|
+\item 各種数学記号.
+
+\end{itemize}
+
+\subsection{jmbraille の命令}
+jmbraille スタイルは墨字用と点字用に箱環境を提供している. 
+
+\begin{rectbox}{rectbox 環境}
+\begin{verbatim}
+\begin{rectbox}{タイトル}
+...
+\end{rectbox}
+\end{verbatim}
+\end{rectbox}
+\begin{ovalbox}{ovalbox 環境}
+\begin{verbatim}
+\begin{ovalbox}{タイトル}
+...
+\end{ovalbox}  
+\end{verbatim}
+\end{ovalbox}
+
+以下の命令は, 墨字用では適切に処理 (大部分は無視) される.
+
+\begin{itemize}
+
+\item \verb|\BrailleSetFigureScale{.}| : 図の拡大率. そのままの大きさでは, \BrailleReading<しょくどく>{触読}には小さすぎる場合が多い. default は $3$.
+\item \verb|\BrailleFigureLandscapeOn| : 拡大すると, そのままでは A4 に入らない場合がある. 90 度回転させて横向きにして印刷したい場合 On にする. それ以降の図はすべて横向きになる.
+\item \verb|\BrailleFigureLandscapeOff| : 上を Off にする.
+\item \verb|\BrailleFigureSpreadOn| : A4 横向きでも入らない場合がある. その場合は見開きで印刷する. 
+\item \verb|\BrailleFigureSpreadOff| : 上を Off にする.
+\item \verb|\BrailleFigureAutoSettingOn| : なるべく拡大率を変更せずに, 紙面をはみ出内容自動的に倍率の変更や回転などを自動で行う.
+\item \verb|\BrailleFigureAutoSettingOff| : 上を Off にする. ただし, はみ出ている場合はおすすめの設定をログに出力.  
+\item \verb|\BrailleSetFillColor{.}{.}{.}{.}| : tikzpicture 環境において, 色で塗りつぶすとき, プロッタプリンタで印刷する際, その代わりになるドットパターンを指定. 例 \verb|\BrailleSetFillColor{red}{3}{3}{{20}{02}}| 赤色は 3 ドットおきに, \verb|{20}{02}| というパターンで塗ることにする. (パターンの数値はドットの大きさで $0$ (点なし), $1$ 小点, $2$ 中点, $3$ 大点を意味する.) 
+\item \verb|\BrailleFigurePlotOn| : 図や表を立体印刷ではなく, プロッタプリンタで印刷 (図 : edel 形式, 表 : 文章中) する. 
+\item \verb|\BrailleFigurePlotOff| : 上を Off にする.
+\item \verb|\BrailleSetFigurePindisplayStep{.}| : 図をピンディスプレイ表示する場合, 1行あたり何ドット進か. default は $1$.
+\item \verb|\BrailleTabularRuleOn| : 表をプロッタプリンタで印刷する際, 罫線を描く.
+\item \verb|\BrailleTabularRuleOff| : 上を Off にする.
+\item \verb|\BrailleEnglishOn| : この命令後は英語文脈として liblouis を用いて点訳する.
+\item \verb|\BrailleEnglishOff| : 上を Off にする.
+\item \verb|\BrailleNewpage| : 点字用の改ページ. 墨字用では無視される.
+\item \verb|\BraillePar| : 点字用の新しい段落. 墨字用では無視される.
+\item \verb|\BrailleReading[.]<.>{.}| : 読みの指定. 次節で説明.
+\item \verb|\BrailleSetReading[.]<.>{.}| : 読みの指定. 次節で説明.
+\item \verb|\BrailleAltColonOn| : LaTeX では 「\verb|\colon|」, 「\verb|:|」 はそれぞれ「写像」, 「比」を表すことになっている (微妙に空白が異なる). 点字でも同じように区別があり, ちょうど1対1になっているのだが, 墨字では区別して使っている人は少ない. (\verb|\colon| を使っている人は少ない.)
+  この命令によって \verb|:| で写像を表し, \verb|\colon| で比を表すことにする (入れ換え).
+\item \verb|\BrailleAltColonOff| : 上を Off にする (正規の書き方にする).
+\item \verb|\BrailleAlternative{A}{B}| : 墨字用では A を実行し, 点字用では B を実行する. どうしても共通化できない部分で使用.
+\item \verb|\BrailleSetAlphabet{.}| : 点字では単なるアルファベットと英単語 (英文) の区別がある. default ではアルファベットの列は英単語と認識するので, 単なるアルファベット扱いものは, これで登録する. 最初から登録されているのでは「アルファベット1文字」「i〜xii」「I〜XII」(ローマ数字)「URL」など.
+\item \verb|\BrailleSetAlphabetUnit{.}| : km などの単位.
+\item \verb|\BrailleSetMathBraille{.}{.}| : 数学記号の点訳を変更する.
+\item \verb|\BrailleSetJapaneseBraille{.}{.}| : 日本語の点訳を変更する.
+\item \verb|\BrailleSetEnglishBraille{.}{.}| : 英語の点訳を変更する.
+\item \verb|\BrailleSetMathCharacter{.}{.}{.}| : 数学記号の点訳を設定する.
+\item \verb|\BrailleSetMathFont{.}{.}{.}{.}{.}| : 数学フォントの点訳を設定する.
+\item \verb|\BrailleSetTextFont{.}{.}{.}{.}| : 文章フォントの点訳を設定する.
+\item \verb|\BrailleTerminology{.}| : math or phys. phys とすると読みが物理用語になる.
+\item \verb|\BrailleSetJpContext{.}| : 指定された記号を日本語とする.
+\item \verb|\BrailleSetEnContext{.}| : 指定された記号を英語とする.
+\end{itemize}
+
+
+あまり重要でないもの. または, 変更すべきでないもの. 詳細省略.
+\begin{itemize}
+\item \verb|\BrailleSetFigureArrowScale{.}| : 図を edel で出力する際の矢印の拡大率. デフォルトは 3.
+\item \verb|\BrailleSetFigureDensity{.}| : 図を edel で出力する際の点の密度. sparse, loose, natural, dense, continuous.
+\item \verb|\BrailleSetFigureLinewidthScale{.}| : 図を立体印刷する際の線太さの拡大率. デフォルトは 2.
+\item \verb|\BrailleSetFigurePindisplayScale{.}| : ピンディスプレイでの図の拡大率. デフォルトは 1. 整数倍のみ.
+\item \verb|\BrailleSetFont{.}| : 点字のフォント.
+HorizontalLine, Plain, ShortLine, SmallBlackDot, SmallWhiteDot, WhiteDot
+のどれか. 単に見た目.
+\item \verb|\BrailleSetFontSize{.}| : 点字のフォントサイズ.
+\item \verb|\BrailleSetFigureFontSize{.}| : 図に入る点字のフォントサイズ.
+\item \verb|\BrailleSetMeaningFontSize{.}| : 読み方のフォントサイズ.
+\item \verb|\BrailleSetMeaningColor{.}| : 読み方の文字の色.
+\item \verb|\BrailleSetOriginalColor{.}| : 入力の文字の色.
+\item \verb|\BrailleSetAmbiguityColor{.}| : 読みが曖昧な言葉の色.
+\item \verb|\BrailleSetWarningColor{.}| : 注意の色.
+\item \verb|\BrailleSetEnglish{.}| : 英語文脈と判定すべきもの.
+\item \verb|\BrailleSetOutputDevice{.}| : hires モードの時のプリンタのデバイス. Windows なら \verb|ComX|. Mac なら \verb|/dev/cu.usbXXXX| 等.
+\item \verb|\BrailleSetOutputBaudrate{.}| : プリンタのボーレイト. デフォルトは9600.
+\item \verb|\BrailleSetOutputLanguage{.}| : Python3 または Powershell.
+
+\item \verb|\BrailleFigureSpecial{.}| : 図に対する特殊処理コード.
+\item \verb|\BrailleVerbatimSpecial{.}| : verbatim 環境に対する特殊処理コード.
+\end{itemize}
+
+\section{出力ファイル}
+
+\begin{itemize}
+\item \verb|nab| : 点字を扱うファイルの一つ. テキストファイルで, 点字プリンタで印刷するか, または点字ディスプレイで直接表示できる.
+\item \verb|gnb| : 拡張点字ファイル. バイナリファイル. 印刷の時に使うが, 点字ディスプレイでは見られない.
+行列の大きな括弧の行間の点を表している.
+\item \verb|txt| : UTF-8 の 8点点字テキスト. ピンディスプレイで読むことができる. %\verb|.zip| (Mac) または \verb|.cab| (Windows) の方をメールで送る.
+%\item \verb|jlg| : mecab で文章がどのように分かち書きされたかのログ. 主に bugfix 用.
+\item \verb|edl| : edel ファイル.
+%\item \verb|cor| : corpus.
+\item \verb|brd| : キャッシュ.
+\item \verb|mcb|, \verb|mrt| : Windows 版では mecab との連携をファイルを介して行なっている. その受け渡し用のファイル. (Windows の echo が機能不足であることに起因している.)
+\item \verb|py|, \verb|ps1| : hires オプションのときの出力ファイル. 
+\end{itemize}
+
+
+
+\section{さらに余裕があれば}
+
+\subsection{点字について}
+
+点字では漢字は全てひらがなに直し, 適当に分割される. これを「分かち書き」という.
+この分割は文法による文節は異なり, 点字独特のものである.
+
+ひらがなに直す際に助詞「は」「へ」はそれぞれ「わ」「え」になる.
+また長音の「う」「お」は一律「ー」(伸ばす音)になる.
+長音でないものや, 例外の場合はそのまま「う」「お」を使う.
+
+\eg 「おとーさん」「おかあさん」「ぐーすー(偶数)」「おおかみ」「いう(言う)」「こうり(小売)」「こーり(公理)」「こおり(氷)」
+
+分かち書きはすでに辞書に登録されているので通常気にしなくて良い.
+
+ただし,
+誤訳したり, 辞書に登録されていない言葉があってエラーになったりする場合がある.\footnote{だからと言ってひらがなで書くともっとエラーになる. 極力漢字で書いた方が良い.}
+また
+漢字をひらがなに直すのは文法だけではなく, 文脈に依存する場合があり, 正確に直すことができない場合がある.
+例えば「元」(もと, げん) はどちらか判定できない場合がある.\footnote{他にも「根」(ね, こん)
+「底」(そこ, てい)
+などある.}
+こういうものは数学で使う言葉を優先させている.
+
+例えば
+「元」を「もと」と読ませる場合, 
+以下の2通りの方法がある.
+
+\begin{enumerate}
+\item 「元」と書いていたところを「\verb|\BrailleReading<もと>{元}|」と
+  する. (墨字用の場合は無視される.)
+\item
+  preamble で
+\verb|\BrailleSetReading<もと>{元}| と書いておき,
+「元」と書いていたところを「\verb|\BrailleReading{元}|」とする.
+「\verb|\newcommand{/?}{\BrailleReading}|」としておけば
+「\verb|\?{元}|」と略記できる.
+\end{enumerate}
+
+
+\subsection{数式について}
+
+\begin{itemize}
+\item  $a\leq b, c\leq d$ は
+  「$a\leq b$」と「$c\leq d$」なのか
+  「$a\leq b,c$」と「$b,c\leq d$」なのか墨字でも区別がつかない.
+  「コンマ」 が元を列挙している場合と,
+  二つの独立した式を表している場合を区別するには
+  \begin{enumerate}
+  \item (列挙) \verb|$a,b$|
+  \item (独立) \verb|$a$, $b$| または \verb|$a,\,b$| (\verb|\,| の代わりに \verb|\>|, \verb|\:|, \verb|\;|, \verb|\ |, \verb|~|, \verb|\quad|, \verb|\qquad| などの空白.)
+  \end{enumerate}
+\end{itemize}
+
+\end{document}
+
+
+%%% Local Variables:
+%%% time-stamp-pattern: "8/\\\\@date{%Y/%02m/%02d}"
+%%% mode: japanese-latex
+%%% TeX-command-extra-options: "-shell-escape"
+%%% TeX-master: t
+%%% End:

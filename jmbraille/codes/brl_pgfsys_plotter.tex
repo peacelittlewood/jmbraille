@@ -1,0 +1,626 @@
+% Time-stamp: <2024-10-10 15:00:14 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+\def\brl@pgf@oneletter{31}% total height
+\def\brl@pgf@dbcht{14}% dbc height
+%% 14 is the same as the highest point of a letter
+%% \@namedef{brl@bc_plot@x0}{0}
+%% \@namedef{brl@bc_plot@y0}{14}
+
+\def\brl@pgf@leastdist{\csname brl@pgf@linestep\brl@pgf@pointsize\endcsname\relax}
+
+
+
+%%
+%%
+
+
+%
+% output:
+% \brl@pgf@ptx, \brl@pgf@pty
+% \box : sumiji letters for check
+\protected\def\brl@pgf_hbox#1#2#3{%
+  \brl@pgf@ptx#1\relax%
+  \brl@pgf@pty#2\relax%
+  %
+  \setbox\pgf@hbox\hbox{\raise\brl@pgf@pty bp\hbox{\brl@orig@hskip\brl@pgf@ptx bp #3}}%
+  %
+  \wd\pgf@hbox\z@%
+  \ht\pgf@hbox\z@%
+  \dp\pgf@hbox\z@%
+  %
+  \box\pgf@hbox%
+}
+
+\def\brl@pgf_drawpoint_init{%
+  \brl@pgf_orient%
+  \ifnum\brl@pgf@pointsize=\z@% if 0, then nbd is not removed.
+  \else%
+  % the radius of the removal
+    \edef\brl@pgf_drawpoint@maxy{\the\numexpr\brl@pgf@pointsize+\brl@pgf@radius\relax}%
+    \brl@pgf@dy-\brl@pgf_drawpoint@maxy\relax%
+    \expandafter\brl@pgf_drawpoint_remove_nbd% remove all the neighboring points
+  \fi%
+}
+
+
+\def\brl@pgf_drawpoint_remove_nbd{%
+  \edef\brl@pgf_drawpoint@curry{_\the\numexpr\brl@pgf@dy+\brl@pgf@transy\relax}%
+  \ifcsname brl@pgf@minxaty\brl@pgf_drawpoint@curry\endcsname%
+    \csname brl@pgf_drawpoint@x_\brl@pgf_drawpoint@maxy _\the\brl@pgf@dy\endcsname%
+  \fi%
+  \ifnum\brl@pgf_drawpoint@maxy>\brl@pgf@dy%
+    \advance\brl@pgf@dy\@ne%
+    \expandafter\brl@pgf_drawpoint_remove_nbd%
+  \fi%
+}
+
+\def\brl@pgf_orient_portrait{%
+  \edef\brl@pgf@transx{\the\brl@pgf@currx}%
+  \edef\brl@pgf@transy{\the\brl@pgf@curry}%
+}
+
+\def\brl@pgf_orient_landscape{%
+  \edef\brl@pgf@transx{\the\numexpr-\brl@pgf@curry\relax}%
+  \edef\brl@pgf@transy{\the\brl@pgf@currx}%
+}
+
+
+% input: \pgf@x, \pgf@y, \brl@pgf@prevx, \brl@pgf@prevy
+%
+% determine whether the point is set or not.
+%
+%%
+%% shape of the neighbor
+%%
+%
+% #1 : maxy
+% #2 : y
+% #3 : width
+
+\def\brl@tmp{{%
+    \global\expandafter\let\csname brl@pgf@size_\the\brl@pgf@dx\brl@pgf_drawpoint@curry\endcsname\@undefined%
+  }}%
+
+\def\brl@pgf_drawpointdef#1#2#3{%
+  \def\brl@pgf_drawpointdef@width{#3}%
+  \count@-#3\relax%
+  \brl@def@toks{}%
+  \brl@pgf_drawpointdef_loop%
+  \expandafter\edef\csname brl@pgf_drawpoint@x_#1_#2\endcsname{\unexpanded{\brl@pgf@dx\numexpr\brl@pgf@transx-#3\relax}\the\brl@def@toks}%
+}
+
+\def\brl@pgf_drawpointdef_loop{%
+  \expandafter\brl@def_appendtoks\brl@tmp%
+  % 
+  \ifnum\brl@pgf_drawpointdef@width>\count@%
+    \brl@def_appendtoks{\advance\brl@pgf@dx\@ne}%
+    \advance\count@\@ne%
+    \expandafter\brl@pgf_drawpointdef_loop%
+  \fi%
+}
+
+
+% >38
+%　　　　　■■ 72 61 52 45 40 37 36
+%　　　■■■■ 61 50 41 34 29 26 25
+%　　■■■■■ 52 41 32 25 20 17 16
+%　■■■■■■ 45 34 25 18 13 10  9
+%　■■■■■■ 40 29 20 13  8  5  4
+%■■■■■■■ 37 26 17 10  5  2  1
+%■■■■■■■ 36 25 16  9  4  1  0
+
+
+\brl@pgf_drawpointdef{6}{6}{1}
+\brl@pgf_drawpointdef{6}{5}{3}
+\brl@pgf_drawpointdef{6}{4}{4}
+\brl@pgf_drawpointdef{6}{3}{5}
+\brl@pgf_drawpointdef{6}{2}{5}
+\brl@pgf_drawpointdef{6}{1}{6}
+\brl@pgf_drawpointdef{6}{0}{6}
+\brl@pgf_drawpointdef{6}{-1}{6}
+\brl@pgf_drawpointdef{6}{-2}{5}
+\brl@pgf_drawpointdef{6}{-3}{5}
+\brl@pgf_drawpointdef{6}{-4}{4}
+\brl@pgf_drawpointdef{6}{-5}{3}
+\brl@pgf_drawpointdef{6}{-6}{1}
+
+% >26
+%　　　　■■ 50 41 34 29 26 25
+%　　■■■■ 41 32 25 20 17 16
+%　■■■■■ 34 25 18 13 10  9
+%　■■■■■ 29 20 13  8  5  4
+%■■■■■■ 26 17 10  5  2  1
+%■■■■■■ 25 16  9  4  1  0
+
+\brl@pgf_drawpointdef{5}{5}{1}
+\brl@pgf_drawpointdef{5}{4}{3}
+\brl@pgf_drawpointdef{5}{3}{4}
+\brl@pgf_drawpointdef{5}{2}{4}
+\brl@pgf_drawpointdef{5}{1}{5}
+\brl@pgf_drawpointdef{5}{0}{5}
+\brl@pgf_drawpointdef{5}{-1}{5}
+\brl@pgf_drawpointdef{5}{-2}{4}
+\brl@pgf_drawpointdef{5}{-3}{4}
+\brl@pgf_drawpointdef{5}{-4}{3}
+\brl@pgf_drawpointdef{5}{-5}{1}
+
+% >18
+%　　　■■ 32 25 20 17 16
+%　■■■■ 25 18 13 10  9
+%　■■■■ 20 13  8  5  4
+%■■■■■ 17 10  5  2  1
+%■■■■■ 16  9  4  1  0
+
+\brl@pgf_drawpointdef{4}{4}{1}
+\brl@pgf_drawpointdef{4}{3}{3}
+\brl@pgf_drawpointdef{4}{2}{3}
+\brl@pgf_drawpointdef{4}{1}{4}
+\brl@pgf_drawpointdef{4}{0}{4}
+\brl@pgf_drawpointdef{4}{-1}{4}
+\brl@pgf_drawpointdef{4}{-2}{3}
+\brl@pgf_drawpointdef{4}{-3}{3}
+\brl@pgf_drawpointdef{4}{-4}{1}
+
+% >10
+%　　■■ 18 13 10  9
+%　■■■ 13  8  5  4
+%■■■■ 10  5  2  1
+%■■■■  9  4  1  0
+
+\brl@pgf_drawpointdef{3}{3}{1}
+\brl@pgf_drawpointdef{3}{2}{2}
+\brl@pgf_drawpointdef{3}{1}{3}
+\brl@pgf_drawpointdef{3}{0}{3}
+\brl@pgf_drawpointdef{3}{-1}{3}
+\brl@pgf_drawpointdef{3}{-2}{2}
+\brl@pgf_drawpointdef{3}{-3}{1}
+
+% >5
+%　■■ 8  5  4
+%■■■ 5  2  1
+%■■■ 4  1  0
+
+\brl@pgf_drawpointdef{2}{2}{1}
+\brl@pgf_drawpointdef{2}{1}{2}
+\brl@pgf_drawpointdef{2}{0}{2}
+\brl@pgf_drawpointdef{2}{-1}{2}
+\brl@pgf_drawpointdef{2}{-2}{1}
+
+
+%%
+%% line shape
+%%
+%% height and depth = radius+size
+%%
+\def\brl@pgf@step_sparse{%
+  \def\brl@pgf@radius{2}%
+  \@namedef{brl@pgf@linestep1}{25}%
+  \@namedef{brl@pgf@linestep2}{36}%
+  \@namedef{brl@pgf@linestep3}{49}%
+  \@namedef{brl@pgf@linestep4}{25}%
+  \@namedef{brl@pgf@linestep5}{36}%
+  \@namedef{brl@pgf@linestep6}{49}%
+  \@namedef{brl@pgf@linestep7}{25}%
+  \@namedef{brl@pgf@linestep8}{36}%
+  \@namedef{brl@pgf@linestep9}{49}%
+  \def\brl@pgf_filldef@plotunit{7}%
+}
+
+\def\brl@pgf@step_loose{%
+  \def\brl@pgf@radius{2}%
+  \@namedef{brl@pgf@linestep1}{16}%
+  \@namedef{brl@pgf@linestep2}{25}%
+  \@namedef{brl@pgf@linestep3}{36}%
+  \@namedef{brl@pgf@linestep4}{16}%
+  \@namedef{brl@pgf@linestep5}{25}%
+  \@namedef{brl@pgf@linestep6}{36}%
+  \@namedef{brl@pgf@linestep7}{16}%
+  \@namedef{brl@pgf@linestep8}{25}%
+  \@namedef{brl@pgf@linestep9}{36}%
+  \def\brl@pgf_filldef@plotunit{6}%
+}
+
+\def\brl@pgf@step_natural{%
+  \def\brl@pgf@radius{2}%
+  \@namedef{brl@pgf@linestep1}{10}%
+  \@namedef{brl@pgf@linestep2}{18}%
+  \@namedef{brl@pgf@linestep3}{26}%
+  \@namedef{brl@pgf@linestep4}{10}%
+  \@namedef{brl@pgf@linestep5}{18}%
+  \@namedef{brl@pgf@linestep6}{26}%
+  \@namedef{brl@pgf@linestep7}{10}%
+  \@namedef{brl@pgf@linestep8}{18}%
+  \@namedef{brl@pgf@linestep9}{26}%
+  \def\brl@pgf_filldef@plotunit{6}%
+}
+% 「多めに探す」でいくつか
+\def\brl@pgf@step_dense{%
+  \def\brl@pgf@radius{1}%
+  \@namedef{brl@pgf@linestep1}{9}%
+  \@namedef{brl@pgf@linestep2}{16}%
+  \@namedef{brl@pgf@linestep3}{25}%
+  \@namedef{brl@pgf@linestep4}{9}%
+  \@namedef{brl@pgf@linestep5}{16}%
+  \@namedef{brl@pgf@linestep6}{25}%
+  \@namedef{brl@pgf@linestep7}{9}%
+  \@namedef{brl@pgf@linestep8}{16}%
+  \@namedef{brl@pgf@linestep9}{25}%
+  \def\brl@pgf_filldef@plotunit{5}%
+}
+% 「標準レベル」で 0, 「多めに探す」で 全部 (ぎりぎり)
+\def\brl@pgf@step_continuous{%
+  \def\brl@pgf@radius{1}%
+  \@namedef{brl@pgf@linestep1}{5}% 
+  \@namedef{brl@pgf@linestep2}{10}%
+  \@namedef{brl@pgf@linestep3}{18}%
+  \@namedef{brl@pgf@linestep4}{5}% 
+  \@namedef{brl@pgf@linestep5}{10}%
+  \@namedef{brl@pgf@linestep6}{18}%
+  \@namedef{brl@pgf@linestep7}{5}% 
+  \@namedef{brl@pgf@linestep8}{10}%
+  \@namedef{brl@pgf@linestep9}{18}%
+  \def\brl@pgf_filldef@plotunit{5}%
+}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% grayscale
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\brl@pgf_filldef_save{50}{1}{1}{%
+  {3333}%
+  {3333}%
+  {3333}%
+  {3333}%
+}
+\brl@pgf_filldef_save{49}{1}{1}{%
+  {1333}%
+  {3333}%
+  {3333}%
+  {3333}%
+}
+\brl@pgf_filldef_save{48}{1}{1}{%
+  {1333}%
+  {3333}%
+  {3313}%
+  {3333}%
+}
+\brl@pgf_filldef_save{47}{1}{1}{%
+  {1313}%
+  {3333}%
+  {3313}%
+  {3333}%
+}
+\brl@pgf_filldef_save{46}{1}{1}{%
+  {1313}%
+  {3333}%
+  {1313}%
+  {3333}%
+}
+\brl@pgf_filldef_save{45}{1}{1}{%
+  {1313}%
+  {3133}%
+  {1313}%
+  {3333}%
+}
+\brl@pgf_filldef_save{44}{1}{1}{%
+  {1313}%
+  {3133}%
+  {1313}%
+  {3331}%
+}
+\brl@pgf_filldef_save{43}{1}{1}{%
+  {1313}%
+  {3131}%
+  {1313}%
+  {3331}%
+}
+\brl@pgf_filldef_save{42}{1}{1}{%
+  {1313}%
+  {3131}%
+  {1313}%
+  {3131}%
+}
+\brl@pgf_filldef_save{41}{1}{1}{%
+  {1113}%
+  {3131}%
+  {1313}%
+  {3131}%
+}
+\brl@pgf_filldef_save{40}{1}{1}{%
+  {1113}%
+  {3131}%
+  {1311}%
+  {3131}%
+}
+\brl@pgf_filldef_save{39}{1}{1}{%
+  {1111}%
+  {3131}%
+  {1311}%
+  {3131}%
+}
+\brl@pgf_filldef_save{38}{1}{1}{%
+  {1111}%
+  {3131}%
+  {1111}%
+  {3131}%
+}
+\brl@pgf_filldef_save{37}{1}{1}{%
+  {1111}%
+  {1131}%
+  {1111}%
+  {3131}%
+}
+\brl@pgf_filldef_save{36}{1}{1}{%
+  {1111}%
+  {1131}%
+  {1111}%
+  {3111}%
+}
+\brl@pgf_filldef_save{35}{1}{1}{%
+  {1111}%
+  {1111}%
+  {1111}%
+  {3111}%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\brl@pgf_filldef_save{34}{1}{1}{%
+  {2222}%
+  {2222}%
+  {2222}%
+  {2222}%
+}
+\brl@pgf_filldef_save{33}{1}{1}{%
+  {0222}%
+  {2222}%
+  {2222}%
+  {2222}%
+}
+\brl@pgf_filldef_save{32}{1}{1}{%
+  {0222}%
+  {2222}%
+  {2202}%
+  {2222}%
+}
+\brl@pgf_filldef_save{31}{1}{1}{%
+  {0202}%
+  {2222}%
+  {2202}%
+  {2222}%
+}
+\brl@pgf_filldef_save{30}{1}{1}{%
+  {0202}%
+  {2222}%
+  {0202}%
+  {2222}%
+}
+\brl@pgf_filldef_save{29}{1}{1}{%
+  {0202}%
+  {2022}%
+  {0202}%
+  {2222}%
+}
+\brl@pgf_filldef_save{28}{1}{1}{%
+  {0202}%
+  {2022}%
+  {0202}%
+  {2220}%
+}
+\brl@pgf_filldef_save{27}{1}{1}{%
+  {0202}%
+  {2020}%
+  {0202}%
+  {2220}%
+}
+\brl@pgf_filldef_save{26}{1}{1}{%
+  {0202}%
+  {2020}%
+  {0202}%
+  {2020}%
+}
+\brl@pgf_filldef_save{25}{1}{1}{%
+  {0002}%
+  {2020}%
+  {0202}%
+  {2020}%
+}
+\brl@pgf_filldef_save{24}{1}{1}{%
+  {0002}%
+  {2020}%
+  {0200}%
+  {2020}%
+}
+\brl@pgf_filldef_save{23}{1}{1}{%
+  {0000}%
+  {2020}%
+  {0200}%
+  {2020}%
+}
+\brl@pgf_filldef_save{22}{1}{1}{%
+  {0000}%
+  {2020}%
+  {0000}%
+  {2020}%
+}
+\brl@pgf_filldef_save{21}{1}{1}{%
+  {0000}%
+  {0020}%
+  {0000}%
+  {2020}%
+}
+\brl@pgf_filldef_save{20}{1}{1}{%
+  {0000}%
+  {0020}%
+  {0000}%
+  {2000}%
+}
+\brl@pgf_filldef_save{19}{1}{1}{%
+  {0000}%
+  {0000}%
+  {0000}%
+  {2000}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\brl@pgf_filldef_save{18}{1}{1}{%
+  {1111}%
+  {1111}%
+  {1111}%
+  {1111}%
+}
+\brl@pgf_filldef_save{17}{1}{1}{%
+  {0111}%
+  {1111}%
+  {1111}%
+  {1111}%
+}
+\brl@pgf_filldef_save{16}{1}{1}{%
+  {0111}%
+  {1111}%
+  {1101}%
+  {1111}%
+}
+\brl@pgf_filldef_save{15}{1}{1}{%
+  {0101}%
+  {1111}%
+  {1101}%
+  {1111}%
+}
+\brl@pgf_filldef_save{14}{1}{1}{%
+  {0101}%
+  {1111}%
+  {0101}%
+  {1111}%
+}
+\brl@pgf_filldef_save{13}{1}{1}{%
+  {0101}%
+  {1011}%
+  {0101}%
+  {1111}%
+}
+\brl@pgf_filldef_save{12}{1}{1}{%
+  {0101}%
+  {1011}%
+  {0101}%
+  {1110}%
+}
+\brl@pgf_filldef_save{11}{1}{1}{%
+  {0101}%
+  {1010}%
+  {0101}%
+  {1110}%
+}
+\brl@pgf_filldef_save{10}{1}{1}{%
+  {0101}%
+  {1010}%
+  {0101}%
+  {1010}%
+}
+\brl@pgf_filldef_save{9}{1}{1}{%
+  {0001}%
+  {1010}%
+  {0101}%
+  {1010}%
+}
+\brl@pgf_filldef_save{8}{1}{1}{%
+  {0001}%
+  {1010}%
+  {0100}%
+  {1010}%
+}
+\brl@pgf_filldef_save{7}{1}{1}{%
+  {0000}%
+  {1010}%
+  {0100}%
+  {1010}%
+}
+\brl@pgf_filldef_save{6}{1}{1}{%
+  {0000}%
+  {1010}%
+  {0000}%
+  {1010}%
+}
+\brl@pgf_filldef_save{5}{1}{1}{%
+  {0000}%
+  {0010}%
+  {0000}%
+  {1010}%
+}
+\brl@pgf_filldef_save{4}{1}{1}{%
+  {0000}%
+  {0010}%
+  {0000}%
+  {1000}%
+}
+\brl@pgf_filldef_save{3}{1}{1}{%
+  {0000}%
+  {0000}%
+  {0000}%
+  {1000}%
+}
+\brl@pgf_filldef_save{2}{1}{1}{%
+  {0000}%
+  {0000}%
+  {0000}%
+  {1000}%
+}
+\brl@pgf_filldef_save{1}{1}{1}{%
+  {0000}%
+  {0000}%
+  {0000}%
+  {1000}%
+}
+\brl@pgf_filldef_save{0}{10000}{10000}{%
+  {0}%
+}
+
+
+
+
+%
+% texdoc xcolor
+%
+% grayscale
+
+\def\brl@pgf_model_gray_#1\brl@end{%
+  \count@\numexpr50-\dimexpr#1pt*50\relax/\p@\relax%
+}
+
+% gray := 0.3 · red + 0.59 · green + 0.11 · blue
+
+\def\brl@pgf_model_rgb_#1,#2,#3\brl@end{%
+  \count@\numexpr50-\dimexpr#1pt*3+#2pt*59+#3pt*11\relax/\p@/2\relax%
+}
+
+% gray := 1 − min{1, 0.3 · cyan + 0.59 · magenta + 0.11 · yellow + black}
+
+\def\brl@pgf_model_cmyk_#1,#2,#3,#4\brl@end{%
+  \count@\numexpr\dimexpr#1pt*3+#2pt*59+#3pt*11+#4pt\relax/\p@/2\relax%
+  \ifnum50<\count@%
+    \count@50\relax%
+  \fi%
+}
+
+% gray := 1 − (0.3 · cyan + 0.59 · magenta + 0.11 · yellow)
+
+\def\brl@pgf_model_cmy_#1,#2,#3\brl@end{%
+  \count@\numexpr\dimexpr#1pt*3+#2pt*59+#3pt*11\relax/\p@/2\relax%
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

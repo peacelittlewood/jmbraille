@@ -1,0 +1,483 @@
+% このファイルは Mac, Windows で uplatex, xelatex, lualatex でコンパイルできる.
+% 全部自動判定している.
+%
+\ifdefined\directlua% luatex
+  \documentclass[lualatex,ja=standard,jafont=haranoaji]{bxjsarticle}
+  \def\pgfsysdriver{pgfsys-luatex.def}
+\else%
+  \ifdefined\kanjiskip% uplatex
+    \documentclass[dvipdfmx,uplatex,ja=standard,jafont=haranoaji]{bxjsarticle}
+    \def\pgfsysdriver{pgfsys-dvipdfmx.def}
+  \else% xelatex
+    \documentclass[xelatex,ja=standard,jafont=haranoaji,prefercjk]{bxjsarticle}
+    \def\pgfsysdriver{pgfsys-xetex.def}
+  \fi%
+\fi%
+
+%
+% jmbraille を最後に読み込む. 
+%
+\usepackage{amsmath,amscd,amssymb,amsthm}
+\usepackage{wrapfig}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.markings,intersections,positioning,matrix}
+
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{dsfont}
+
+% \usepackage{jmbraille}% 墨字用
+% \usepackage[braille]{jmbraille}% 点字用
+\usepackage[pindisplay,braille]{jmbraille}% ピンディスプレイでのみ使用する場合
+% \usepackage[overfull]{jmbraille}% 点字 → 墨字 (ページをはみ出している行を .ovfl ファイルに出力)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% 以下通常は不要
+%
+
+% advanced setting の例 :
+% \usepackage[braille,uebg2,cache]{jmbraille}
+% \usepackage[braille,uebg2,nospread]{jmbraille}
+% \usepackage[braille,uebg2,corpus]{jmbraille}
+% \usepackage[braille,uebg2,hires]{jmbraille}\BrailleSetOutputDevice{COM1}
+
+% 点図の場合, その細かさを指定できる. default : natural
+% \BrailleSetFigureDensity{sparse}
+% \BrailleSetFigureDensity{loose}
+% \BrailleSetFigureDensity{natural}
+% \BrailleSetFigureDensity{dense}
+% \BrailleSetFigureDensity{continuous}
+
+% 専門用語の扱い
+% \BrailleTerminology{math}% 数学用 : default
+% \BrailleTerminology{phys}% 物理用
+
+% 点字を追加, または変更などが必要な場合 :
+% \BrailleSetJapaneseBraille{あ}{123456}% 日本語の点字を変更したい場合.
+%
+% \BrailleSetJapaneseBraille{・}{5}% 「・」（中点）を表示したい場合.
+
+
+% \BrailleSetEnglishBraille{(}{2356}% 英語の点字を変更したい場合.
+% \BrailleSetEnglishBraille{)}{2356}
+% \BrailleSetEnglishBraille{*}{123456}
+
+% \BrailleSetMathBraille{\sqrt}{123456-123456}% 数式の点字を変更したい場合.
+% \BrailleSetMathBraille{\sqrt[]}{123-123}
+
+% jmbraille で用意されていない数式中の記号を定義する場合 :
+% \BrailleSetMathCharacter{\gtrsim}{rel}{26-26-5-36}% \gtrsim という記号を rel class で定義する場合.
+% ord ： 通常の記号、文字
+% op ： 大型演算子
+% bin ： 二項演算子
+% rel ： 関係演算子
+% open ： 開き括弧類
+% close ： 閉じ括弧類
+% punct ： 句読点類
+\BrailleSetMathCharacter{\lesssim}{rel}{35-35-5-36}%
+
+% jmbraille で用意されていない文章中のフォントの点字を定義する場合 :
+% \BrailleSetTextFont{\sc}{\textsc}{2}{5}% {\sc...} という形式と \textsc{...} という形式のフォントを日本語文章中では第2指示符 (1〜3), 英語文章中では第5点訳者定義書体指示符 (1〜5) を割り当てる.
+% \BrailleSetTextFont{\mc}{\textmc}{3}{2}
+
+% 用意されていない数式中のフォントの点字を定義する場合 :
+\BrailleSetMathFont{\scr}{\mathscr}{4-3456-23-6}{4-3456-23}{4-3456-23}% {\scr...} という形式と \mathscr{...} という形式のフォントの大文字, 小文字, 数字に点字を割り当てる.
+\BrailleSetMathFont{}{\mathds}{4-3456-2-6}{4-3456-2}{4-3456-2}% \mathds{...} という形式のみしかない場合.
+
+
+
+% 長いので省略を定義
+\newcommand\?{\BrailleReading}
+
+% [...] : 一般,人名,地域,組織. 省略可
+% <...> : 読み方. (分かち書きを指定するだけなら省略可. 辞書に読み方がない場合はエラーとなるので必ず指定すること.)
+% 本文中でも指定可能
+\BrailleSetReading[人名]<たけのうち>{竹内}%
+\BrailleSetReading[人名]<たんぞー>{端三}% 点字では「お」「う」の長音は「ー」
+
+\usetikzlibrary{arrows.meta,decorations.markings,intersections,positioning,matrix}
+
+%
+% user setting
+%
+% \DeclareMathOperator{\newop}{newop}
+\newcommand{\Xvec}{{\bf X}}% 古い形式
+\newcommand{\Avec}{\mathbf{A}}%
+\newcommand{\Acal}{\mathcal{A}}
+
+\numberwithin{subsection}{section}
+\numberwithin{equation}{subsection}
+
+\begin{document}
+
+
+\section{日本語チェック}
+
+\subsection{解析概論の緒言 (高木貞治 著)}
+本書は，著者の意図においては，時代に順応した一般向きの解析学の予習書，あるいはむしろ解析学読本で，なるべく少量の一冊内において，解析学の基本事項を大観して，自由に各特殊部門に入るべき素養を与えることを目標とするものである．解析概論と言っても，内容は微分積分法の一般的解説であるが，ただ特に初等関数\footnote{フットノートのチェック.}の理論に重点を置いたことを\?<ひょーしゅつ>{標出}\footnote{辞書にない言葉.}するために，この題名を選んだのである．
+
+\subsection{楕円関数論（\?{竹内}\?{端三}著）}
+楕圓函數の誕生日は Jacobi によれば西曆 1751 年 12 月 23 日であるといふ．\?<このひ>{此日}\footnote{辞書にないので読みを指定.}
+Euler が Fagnano の提出した論文の審査を委囑されたのであるが，之が動機となつて
+彼の加法定理に關する硏究が始まつたのであるから如何にも楕圓函數の誕生日ともい
+へよう．しかし古くは今日の楕圓積分のことを楕圓函數と稱したので，積分の逆函數を
+考へるといふ思想は 1827 年 9 月 20 日の Abel の論文を以て嚆矢とする．これを新%ら
+しい楕圓函數の誕生日としても旣に今日までに百年を經て居る．いつまでも楕圓函數
+を敬遠して居るべきではあるまい，理論上にも實用上にも之を恰%か
+も三角函數の如く
+に自在に利用して然るべきである．
+
+
+
+\subsection{「元」の読み方チェック}%\BrailleTerminology{phys} なら全部「もと」
+% 正しく読めない場合もある。
+
+集合 $X$ の元 $a$ をとる。
+元の場所に戻す。
+この元を考えると, 元の問題はどうなるか。
+
+この道に沿って移動すると元の場所に戻る。
+あの元に適用する。
+要素である元に適用する。
+
+
+\subsection{表のチェック}
+
+% \BrailleFigurePlotOn% 表を点字でこの場所に表示する場合.
+
+\begin{tabular}{c|c|c|c}
+  \hline
+  日本語 & これです. & & 日本語 \\
+  \hline
+  \hline
+  日本語 & これです. & & $
+                         \begin{pmatrix}
+                           a & c\\b
+                         \end{pmatrix}$
+  \\
+  \hline
+\end{tabular}
+
+
+\subsection{箇条書き}
+\begin{enumerate}
+\item 日本語
+\begin{enumerate}
+\item 日本語
+\begin{enumerate}
+\item 日本語
+\begin{enumerate}
+\item 日本語
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\begin{itemize}
+\item 日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語
+\begin{itemize}
+\item 日本語
+\begin{itemize}
+\item 日本語
+\begin{itemize}
+\item 日本語
+\end{itemize}
+\end{itemize}
+\end{itemize}
+\end{itemize}
+
+
+\section{数字の読み方チェック}
+\subsection{助数詞}
+
+3匹, 百数十匹, 二百十数匹, 五千数匹, 五千数十匹, 五千数百匹。
+一億八千二百五万です。
+一億8205万です。
+100編,
+100遍,
+100辺.
+10000編,
+10000遍,\footnote{この時は「べん」}
+10000辺.
+
+$4$ km です. 12 kmです. 2kmです。 $23$ kl飲む。
+
+100 ki\footnote{単位ではない。}
+
+
+
+\section{ラベルチェック}
+\label{sec:labelcheck}
+\begin{subequations}
+\begin{gather}
+  a+b=c
+  \tag{c}
+  \label{eq:1}
+  \\
+  c+d=a
+  \tag{日本語}
+  \label{eq:2}
+  \\
+  c+d=a
+  \tag{\ref{eq:1}}
+  \label{eq:3}
+\end{gather}
+\end{subequations}
+
+\eqref{eq:1} と \eqref{eq:3} は同じ番号で
+\eqref{eq:2} は違う番号.
+
+このセクション番号は \ref{sec:labelcheck}です.
+
+
+
+\section{数式チェック}
+
+\subsection{ユーザー記号}
+$1\lesssim 2$% user defined.
+
+\subsection{複雑な式}
+\begin{equation}\label{eq:BigFloq}
+    \dot{\bm{q}}(t) = \tilde{\mathbb{U}}(t) \, \bm{q}(t)
+    \qquad \text{with} \qquad 
+    \bm{q}(t)
+    =
+    \left( {\begin{array}{c}
+    \Avec(t)\\
+    \dot{\Avec}(t)
+    \end{array} } \right)
+    \quad\textrm{and}\quad 
+    \tilde{\mathbb{U}}(t)
+    =
+    \left( {\begin{array}{c|c}
+    0 & \mathds{1}\\\hline\\[-6pt]
+    -\tilde{\mathbb{O}}^{-1}\tilde{\mathbb{Q}}& -\tilde{\mathbb{O}}^{-1}\tilde{\mathbb{P}} 
+    \end{array} } \right) 
+    \;.
+\end{equation}
+
+\begin{equation}
+  \label{eq:9}
+  \begin{cases}
+    a+b=c & \text{日本語}\\
+    a+b=c 
+  \end{cases}
+\end{equation}
+
+\begin{equation}
+  \label{eq:10}
+  \begin{cases*}
+    a+b=c & 日本語\\
+    a+b=c 
+  \end{cases*}
+\end{equation}
+
+\begin{equation}
+  \label{eq:7}
+  \left(
+\begin{array}{c|cc}
+  a & b & c\\
+  \multicolumn{2}{|c|}{a}
+\end{array}
+\right)
+\end{equation}
+
+\begin{equation}
+  \label{eq:6}
+  \left(
+    \begin{array}{c||c|c}
+      \hline
+      \hline
+      \ddots & \overbrace{aaaa}^2 &
+               \begin{pmatrix}
+                 a\\b\\c
+               \end{pmatrix}
+      \\
+      \hline
+      \hline
+      a & b& c\\
+      \hline
+      a & b& c\\
+      a & b& f\\
+      \hline
+      \hline
+  \end{array}
+  \right)
+\end{equation}
+
+\subsection{上付き, 下付き}
+
+$2_i$ $2_{\arctan}$ $2_j$ $2_k$
+
+$a^2a$ $a^22$
+
+$\overbrace{a\cdots zA\cdots Z}^{52}$
+
+$\underbrace{a\cdots zA\cdots Z}_{
+  \begin{pmatrix}
+    3 & b\\4
+  \end{pmatrix}
+}$
+
+$2\underbrace{a}_{ab}c$
+
+$2\underbrace{a\cdots2}_{ab}c$
+
+\subsection{ローマン}
+
+${\rm A\dot{A}A}a$% 大文字の列が図形などを表す場合は \mathrm.
+
+$A\dot{A}Aa$% 大文字の列が変数の積である場合.
+
+\subsection{転置など}
+$\begin{pmatrix}
+  a\\b
+\end{pmatrix}^t$ ${}^tA$ $A={}^tA$
+
+${}_a^bX_c^d={}_a^bY_c^d$
+
+\subsection{フォントチェック}
+
+$\bf \sqrt[a]{{\cal A}a}a \mathscr{A}$
+
+$\bf \sqrt{{\cal A}a}a$
+
+$\bf c\begin{pmatrix} {\cal A}a\\b \end{pmatrix}b$
+
+$\rm AAA\underbrace{A}_AA$
+
+
+$\bf 2\underbrace{a2}_{ab}c$
+
+
+\begin{equation}
+  \label{eq:13}
+  \bf
+  \frac{\cal A}{B}
+  C
+  \begin{pmatrix}
+   \cal A B & {\frak A} B \\  b \\
+  \end{pmatrix}
+  a
+\end{equation}
+
+\section{英語チェック}
+\BrailleEnglishOn% 以下英語文脈, grade 2 にしたい場合は uebg2 をオプションに追加する.
+
+%\subsection{symbols}% grade 2 の場合のみ使用可
+%\$\%\&\S\P\pounds\copyright\dag\ddag\#
+
+\subsection{fonts and captials}
+{\bf (ENGLISH SENTENCE CAN BE TREATED.}\footnote{foot note in english.}
+
+AA\textbf{A BBB CC}C DDD.
+
+
+\subsection{accents}
+
+ABC\^A AB\"C
+
+\AE\ae\OE\oe\ss
+
+ÆæŒœß\o\O
+
+\l\L øØł Łdef
+
+%日本語 Wahrscheinlichkeitsverteilung です。% japanese in english context. grade 2 の時のみ使用可
+
+you `ab's'% grade 2 の時, `` '' と ` ' のうち使用頻度の高いものが主引用符となる.
+
+``auto''
+
+``auto''
+
+``auto''
+
+\[a+b=c\]
+
+\begin{description}
+\item[Time] This is a pen. This is a pen. This is a pen. This is a pen. This is a pen.
+  \begin{description}
+  \item[Home] This is a pen. This is a pen. This is a pen. This is a pen. This is a pen.
+  \end{description}
+\end{description}
+
+This is a pen. This is a pen. This is a pen. This is a pen. This is a pen.
+
+\begin{itemize}
+\item This is a pen.
+\begin{itemize}
+\item This is a pen.
+\begin{itemize}
+\item This is a pen.
+\begin{itemize}
+\item This is a pen.
+\end{itemize}
+\end{itemize}
+\end{itemize}
+\end{itemize}
+
+
+\BrailleEnglishOff
+
+\appendix
+
+\section{tikz チェック}
+
+% \BrailleFigurePlotOn% 点図 (edel) にしたい場合
+% \BrailleFigureScale{2}% 拡大率を変えたい場合
+% \BrailleFigureAutoSettingOn% 拡大率を自動に設定する場合. (うまくいかない場合もあり得る.)
+
+
+\begin{tikzpicture}
+  \draw (1,0) node [draw,  rounded corners=6pt, inner sep=2pt, text width=20mm] {日本語1};
+  \draw (0,1) node [draw,  inner sep=2pt] {日本語2};
+  \draw (2,1) node [draw,  inner sep=2pt, text height=5mm] {日本語3};
+  \draw (0,-1) node [draw,  inner sep=2pt, text width=20mm] {日本語4};
+  \draw (2,-1) node [draw,  inner sep=2pt, text width=10mm] {日本語\\日本語\\日本語\\日本語};
+\end{tikzpicture}
+
+\begin{tikzpicture}[scale=2]
+  \matrix [matrix of math nodes,row sep=1cm]
+  { 
+    |(U)| U &[2mm]   &[8mm] \\
+    & |(XZY)| X \times_Z \bf Y  & |(X)| A   \\
+    & |(Y)|  
+    \begin{pmatrix}
+      a & b \\ c & d 
+    \end{pmatrix}
+    & |(Z)| Z \\
+  };
+
+  \begin{scope}[every node/.style={midway,auto,font=\scriptsize}]
+    \draw [double distance=1.5pt, dashed] (U) -- node {$x$} (X);
+    \draw (X) -- node {$p$} (X -| XZY.east)
+    (X) -- node {$f$} (Z)
+    -- node {$g$} (Y)
+    -- node {$q$} (XZY)
+    -- node {$y$} (U);
+  \end{scope}
+
+  \filldraw [red!20] (1,1) circle [radius=0.5];
+
+  \node at (0,-1.5) [circle,draw,text width=12mm] {日本語\\ $a+b=c$};
+\end{tikzpicture}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% TeX-command-extra-options: "-shell-escape -8bit"
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,73 @@
+% Time-stamp: <2026-08-24 14:14:13 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% use in both braille and nonbraille mode.
+%%
+\let\brl@orig@indent\indent
+\let\brl@orig@noindent\noindent
+\let\brl@orig@vskip\vskip
+\let\brl@orig@hskip\hskip
+\let\brl@orig@begin\begin
+\let\brl@orig@end\end
+\let\brl@orig@hfil\hfil
+\let\brl@orig@hfill\hfill
+
+\let\brl@orig@hrule\hrule
+\let\brl@orig@vrule\vrule
+
+\def\brl@@end{\brl@end}% main endmark
+\protected\def\brl@end{\brl@@error\brl@end}% \brl@end != \brl@@end because \brl@end is protected defined.
+
+
+%% only preamble
+%%
+
+\@onlypreamble\BrailleSetFont
+\@onlypreamble\BrailleSetFontSize
+\@onlypreamble\BrailleSetFigureFontSize
+\@onlypreamble\BrailleSetFigureDensity
+\@onlypreamble\BrailleSetMeaningFontSize
+\@onlypreamble\BrailleSetMeaningColor
+\@onlypreamble\BrailleSetOriginalColor
+\@onlypreamble\BrailleSetAmbiguityColor
+\@onlypreamble\BrailleSetWarningColor
+\@onlypreamble\BrailleSetTransparentColor
+\@onlypreamble\BrailleSetMecabProgram
+\@onlypreamble\BrailleSetMecabDirectory
+\@onlypreamble\BrailleSetMecabUserDictionary
+\@onlypreamble\BrailleSetAlphabet
+\@onlypreamble\BrailleSetAlphabetUnit
+\@onlypreamble\BrailleSetWord
+\@onlypreamble\BrailleSetReading
+\@onlypreamble\BrailleSetFillColor
+\@onlypreamble\BrailleSetOutputDevice
+\@onlypreamble\BrailleSetOutputBaudrate
+\@onlypreamble\BrailleSetOutputLanguage
+\@onlypreamble\BrailleSetTerminology
+\@onlypreamble\BrailleSetMathBraille
+\@onlypreamble\BrailleSetJapaneseBraille
+\@onlypreamble\BrailleSetEnglishBraille
+\@onlypreamble\BrailleSetMathCharacter
+\@onlypreamble\BrailleSetMathFont
+\@onlypreamble\BrailleSetTextFont
+\@onlypreamble\BrailleSetPredominantQuotationMarks
+
+
+
+\def\hirakana#1{%
+  \ifcase\csname c@#1\endcsname\relax%
+    \or あ\or い\or う\or え\or お\or か\or き\or く\or け\or こ\or%
+        さ\or し\or す\or せ\or そ\or た\or ち\or つ\or て\or と\or%
+        な\or に\or ぬ\or ね\or の\or は\or ひ\or ふ\or へ\or ほ\else\@ctrerr\fi}%かな
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

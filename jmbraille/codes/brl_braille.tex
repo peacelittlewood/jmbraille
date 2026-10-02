@@ -1,0 +1,60 @@
+% Time-stamp: <2024-09-11 22:02:40 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \brl@braille
+%
+
+%% 1 braille char width
+%%
+%% \brl@braille@width
+%% \brl@braille@height
+%% \brl@braille@depth
+%% \brl@braille@lineheight
+%% \brl@braille@charheight
+
+\newdimen\brl@braille@width%
+\newdimen\brl@braille@height%
+\newdimen\brl@braille@depth%
+\newdimen\brl@braille@fontsize%
+\newdimen\brl@braille@figurefontsize%
+
+\def\brl@braille_setfontdimen{%
+  %
+  %
+  \edef\brl@tmpA{brl@braille_font@A_\the\brl@braille@fontsize}%
+  \edef\brl@tmpP{brl@braille_font@P_\the\brl@braille@fontsize}%
+  \ifcsname\brl@tmpA\endcsname%
+  \else%
+    \global\expandafter\font\csname\brl@tmpA\endcsname=DixBrailleA at \brl@braille@fontsize%
+    \global\expandafter\font\csname\brl@tmpP\endcsname=DixBrailleP at \brl@braille@fontsize%
+  \fi%
+  \expandafter\let\expandafter\brl@braille@fontA\csname\brl@tmpA\endcsname%
+  \expandafter\let\expandafter\brl@braille@fontP\csname\brl@tmpP\endcsname%
+  % 
+  % 
+  \setbox\z@\hbox{%
+    %
+    \brl@braille@fontA\char63\relax%
+    %
+  }%
+  \brl@braille@width\wd\z@%
+  \brl@braille@height\ht\z@%
+  \brl@braille@depth\dp\z@%
+  \edef\brl@braille@lineheight{\the\dimexpr\brl@braille@height+\brl@char@meanfontsize\relax}% total height of a line.
+  \edef\brl@braille@charheight{\the\dimexpr\brl@braille@height+2\brl@char@meanfontsize\relax}% total height of a char.
+  \edef\brl@braille@chardepth{\the\dimexpr\brl@braille@depth+\brl@char@meanfontsize\relax}% lineheight+chardepth = charheight+depth = total height.
+  \edef\brl@braille@totalheight{\the\dimexpr\brl@braille@depth+\brl@braille@height+2\brl@char@meanfontsize\relax}% total height of a char.
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:

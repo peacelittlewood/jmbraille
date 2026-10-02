@@ -1,0 +1,457 @@
+% Time-stamp: <2026-09-12 22:02:41 komori>
+% Copyright (c) 2021 Yasushi Komori
+% All rights reserved.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% \brl@info
+%%
+
+
+\def\brl@info_appendtoks#1{\brl@info@toks\expandafter{\the\brl@info@toks#1}}
+\newtoks\brl@info@toks
+
+\def\brl@info_appendUtoks#1{\brl@info@Utoks\expandafter{\the\brl@info@Utoks#1}}
+\newtoks\brl@info@Utoks
+
+
+% In the context info, each special char including the space is already changed into cs.
+% This routine is also used in texttt and may contain spaces.
+
+% A : acc
+% E : env
+% I : init
+% J : Japanese (= 'not the others')
+% L : lowercase
+% N : number
+% Q : direct
+% R : symbol breakable before
+% S : symbol
+% T : symbol breakable after
+% U : uppercase
+% W : space
+% Z : \brl@end
+
+
+\protected\def\brl@info#1{%
+  %
+  \brl@info@toks{}%
+  % 
+  \def\brl@info@prevcase{I}%
+  \let\brl@info@accent\empty%
+  %
+  \brl@info_loop#1\brl@end%
+}
+
+\def\brl@info_get@currcase#1{%
+  \edef\brl@tmp{brl@info@case_\string#1}%
+  \edef\brl@info@currcase{\ifcsname\brl@tmp\endcsname\csname\brl@tmp\endcsname\else J\fi}%
+}
+
+\def\brl@info_loop#1{%
+  \brl@info_get@currcase{#1}%
+  %
+  \ifcsname brl@info@break_\brl@info@prevcase\brl@info@currcase\endcsname% breakable pair
+    \edef\brl@tmp{{\brl@char@breakable{i}{\brl@char@break_big}{0}}}%
+    \expandafter\brl@info_appendtoks\brl@tmp%
+  \fi%
+  \csname brl@info_sub\brl@info@currcase\endcsname{#1}%
+}
+
+
+%
+% breakable pair
+%
+\let\brl@info@break_LR\empty
+\let\brl@info@break_UR\empty
+\let\brl@info@break_NR\empty
+\let\brl@info@break_TL\empty
+\let\brl@info@break_TU\empty
+\let\brl@info@break_TN\empty
+\let\brl@info@break_TR\empty
+
+\let\brl@info@break_LJ\empty
+\let\brl@info@break_UJ\empty
+\let\brl@info@break_NJ\empty
+\let\brl@info@break_JL\empty
+\let\brl@info@break_JU\empty
+\let\brl@info@break_JN\empty
+
+\let\brl@info@break_LU\empty% UL is not breakable
+\let\brl@info@break_LN\empty
+\let\brl@info@break_NL\empty
+\let\brl@info@break_UN\empty
+\let\brl@info@break_NU\empty
+
+% 
+% #1: cmd
+% #2: â
+% #3: \^
+% #4: a
+%
+% or
+%
+% #1: cmd
+% #2: Æ
+% #3: \emptyaccent
+% #4: AE
+%
+
+\def\brl@info_subA#1#2#3#4{% accent
+  \def\brl@tmp{#3}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \def\brl@info@accent{\brl@code_info_englishaccent}% english accent or empty
+    %
+  \fi%
+  \let\brl@info@prevcase\brl@info@currcase%
+  \brl@info_loop#4%
+}
+
+
+\def\brl@info_subJ#1{% A etc.
+  \brl@info@Utoks{#1}
+  %
+  \brl@info_jpmode%
+  \brl@info_subJ_loop%
+}
+
+\def\brl@info_subJ_loop#1{% A etc.
+  %
+  \brl@info_get@currcase{#1}%
+  %
+  \if J\brl@info@currcase%
+    %
+    \brl@info_appendUtoks{#1}
+    \expandafter\brl@info_subJ_loop%
+  \else%
+    {% already \brl@documented
+      \expandafter\brl@text\expandafter{\the\brl@info@Utoks}%
+      \xdef\brl@tmp{{\brl@code_text_textquoteopen\the\brl@text@toks\brl@code_text_textquoteclose}}%
+    }%
+    %
+    \expandafter\brl@info_appendtoks\brl@tmp%
+    %
+    \brl@info_textmode%
+    \def\brl@info_next{\brl@info_loop#1}%
+    \expandafter\brl@info_next%
+  \fi%
+}
+
+
+\newif\ifbrl@info@Ufirst
+
+\def\brl@info_subU#1{% A etc.
+  \edef\brl@tmp{{\brl@info@accent\csname brl@code_info_#1\endcsname}}%
+  %
+  \let\brl@info@accent\empty%
+  \brl@info@Utoks\brl@tmp%
+  \brl@info@Ufirsttrue%
+  % 
+  \brl@info_subU_loop%
+}
+
+\def\brl@info_subU_loop#1{% A etc.
+  %
+  \brl@info_get@currcase{#1}%
+  %
+  \if U\brl@info@currcase%
+    %
+    %
+    \brl@info@Ufirstfalse%
+    \edef\brl@tmp{{\brl@info@accent\csname brl@code_info_#1\endcsname}}%
+    \let\brl@info@accent\empty%
+    \expandafter\brl@info_appendUtoks\brl@tmp%
+    \expandafter\brl@info_subU_loop%
+  \else%
+    \if A\brl@info@currcase%
+      \def\brl@info_next{\brl@info_subU_subA}%
+    \else%
+      \def\brl@info_next{\brl@info_subU_finish#1}%
+    \fi%
+    \expandafter\brl@info_next%
+  \fi%
+}
+
+
+\def\brl@info_subU_subA#1#2#3{% accent
+  \def\brl@tmp{#2}%
+  \ifx\brl@tmp\empty%
+  \else%
+    \def\brl@info@accent{\brl@code_info_englishaccent}% english accent or empty
+    %
+  \fi%
+  \brl@info_subU_loop#3%
+}
+
+
+\def\brl@info_subU_finish{%
+  %
+  %
+  \ifbrl@info@Ufirst%
+    \def\brl@info@Utop{\brl@code_info_capital}%
+    \let\brl@info@Ulast\empty%
+  \else%
+    \def\brl@info@Utop{\brl@code_info_doublecapital}%
+    \if L\brl@info@currcase%
+      \def\brl@info@Ulast{\brl@code_info_small}% append stopcapital or small
+    \else%
+      \let\brl@info@Ulast\empty%
+    \fi%
+  \fi%
+  %
+  \edef\brl@tmp{{\brl@info@Utop\the\brl@info@Utoks\brl@info@Ulast}}%
+  \expandafter\brl@info_appendtoks\brl@tmp%
+  \let\brl@info@prevcase\brl@info@currcase%
+  \brl@info_loop%
+}
+
+\def\brl@info_subL#1{% a etc.
+  \edef\brl@tmp{{\brl@info@accent\csname brl@code_info_#1\endcsname}}%
+  \let\brl@info@accent\empty%
+  %
+  \expandafter\brl@info_appendtoks\brl@tmp%
+  %
+  %
+  \let\brl@info@prevcase\brl@info@currcase%
+  \brl@info_loop%
+}
+
+\def\brl@info_subR#1{% ; etc.
+  \edef\brl@tmp{{\csname brl@code_info_\string#1\endcsname}}%
+  \expandafter\brl@info_appendtoks\brl@tmp%
+  \let\brl@info@prevcase\brl@info@currcase%
+  \brl@info_loop%
+}
+
+\def\brl@info_subS#1{% ; etc.
+  \edef\brl@tmp{{\csname brl@code_info_\string#1\endcsname}}%
+  \expandafter\brl@info_appendtoks\brl@tmp%
+  \let\brl@info@prevcase\brl@info@currcase%
+  \brl@info_loop%
+}
+
+\def\brl@info_subT#1{% ; etc.
+  \edef\brl@tmp{{\csname brl@code_info_\string#1\endcsname}}%
+  \expandafter\brl@info_appendtoks\brl@tmp%
+  \let\brl@info@prevcase\brl@info@currcase%
+  \brl@info_loop%
+}
+
+
+
+\def\brl@info_subN#1{% 1 etc.
+  \edef\brl@tmp{{\brl@code_info_numbersign\csname brl@code_info_#1\endcsname}}%
+  \expandafter\brl@info_appendtoks\brl@tmp%
+  %
+  \brl@info_numbermode%
+  \brl@info_subN_loop%
+}
+
+  
+\def\brl@info_subN_loop#1{% 1 etc.
+  %
+  \brl@info_get@currcase{#1}%
+  \if N\brl@info@currcase%
+    \edef\brl@tmp{{\csname brl@code_info_#1\endcsname}}%
+    \expandafter\brl@info_appendtoks\brl@tmp%
+    \expandafter\brl@info_subN_loop%
+  \else%
+    \brl@info_textmode%
+    \ifcsname brl@@letteraj_\string#1\endcsname%
+      \brl@info_appendtoks{\brl@code_info_small}%
+    \fi%
+    \def\brl@info_next{\brl@info_loop#1}%
+    \let\brl@info@prevcase\brl@info@currcase%
+    \expandafter\brl@info_next%
+  \fi%
+}
+
+%% special commands
+%%
+
+
+\def\brl@info_subQ#1#2{% cmd_direct
+  \brl@info_appendtoks{\brl@char@cmd_direct{#2}}%
+  \brl@info_loop%
+}
+
+
+\def\brl@info_subW#1{% glue etc.
+  \brl@info_subW_loop%
+}
+
+\def\brl@info_subW_loop#1{% skip consecutive W and omit the spaces at the end.
+  %
+  \brl@info_get@currcase{#1}%
+  % 
+  \if W\brl@info@currcase%
+    \expandafter\brl@info_subW_loop%
+  \else%
+    \if Z\brl@info@currcase%
+    \else%
+      \if I\brl@info@prevcase%
+      \else%
+        \edef\brl@tmp{{\brl@char@breakable{i}{\brl@char@break_big}{1}}}%
+        \expandafter\brl@info_appendtoks\brl@tmp%
+      \fi%
+    \fi%
+    \let\brl@info@prevcase\brl@info@currcase%
+    \def\brl@info_next{\brl@info_loop#1}%
+    \expandafter\brl@info_next%
+  \fi%
+}
+
+\def\brl@info_subZ#1{% \brl@end
+}
+
+
+\def\brl@info_alphdef#1#2{%
+  \@namedef{brl@info@case_\string#1}{#2}%
+}
+
+
+\brl@info_alphdef{\brl@text_cmd_letter}{A}%
+\brl@info_alphdef{\brl@char@cmd_direct}{Q}
+\brl@info_alphdef{\brl@end}{Z}
+
+\brl@info_alphdef{\brl@text_cmd_glue}{W}%
+\brl@info_alphdef{\brl@text_cmd_space}{W}
+\brl@info_alphdef{\!}{W}
+\brl@info_alphdef{\,}{W}
+\brl@info_alphdef{\>}{W}
+\brl@info_alphdef{\:}{W}
+\brl@info_alphdef{\;}{W}
+\brl@info_alphdef{\ }{W}
+\brl@info_alphdef{~}{W}
+\brl@info_alphdef{\quad}{W}
+\brl@info_alphdef{\qquad}{W}
+
+\brl@info_alphdef{\brl@info_cmd_altsp}{R}% only in verb*
+\brl@info_alphdef{!}{S}% 21
+\brl@info_alphdef{"}{S}% 22
+\brl@info_alphdef{\#}{S}% 23
+\brl@info_alphdef{\$}{S}% 24
+\brl@info_alphdef{\%}{S}% 25
+\brl@info_alphdef{\&}{S}% 26
+\brl@info_alphdef{'}{S}% 27
+\brl@info_alphdef{(}{R}% 28
+\brl@info_alphdef{)}{T}% 29
+\brl@info_alphdef{*}{S}% 2A
+\brl@info_alphdef{+}{R}% 2B
+\brl@info_alphdef{,}{S}% 2C
+\brl@info_alphdef{-}{R}% 2D
+\brl@info_alphdef{.}{T}% 2E
+\brl@info_alphdef{/}{R}% 2F
+\brl@info_alphdef{:}{T}% 3A
+\brl@info_alphdef{;}{T}% 3B
+\brl@info_alphdef{<}{R}% 3C
+\brl@info_alphdef{=}{R}% 3D
+\brl@info_alphdef{>}{R}% 3E
+\brl@info_alphdef{?}{S}% 3F
+\brl@info_alphdef{@}{S}% 40
+\brl@info_alphdef{[}{R}% 5B
+\brl@info_alphdef{\textbackslash}{S}% 5C
+\brl@info_alphdef{]}{T}% 5D
+\brl@info_alphdef{\textasciicircum}{S}% 5E
+\brl@info_alphdef{\_}{S}% 5F
+\brl@info_alphdef{`}{S}% 60
+\brl@info_alphdef{\{}{R}% 7B
+\brl@info_alphdef{|}{S}% 7C
+\brl@info_alphdef{\}}{T}% 7D
+\brl@info_alphdef{\textasciitilde}{S}% 7E
+%
+\brl@info_alphdef{\yen}{S}% 5C
+
+
+\brl@info_alphdef{A}{U}
+\brl@info_alphdef{B}{U}
+\brl@info_alphdef{C}{U}
+\brl@info_alphdef{D}{U}
+\brl@info_alphdef{E}{U}
+\brl@info_alphdef{F}{U}
+\brl@info_alphdef{G}{U}
+\brl@info_alphdef{H}{U}
+\brl@info_alphdef{I}{U}
+\brl@info_alphdef{J}{U}
+\brl@info_alphdef{K}{U}
+\brl@info_alphdef{L}{U}
+\brl@info_alphdef{M}{U}
+\brl@info_alphdef{N}{U}
+\brl@info_alphdef{O}{U}
+\brl@info_alphdef{P}{U}
+\brl@info_alphdef{Q}{U}
+\brl@info_alphdef{R}{U}
+\brl@info_alphdef{S}{U}
+\brl@info_alphdef{T}{U}
+\brl@info_alphdef{U}{U}
+\brl@info_alphdef{V}{U}
+\brl@info_alphdef{W}{U}
+\brl@info_alphdef{X}{U}
+\brl@info_alphdef{Y}{U}
+\brl@info_alphdef{Z}{U}
+
+\brl@info_alphdef{a}{L}
+\brl@info_alphdef{b}{L}
+\brl@info_alphdef{c}{L}
+\brl@info_alphdef{d}{L}
+\brl@info_alphdef{e}{L}
+\brl@info_alphdef{f}{L}
+\brl@info_alphdef{g}{L}
+\brl@info_alphdef{h}{L}
+\brl@info_alphdef{i}{L}
+\brl@info_alphdef{j}{L}
+\brl@info_alphdef{k}{L}
+\brl@info_alphdef{l}{L}
+\brl@info_alphdef{m}{L}
+\brl@info_alphdef{n}{L}
+\brl@info_alphdef{o}{L}
+\brl@info_alphdef{p}{L}
+\brl@info_alphdef{q}{L}
+\brl@info_alphdef{r}{L}
+\brl@info_alphdef{s}{L}
+\brl@info_alphdef{t}{L}
+\brl@info_alphdef{u}{L}
+\brl@info_alphdef{v}{L}
+\brl@info_alphdef{w}{L}
+\brl@info_alphdef{x}{L}
+\brl@info_alphdef{y}{L}
+\brl@info_alphdef{z}{L}
+
+\brl@info_alphdef{0}{N}
+\brl@info_alphdef{1}{N}
+\brl@info_alphdef{2}{N}
+\brl@info_alphdef{3}{N}
+\brl@info_alphdef{4}{N}
+\brl@info_alphdef{5}{N}
+\brl@info_alphdef{6}{N}
+\brl@info_alphdef{7}{N}
+\brl@info_alphdef{8}{N}
+\brl@info_alphdef{9}{N}
+
+\def\brl@info_numbermode{%
+  \brl@info_alphdef{.}{N}
+}
+\def\brl@info_textmode{%
+  \brl@info_alphdef{.}{T}
+}
+\def\brl@info_jpmode{%
+  \brl@info_alphdef{.}{J}
+}
+\def\brl@info_infomode{%
+  \brl@info_alphdef{\ }{W}%
+}
+\def\brl@info_verbmode{%
+  \brl@info_alphdef{\ }{R}%
+}
+
+
+\endinput
+
+
+%%% Local Variables:
+%%% mode: japanese-latex
+%%% backup-each-save-backup : t
+%%% TeX-master: t
+%%% End:
