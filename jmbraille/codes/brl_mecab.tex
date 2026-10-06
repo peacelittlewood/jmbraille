@@ -1,4 +1,4 @@
-% Time-stamp: <2026-09-28 21:07:08 komori>
+% Time-stamp: <2026-10-04 17:11:41 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -158,8 +158,11 @@
 \@namedef{brl@mecab@wakachi_451}{{40}{40}}%接頭詞,名詞接続,*,*,*,*,各,相
 
 % 非
-\@namedef{brl@mecab@wakachi_452}{{40}{-60}}%接頭詞,名詞接続,*,*,*,*,非
-\@namedef{brl@mecab@wakachi_453}{{40}{40}}%接頭詞,名詞接続,*,*,*,*,非
+\@namedef{brl@mecab@wakachi_452}{{40}{-60}}%接頭詞,名詞接続,*,*,*,*,非, 反
+% \@namedef{brl@mecab@wakachi_453}{{40}{40}}%接頭詞,名詞接続,*,*,*,*,非, 反
+
+\@namedef{brl@mecab@wakachi_459}{{40}{40}}%接頭詞 （合成無し）
+
 
 \@namedef{brl@mecab@wakachi_460}{{40}{-60}}%名詞,一般,*,* （名詞接続）
 
@@ -2803,6 +2806,10 @@
 % .X -> .X
 %
 % .,*,*,*,記号,句点,*,*,*,*,.,.,*,*
+\@namedef{brl@mecab_item_periodone@1026}{}% ID \␣
+\@namedef{brl@mecab_item_periodone@1027}{}% ID ~
+\@namedef{brl@mecab_item_periodzero@\brl@mecab@idnum_arabic}{}%
+
 \@namedef{brl@mecab_item_908}{% ID
   \edef\brl@tmp{\csname brl@mecab@ints_\the\numexpr\brl@mecab@linenum+\@ne\relax\endcsname}% next space
   \ifx\brl@tmp\empty% no space
@@ -2827,24 +2834,57 @@
 }
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \@namedef{brl@mecab@wakachi_51}{{-110}{40}}%名詞,接尾,一般,*
+% \@namedef{brl@mecab@wakachi_52}{{-110}{40}}%名詞,接尾,形容動詞語幹,*
+% \@namedef{brl@mecab@wakachi_53}{{-110}{40}}%名詞,接尾,助数詞,*
+% \@namedef{brl@mecab@wakachi_54}{{-110}{40}}%名詞,接尾,助動詞語幹,*
 
-\@namedef{brl@mecab_item_452@51}{}% ID
-\@namedef{brl@mecab_item_452@52}{}% ID
-\@namedef{brl@mecab_item_452@54}{}% ID
-\@namedef{brl@mecab_item_452}{% ID  非
-  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@nextid}%
-  \ifcsname brl@mecab_item_452@\brl@mecab@nextid\endcsname% 接尾
-    \brl@mecab_set@id{\the\brl@mecab@linenum}{453}% ID
+\@namedef{brl@mecab_item_452@51}{}% ID 名詞,接尾,一般,*
+\@namedef{brl@mecab_item_452@52}{}% ID 名詞,接尾,形容動詞語幹,*
+\@namedef{brl@mecab_item_452@54}{}% ID 名詞,接尾,助動詞語幹,*
+\@namedef{brl@mecab_item_452}{% ID  非, 反
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  \ifcsname brl@mecab_item_prefix@\brl@mecab@nextid\endcsname% 接頭
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{459}% ID 合成無し
+  \else%
+    \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\tw@\relax}{\brl@mecab@nextid}%
+    \ifcsname brl@mecab_item_452@\brl@mecab@nextid\endcsname% 接尾
+      \brl@mecab_set@id{\the\brl@mecab@linenum}{459}% ID 合成無し
+    \fi%
   \fi%
   \advance\brl@mecab@linenum\@ne%
 }
 
+% \@namedef{brl@mecab@wakachi_27}{{40}{-110}}%接頭詞,形容詞接続,*,*
+% \@namedef{brl@mecab@wakachi_28}{{40}{-110}}%接頭詞,数接続,*,*
+% \@namedef{brl@mecab@wakachi_29}{{40}{-110}}%接頭詞,動詞接続,*,*
+% \@namedef{brl@mecab@wakachi_30}{{40}{-110}}%接頭詞,名詞接続,*,*
+% \@namedef{brl@mecab@wakachi_450}{{40}{40}}%接頭詞,数接続,*,*,*,*,各
+% \@namedef{brl@mecab@wakachi_451}{{40}{40}}%接頭詞,名詞接続,*,*,*,*,各,相
+% \@namedef{brl@mecab@wakachi_452}{{40}{-60}}%接頭詞,名詞接続,*,*,*,*,非, 反
 
-\@namedef{brl@mecab_item_periodone@1026}{}% ID \␣
-\@namedef{brl@mecab_item_periodone@1027}{}% ID ~
+\def\brl@mecab_item_prefix{% double prefix
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  \ifcsname brl@mecab_item_prefix@\brl@mecab@nextid\endcsname% 接頭
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{459}% ID 合成無し
+  \fi%
+  \advance\brl@mecab@linenum\@ne%
+}
+% \@namedef{brl@mecab@wakachi_459}{{40}{40}}%接頭詞
 
-\@namedef{brl@mecab_item_periodzero@\brl@mecab@idnum_arabic}{}%
+\@namedef{brl@mecab_item_prefix@27}{}% ID
+\@namedef{brl@mecab_item_prefix@28}{}% ID
+\@namedef{brl@mecab_item_prefix@29}{}% ID
+\@namedef{brl@mecab_item_prefix@30}{}% ID
+\@namedef{brl@mecab_item_prefix@450}{}% ID
+\@namedef{brl@mecab_item_prefix@451}{}% ID
+\@namedef{brl@mecab_item_prefix@452}{}% ID
 
+\expandafter\let\csname brl@mecab_item_27\endcsname\brl@mecab_item_prefix
+\expandafter\let\csname brl@mecab_item_28\endcsname\brl@mecab_item_prefix
+\expandafter\let\csname brl@mecab_item_29\endcsname\brl@mecab_item_prefix
+\expandafter\let\csname brl@mecab_item_30\endcsname\brl@mecab_item_prefix
 
 %% idmathnum -> idnum_arabic
 \@namedef{brl@mecab_item_\brl@mecab@idmathnum}{% \d
