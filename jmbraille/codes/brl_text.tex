@@ -1,4 +1,4 @@
-% Time-stamp: <2026-09-16 22:30:27 komori>
+% Time-stamp: <2026-10-08 14:30:30 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -407,6 +407,7 @@
   %% \brl@text@prevdigittrue or false
   %% \brl@text@prevalphtrue or false
   %% \brl@text@glue
+  % \def\brl@tmp{#1}\show\brl@tmp
   \edef\brl@text@tmp{brl@text_dospecial_\string#1}%
   \ifcsname\brl@text@tmp\endcsname% dospecial
     \ifcsname brl@text_setglue_\string#1\endcsname% set glue = ignore default glue
@@ -1038,6 +1039,7 @@
   \brl@text@prevalphfalse%
   \brl@text_loop%
 }
+
 
 
 %%

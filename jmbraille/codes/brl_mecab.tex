@@ -1,4 +1,4 @@
-% Time-stamp: <2026-10-04 17:11:41 komori>
+% Time-stamp: <2026-10-08 23:19:33 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -49,17 +49,17 @@
 \@namedef{brl@mecab@wakachi_11}{{-90}{20}}%形容詞,接尾,*,*
 \@namedef{brl@mecab@wakachi_12}{{-90}{20}}%形容詞,非自立,*,*
 \@namedef{brl@mecab@wakachi_13}{{-90}{80}}%助詞,格助詞,一般,* から,  に, にて, を, が, で, へ, より
-% \@namedef{brl@mecab@wakachi_14}{{-90}{80}}%助詞,格助詞・引用／格助詞・一般／並立助詞,*,* と  `です。」と'
-% \@namedef{brl@mecab@wakachi_15}{{-90}{80}}%助詞,格助詞,連語,* では、ては、って (=とは)、に関して (=助詞 + 動詞 + 助詞)
+\@namedef{brl@mecab@wakachi_14}{{-90}{80}}%助詞,格助詞・引用／格助詞・一般／並立助詞,*,* と  `です。」と'
+\@namedef{brl@mecab@wakachi_15}{{-90}{80}}%助詞,格助詞,連語,* では、ては、って (=とは)、に関して (=助詞 + 動詞 + 助詞)
 
-% \@namedef{brl@mecab@wakachi_16}{{-90}{80}}%助詞,係助詞,*,* は, も, や, こそ
-% \@namedef{brl@mecab@wakachi_17}{{-90}{80}}%助詞,終助詞,*,* よ, わ, ね
-% \@namedef{brl@mecab@wakachi_18}{{-90}{80}}%助詞,接続助詞,*,* から, どころか, [ものの]
-% \@namedef{brl@mecab@wakachi_19}{{-90}{80}}%助詞,特殊,*,* にゃ, けむ
-% \@namedef{brl@mecab@wakachi_20}{{-90}{80}}%助詞,副詞化,*,* と, に (のみ)
-% \@namedef{brl@mecab@wakachi_21}{{-90}{80}}%助詞,副助詞,*,* のみ, ばかり, ほど
-% \@namedef{brl@mecab@wakachi_22}{{-90}{80}}%助詞,副助詞／並立助詞／終助詞,*,* か (のみ)
-% \@namedef{brl@mecab@wakachi_23}{{-90}{80}}%助詞,並立助詞,*,* やら, だの
+\@namedef{brl@mecab@wakachi_16}{{-90}{80}}%助詞,係助詞,*,* は, も, や, こそ
+\@namedef{brl@mecab@wakachi_17}{{-90}{80}}%助詞,終助詞,*,* よ, わ, ね
+\@namedef{brl@mecab@wakachi_18}{{-90}{80}}%助詞,接続助詞,*,* から, どころか, [ものの]
+\@namedef{brl@mecab@wakachi_19}{{-90}{80}}%助詞,特殊,*,* にゃ, けむ
+\@namedef{brl@mecab@wakachi_20}{{-90}{80}}%助詞,副詞化,*,* と, に (のみ)
+\@namedef{brl@mecab@wakachi_21}{{-90}{60}}%助詞,副助詞,*,* のみ, ばかり, ほど 60 < 70 (括弧開) ← "など（...）" no space
+\@namedef{brl@mecab@wakachi_22}{{-90}{80}}%助詞,副助詞／並立助詞／終助詞,*,* か (のみ)
+\@namedef{brl@mecab@wakachi_23}{{-90}{80}}%助詞,並立助詞,*,* やら, だの
 % % \@namedef{brl@mecab@wakachi_24}{{-90}{40}}%助詞,格助詞・一般／連体化,*,* 助詞,連体化,*,* の (のみ)
 \@namedef{brl@mecab@wakachi_24}{{-90}{80}}%助詞,格助詞・一般／連体化,*,* 助詞,連体化,*,* の (のみ)
 \@namedef{brl@mecab@wakachi_25}{{-90}{80}}%助動詞,*,*,* う, たい, だ, ない
@@ -90,6 +90,7 @@
 \@namedef{brl@mecab@wakachi_45}{{40}{40}}%名詞,固有名詞,組織,*
 \@namedef{brl@mecab@wakachi_46}{{40}{40}}%名詞,固有名詞,地域,一般
 \@namedef{brl@mecab@wakachi_47}{{40}{40}}%名詞,固有名詞,地域,国
+\@namedef{brl@mecab@wakachi_48}{{40}{40}}%名詞,固有名詞,地域,国外
 % \@namedef{brl@mecab@wakachi_48}{{100}{40}}%名詞,数,*,*
 \@namedef{brl@mecab@wakachi_49}{{40}{40}}%名詞,接続詞的,*,*
 \@namedef{brl@mecab@wakachi_50}{{-110}{40}}%名詞,接尾,サ変接続,*
@@ -653,8 +654,12 @@
 \def\brl@mecab@idnoun_left{460}
 %\def\brl@mecab@idnoun_right{461}
 
+\def\brl@mecab@idnakaguro{604}
+
 \def\brl@mecab@idseparate{698}
 \def\brl@mecab@idconcat{699}
+
+
 
 \def\brl@mecab@idmw{53}%名詞,接尾,助数詞,*
 
@@ -2744,6 +2749,7 @@
   \@namedef{brl@mecab_item_#1}{%
     \brl@mecab_set@id{\the\brl@mecab@linenum}{#2}%
     \brl@mecab_set@dat{\the\brl@mecab@linenum}{#3}{#3}%
+    % \advance\brl@mecab@linenum\@ne% must be omitted because the replaced item should be examined.
   }
 }
 
@@ -2779,8 +2785,8 @@
 \brl@mecab_replacedef{913}{7}{？}% ID
 \brl@mecab_replacedef{914}{600}{―}% ID
 \brl@mecab_replacedef{915}{820}{\brl@text_cmd_space}% ID /
-%\brl@mecab_replacedef{916}{600}{―}
-\brl@mecab_replacedef{916}{601}{〜}% ID
+\brl@mecab_replacedef{916}{600}{―}% ID
+%\brl@mecab_replacedef{916}{601}{〜}% ID
 \brl@mecab_replacedef{917}{600}{…}% ID
 \brl@mecab_replacedef{918}{607}{＆}% ID
 \brl@mecab_replacedef{1010}{661}{」}% ID '
@@ -2795,6 +2801,24 @@
 \brl@mecab_replacedef{1027}{\brl@mecab@idskip}{}% ID ~
 \brl@mecab_replacedef{1028}{\brl@mecab@idskip}{}% ID \quad
 \brl@mecab_replacedef{1029}{\brl@mecab@idskip}{}% ID \qquad
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ・
+% may be improved, though it is difficult...
+%
+\@namedef{brl@mecab_item_\brl@mecab@idnakaguro}{%
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\m@ne\relax}{\brl@mecab@previd}%
+  \brl@mecab_get@id{\the\numexpr\brl@mecab@linenum+\@ne\relax}{\brl@mecab@nextid}%
+  \ifx\brl@mecab@previd\brl@mecab@nextid% prev != next, then `・' should be replaced by a space.
+  \else%
+    \brl@mecab_set@id{\the\brl@mecab@linenum}{820}% ID
+%    \brl@mecab_set@dat{\the\brl@mecab@linenum}{\brl@text_cmd_space}{\brl@text_cmd_space}%
+    \brl@mecab_set@dat{\the\brl@mecab@linenum}{\brl@text_cmd_space}{}%
+  \fi%
+  \advance\brl@mecab@linenum\@ne%
+}
+
 
 % .,*,*,*,記号,句点,*,*,*,*,.,.,1,*
 % 。,*,*,*,記号,句点,*,*,*,*,。,。,1,*
@@ -5053,16 +5077,16 @@
 \brl@mecab_appendnodef{847}{634}% env （
 
 \brl@mecab_appendgluedef{602}{13}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{14}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{15}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{16}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{17}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{18}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{19}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{20}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{21}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{22}% ％ 助詞
-% \brl@mecab_appendgluedef{602}{23}% ％ 助詞
+\brl@mecab_appendgluedef{602}{14}% ％ 助詞
+\brl@mecab_appendgluedef{602}{15}% ％ 助詞
+\brl@mecab_appendgluedef{602}{16}% ％ 助詞
+\brl@mecab_appendgluedef{602}{17}% ％ 助詞
+\brl@mecab_appendgluedef{602}{18}% ％ 助詞
+\brl@mecab_appendgluedef{602}{19}% ％ 助詞
+\brl@mecab_appendgluedef{602}{20}% ％ 助詞
+\brl@mecab_appendgluedef{602}{21}% ％ 助詞
+\brl@mecab_appendgluedef{602}{22}% ％ 助詞
+\brl@mecab_appendgluedef{602}{23}% ％ 助詞
 \brl@mecab_appendgluedef{602}{24}% ％ 助詞 の
 \brl@mecab_appendgluedef{602}{25}% ％ 助詞, 助動詞
 
