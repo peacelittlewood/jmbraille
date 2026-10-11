@@ -1,4 +1,4 @@
-% Time-stamp: <2026-09-11 16:36:36 komori>
+% Time-stamp: <2026-10-11 10:55:39 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -24,19 +24,153 @@
 % files
 
 
+\ifbrl@option@fullpindisplay% unicode
 
-%\edef\brl@plot@width_single{\the\numexpr\brl@bse@width-\tw@\relax}% 32-2
+\def\brl@plot@ext{txt}
+\def\brl@plot@mod{4}
+\def\brl@plot@start{\thr@@}
+
+\def\brl@plot_maxcmd_a{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_b}%
+  \let\brl@plot_conschar\brl@plot_conschar_a%
+  \def\brl@plot@maxmody{0}%
+  \def\brl@plot@tick{⡀}%
+}%
+
+\def\brl@plot_maxcmd_b{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_c}%
+  \let\brl@plot_conschar\brl@plot_conschar_b%
+  \def\brl@plot@maxmody{1}%
+  \def\brl@plot@tick{⠄}%
+}%
+
+\def\brl@plot_maxcmd_c{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_d}%
+  \let\brl@plot_conschar\brl@plot_conschar_c%
+  \def\brl@plot@maxmody{2}%
+  \def\brl@plot@tick{⠂}%
+}%
+
+\def\brl@plot_maxcmd_d{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
+  \let\brl@plot_conschar\brl@plot_conschar_d%
+  \def\brl@plot@maxmody{3}%
+  \def\brl@plot@tick{⠁}%
+}%
+
+\def\brl@plot_conschar_a{%
+  \edef\brl@tmp{\csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs3\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_b{%
+  \edef\brl@tmp{\csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs3\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_c{%
+  \edef\brl@tmp{\csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs3\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_d{%
+  \edef\brl@tmp{\csname\brl@plot@cs3\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+  }%
+}
+
+\ifdefined\Uchar% if \Uchar can be used, we use it.
+  \def\brl@plot_conschar_code#1#2#3#4#5#6#7#8{%
+    \Uchar\numexpr10240+#1+#2*8+#3*2+#4*16+#5*4+#6*32+#7*64+#8*128\relax%
+  }
+\else%
+  \def\brl@plot_conschar_code#1#2#3#4#5#6#7#8{%
+    \csname brl@bc@Ucode_\the\numexpr#1+#2*8+#3*2+#4*16+#5*4+#6*32+#7*64+#8*128\endcsname%
+  }
+\fi
+
+\let\brl@plot_writeinit\empty
+
+\else% brl
+
+\def\brl@plot@ext{brl}
+\def\brl@plot@mod{3}
+\def\brl@plot@start{\tw@}
+
+\def\brl@plot_maxcmd_a{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_b}%
+  \let\brl@plot_conschar\brl@plot_conschar_a%
+  \def\brl@plot@maxmody{0}%
+  \def\brl@plot@tick{'}%{⠄}%
+}%
+
+\def\brl@plot_maxcmd_b{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_c}%
+  \let\brl@plot_conschar\brl@plot_conschar_b%
+  \def\brl@plot@maxmody{1}%
+  \def\brl@plot@tick{1}%{⠂}%
+}%
+
+\def\brl@plot_maxcmd_c{%
+  \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
+  \let\brl@plot_conschar\brl@plot_conschar_c%
+  \def\brl@plot@maxmody{2}%
+  \def\brl@plot@tick{A}%{⠁}%
+}%
+
+\def\brl@plot_conschar_a{%
+  \edef\brl@tmp{\csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_b{%
+  \edef\brl@tmp{\csname\brl@plot@cs1\endcsname%
+    \csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_c{%
+  \edef\brl@tmp{\csname\brl@plot@cs2\endcsname%
+    \csname\brl@plot@cs0\endcsname%
+    \csname\brl@plot@cs1\endcsname%
+  }%
+}
+
+\def\brl@plot_conschar_code#1#2#3#4#5#6{%
+  \csname brl@bc@bascii_\the\numexpr#1+#2*8+#3*2+#4*16+#5*4+#6*32\relax\endcsname%
+}
+
+\def\brl@plot_writeinit{%
+  \def\brl@bc@bascii_singleq{'}% '
+  \let\brl@bc@bascii_bs\brl@@bs% \
+}
+
+\fi
+
+
 \edef\brl@plot@width_single{\the\numexpr\brl@bse@width-\@ne\relax}% 32-1
 \edef\brl@plot@width_double{\the\numexpr\brl@plot@width_single*\tw@\relax}% *2
 
-\edef\brl@plot@maxlinex_single{\the\numexpr\brl@plot@width_single*\tw@\relax}% 2*30
-\edef\brl@plot@maxlinex_double{\the\numexpr\brl@plot@width_double*\tw@\relax}% 2*60
+\edef\brl@plot@maxlinex_single{\the\numexpr\brl@plot@width_single*\tw@\relax}% 2*(32-1)
+\edef\brl@plot@maxlinex_double{\the\numexpr\brl@plot@width_double*\tw@\relax}% 2*2*(32-1)
 \edef\brl@plot@maxliney{\the\numexpr\brl@bse@height*4\relax}% 4*22
 \def\brl@plot@headsep{0}% 
 \def\brl@plot@leftsidemargin{0}% must be even
 
-% \def\brl@plot@braillewidth{16}%
-% \def\brl@plot@brailleheight{32}%
 \def\brl@plot@braillewidth{2}%
 \def\brl@plot@brailleheight{4}%
 \def\brl@plot@braillebaseline{3}%
@@ -46,12 +180,6 @@
 \newtoks\brl@plot@pintoks% for pindisplay
 \def\brl@plot_appendpintoks#1{\brl@plot@pintoks\expandafter{\the\brl@plot@pintoks#1}}
 
-
-% \@tempdima\brl@plot@draw_ratio\dimexpr\brl@plot@maxlinex_single\p@/480\relax% 0.1343
-% \edef\brl@plot@ratiox{\expandafter\brl@@strip@pt\the\@tempdima}% 60/480
-
-% \@tempdima\brl@plot@draw_ratio\dimexpr\brl@plot@maxliney\p@/684\relax% 0.1338
-% \edef\brl@plot@ratioy{\expandafter\brl@@strip@pt\the\@tempdima}%
 
 \def\brl@plot@pindisplayratio{0.1338}
 
@@ -82,8 +210,6 @@
     % 
     \brl@pgf_hbox{\numexpr\brl@pgf@minx+50\relax}{\numexpr\brl@pgf@maxy+2\relax}{\brl@plot@page}% 2 * 24 spaces = 48, 4 * 1 = 4 - 2 (1 lineskip)
     % 
-    % \@namedef{brl@bc_plot@x0}{0}
-    % \@namedef{brl@bc_plot@y0}{2}
     % 
   }%
   % 
@@ -96,7 +222,7 @@
   % 
   % 
   % 
-  % 
+  % draw points in the pdf file
   % 
   \brl@@pdf_bcontent%
   \brl@@pdf_invoke{q 0 G 0 g 0 w}%
@@ -109,16 +235,23 @@
   % 
   \brl@@pdf_invoke{Q}%
   \brl@@pdf_econtent%
-  % 
-  \brl@plot@liney\thr@@%
+  %
+  % write points in the file txt or brl
+  %
+  \brl@plot@liney\brl@plot@start%
   \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
   \brl@plot_sclinedef{0}%
   \brl@plot_sclinedef{1}%
   \brl@plot_sclinedef{2}%
-  \brl@plot_sclinedef{3}%
+  \ifnum\brl@plot@start=\thr@@%
+    \brl@plot_sclinedef{3}%
+  \fi%
   % 
-  \immediate\openout\brl@plot@file=\jobname-\brl@figure@figurenum_plot.txt\relax%
-  \expandafter\brl@plot_determiney\the\brl@plot@pintoks{-1}%
+  \immediate\openout\brl@plot@file=\jobname-\brl@figure@figurenum_plot.\brl@plot@ext\relax%
+  {%
+    \brl@plot_writeinit%
+    \expandafter\brl@plot_determiney\the\brl@plot@pintoks{-1}%
+  }%
   \immediate\closeout\brl@plot@file%
   % 
 }
@@ -159,9 +292,6 @@
     \fi%
   \fi%
   %
-  % \advance\brl@plot@liney\m@ne%
-  % \ifnum\brl@pgf@miny>\brl@plot@liney%
-  % \else%
   \ifnum\brl@pgf@miny<\brl@plot@liney%
     \advance\brl@plot@liney\m@ne%
     \expandafter\brl@plot_writepts%
@@ -180,9 +310,7 @@
     \global\expandafter\let\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname\@undefined% clear
     %
   \fi%
-  % \advance\brl@plot@linex\@ne%
-  % \ifnum\brl@plot@maxxaty<\brl@plot@linex%
-  % \else%
+  %
   \ifnum\brl@plot@maxxaty>\brl@plot@linex%
     \advance\brl@plot@linex\@ne%
     \expandafter\brl@plot_writepts_outy_loop%
@@ -207,9 +335,7 @@
     \global\expandafter\let\csname brl@pgf@size_\the\brl@plot@linex _\the\brl@plot@liney\endcsname\@undefined% clear
     %
   \fi%
-  % \advance\brl@plot@linex\@ne%
-  % \ifnum\brl@plot@maxxaty<\brl@plot@linex%
-  % \else%
+  %
   \ifnum\brl@plot@maxxaty>\brl@plot@linex%
     \advance\brl@plot@linex\@ne%
     \expandafter\brl@plot_writepts_loop%
@@ -217,7 +343,9 @@
 }
 
 
-
+%
+% zero clear
+%
 \def\brl@plot_sclinedef#1{%
   \count@\z@%
   \def\brl@tmp{#1}%
@@ -250,31 +378,13 @@
     \expandafter\brl@plot_determiney_%
   \else%
     \count@\brl@plot@curry\relax%
-    \divide\count@4\relax%
-    \edef\brl@plot@currmody{\the\numexpr\brl@plot@curry-4*\count@\relax}%
+    \divide\count@\brl@plot@mod\relax%
+    \edef\brl@plot@currmody{\the\numexpr\brl@plot@curry-\brl@plot@mod*\count@\relax}%
     \expandafter\brl@plot_determinex%
   \fi%
 }
 
 % write the point at (x,y)
-% \def\brl@plot_determinex#1{%
-%   \ifnum#1=\m@ne%
-%     \expandafter\brl@plot_determiney%
-%   \else%
-%     \count@#1\relax%
-%     \ifodd\count@%
-%       \let\brl@plot_setx\brl@plot_setx_second%
-%     \else%
-%       \let\brl@plot_setx\brl@plot_setx_first%
-%     \fi%
-%     \divide\count@\tw@%
-%     \edef\brl@tmp{\expandafter\noexpand\csname brl@plot@scline\the\count@ _\brl@plot@currmody\endcsname}%
-%     \edef\brl@tmpdata{\brl@tmp}% 00 etc.
-%     \expandafter\edef\brl@tmp{\expandafter\brl@plot_setx\brl@tmpdata}%
-%     \expandafter\brl@plot_determinex%
-%   \fi%
-% }
-
 \def\brl@plot_determinex#1{%
   \ifnum#1=\m@ne%
     \expandafter\brl@plot_determiney%
@@ -336,38 +446,12 @@
   }%
 }
 
-% \brl@def{brl@bc@Ucode_0}\brl@end{%
-%   \def\brl@plot_oneline_{%
-%     \edef\brl@plot@cs{brl@plot@scline\the\brl@plot@linex _}%
-%     %
-%     \brl@plot_conschar% construct brl@tmp = 00000000
-%     \edef\brl@tmp{\expandafter\brl@plot_conschar_Ucode\brl@tmp}%
-%     \expandafter\aftergroup\brl@tmp%
-%     \advance\brl@plot@linex\@ne%
-%     % 
-%     % 
-%     % 
-%     % 
-%     \ifnum\brl@plot@width>\brl@plot@linex%
-%       \advance\count@\@ne%
-%       \ifnum\brl@plot@width_single=\count@%
-%         \aftergroup#1%
-%         \expandafter\aftergroup\brl@plot@tick%
-%         % \expandafter\aftergroup#1%
-%         % \expandafter\aftergroup\brl@plot@tick%
-%         \count@\z@%
-%       \fi%
-%       % 
-%       \expandafter\brl@plot_oneline_%
-%     \fi%
-%   }%
-% }
 
 \def\brl@plot_oneline_{%
   \edef\brl@plot@cs{brl@plot@scline\the\brl@plot@linex _}%
   % 
-  \brl@plot_conschar% construct brl@tmp = 00000000
-  \edef\brl@tmp{\expandafter\brl@plot_conschar_Ucode\brl@tmp}%
+  \brl@plot_conschar% construct brl@tmp = 00000000 or 000000
+  \edef\brl@tmp{\expandafter\brl@plot_conschar_code\brl@tmp}%
   \expandafter\aftergroup\brl@tmp%
   \advance\brl@plot@linex\@ne%
   % 
@@ -377,7 +461,7 @@
   \ifnum\brl@plot@width>\brl@plot@linex%
     \advance\count@\@ne%
     \ifnum\brl@plot@width_single=\count@%
-      \aftergroup⠀%
+      % \aftergroup⠀% ??
       \expandafter\aftergroup\brl@plot@tick%
       % \expandafter\aftergroup#1%
       % \expandafter\aftergroup\brl@plot@tick%
@@ -399,16 +483,6 @@
   \brl@plot_oneline_start%
 }
 
-% \protected\@namedef{brl@plot_drawpoint_2}{%
-%   \ifcase\brl@plot@maxmody\relax%
-%     \expandafter\brl@plot_oneline_start% 0
-%   \or%
-%     % 1
-%   \or% 
-%     \expandafter\brl@plot_oneline_start% 2
-%   \fi%
-% }
-
 \protected\@namedef{brl@plot_drawpoint_2}{%
   \ifodd\brl@plot@maxmody\relax%
   \else%
@@ -416,124 +490,13 @@
   \fi%
 }
 
-\protected\@namedef{brl@plot_drawpoint_4}{%
+\protected\@namedef{brl@plot_drawpoint_0}{%
   \ifnum\brl@plot@maxmody=\z@%
     \expandafter\brl@plot_oneline_start%
   \fi%
 }
 
 
-\ifdefined\Uchar% if \Uchar can be used, we use it.
-  \def\brl@plot_conschar_Ucode#1#2#3#4#5#6#7#8{%
-    \Uchar\numexpr10240+#1+#2*8+#3*2+#4*16+#5*4+#6*32+#7*64+#8*128\relax%
-  }
-\else%
-  \def\brl@plot_conschar_Ucode#1#2#3#4#5#6#7#8{%
-    \csname brl@bc@Ucode_\the\numexpr#1+#2*8+#3*2+#4*16+#5*4+#6*32+#7*64+#8*128\endcsname%
-  }
-\fi
-
-% \brl@def{brl@bc@Ucode_64}\brl@end{% 7
-%   \def\brl@plot_maxcmd_a{%
-%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_b}%
-%     \let\brl@plot_conschar\brl@plot_conschar_a%
-%     \def\brl@plot@maxmody{0}%
-%     % \def\brl@plot@tick{#1}%
-%     \let\brl@plot@tick#1%
-%   }%
-% }
-
-% \brl@def{brl@bc@Ucode_4}\brl@end{% 3
-%   \def\brl@plot_maxcmd_b{%
-%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_c}%
-%     \let\brl@plot_conschar\brl@plot_conschar_b%
-%     \def\brl@plot@maxmody{1}%
-%     % \def\brl@plot@tick{#1}%
-%     \let\brl@plot@tick#1%
-%   }%
-% }
-
-% \brl@def{brl@bc@Ucode_2}\brl@end{% 2
-%   \def\brl@plot_maxcmd_c{%
-%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_d}%
-%     \let\brl@plot_conschar\brl@plot_conschar_c%
-%     \def\brl@plot@maxmody{2}%
-%     % \def\brl@plot@tick{#1}%
-%     \let\brl@plot@tick#1%
-%   }%
-% }
-
-% \brl@def{brl@bc@Ucode_1}\brl@end{% 1
-%   \def\brl@plot_maxcmd_d{%
-%     \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
-%     \let\brl@plot_conschar\brl@plot_conschar_d%
-%     \def\brl@plot@maxmody{3}%
-%     % \def\brl@plot@tick{#1}%
-%     \let\brl@plot@tick#1%
-%   }%
-% }
-
-\def\brl@plot_maxcmd_a{%
-  \def\brl@plot_maxcmd{\brl@plot_maxcmd_b}%
-  \let\brl@plot_conschar\brl@plot_conschar_a%
-  \def\brl@plot@maxmody{0}%
-  \def\brl@plot@tick{⡀}%
-}%
-
-\def\brl@plot_maxcmd_b{%
-  \def\brl@plot_maxcmd{\brl@plot_maxcmd_c}%
-  \let\brl@plot_conschar\brl@plot_conschar_b%
-  \def\brl@plot@maxmody{1}%
-  \def\brl@plot@tick{⠄}%
-}%
-
-\def\brl@plot_maxcmd_c{%
-  \def\brl@plot_maxcmd{\brl@plot_maxcmd_d}%
-  \let\brl@plot_conschar\brl@plot_conschar_c%
-  \def\brl@plot@maxmody{2}%
-  \def\brl@plot@tick{⠂}%
-}%
-
-\def\brl@plot_maxcmd_d{%
-  \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
-  \let\brl@plot_conschar\brl@plot_conschar_d%
-  \def\brl@plot@maxmody{3}%
-  \def\brl@plot@tick{⠁}%
-}%
-
-
-
-\def\brl@plot_conschar_a{%
-  \edef\brl@tmp{\csname\brl@plot@cs0\endcsname%
-    \csname\brl@plot@cs1\endcsname%
-    \csname\brl@plot@cs2\endcsname%
-    \csname\brl@plot@cs3\endcsname%
-  }%
-}
-
-\def\brl@plot_conschar_b{%
-  \edef\brl@tmp{\csname\brl@plot@cs1\endcsname%
-    \csname\brl@plot@cs2\endcsname%
-    \csname\brl@plot@cs3\endcsname%
-    \csname\brl@plot@cs0\endcsname%
-  }%
-}
-
-\def\brl@plot_conschar_c{%
-  \edef\brl@tmp{\csname\brl@plot@cs2\endcsname%
-    \csname\brl@plot@cs3\endcsname%
-    \csname\brl@plot@cs0\endcsname%
-    \csname\brl@plot@cs1\endcsname%
-  }%
-}
-
-\def\brl@plot_conschar_d{%
-  \edef\brl@tmp{\csname\brl@plot@cs3\endcsname%
-    \csname\brl@plot@cs0\endcsname%
-    \csname\brl@plot@cs1\endcsname%
-    \csname\brl@plot@cs2\endcsname%
-  }%
-}
 
 
 

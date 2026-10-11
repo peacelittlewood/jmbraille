@@ -3,7 +3,7 @@
 % All rights reserved.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{jmbraille}[2026/09/15 22:54:03]
+\ProvidesPackage{jmbraille}[2026/10/11 10:54:28]
 
 \RequirePackage{graphicx}
 \RequirePackage{xcolor}
@@ -28,6 +28,7 @@
 \newif\ifbrl@option@corpus
 \newif\ifbrl@option@braille
 \newif\ifbrl@option@pindisplay
+\newif\ifbrl@option@fullpindisplay
 \newif\ifbrl@option@hires
 \newif\ifbrl@option@multihline
 \newif\ifbrl@option@nospread
@@ -47,7 +48,8 @@
 \DeclareOption{jplog}{\brl@option@jplogtrue}
 \DeclareOption{mathlog}{\brl@option@mathlogtrue}
 \DeclareOption{braille}{\brl@option@brailletrue}
-\DeclareOption{pindisplay}{\brl@option@hiresfalse\brl@option@brailletrue\brl@option@pindisplaytrue}
+\DeclareOption{pindisplay}{\brl@option@hiresfalse\brl@option@brailletrue\brl@option@pindisplaytrue\brl@option@fullpindisplayfalse}
+\DeclareOption{fullpindisplay}{\brl@option@hiresfalse\brl@option@brailletrue\brl@option@pindisplaytrue\brl@option@fullpindisplaytrue}
 \DeclareOption{hires}{\brl@option@hirestrue\brl@option@brailletrue\brl@option@pindisplayfalse}
 \DeclareOption{uebg1}{\def\brl@option@ueb{1}}
 \DeclareOption{uebg2}{\def\brl@option@ueb{2}}
