@@ -1,4 +1,4 @@
-% Time-stamp: <2026-10-08 23:19:33 komori>
+% Time-stamp: <2026-10-12 21:55:08 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -577,7 +577,7 @@
 
 \newcount\brl@mecab@spnum
 
-\def\brl@math_cmd@#1#2{\@firstoftwo#2}% used for cmd{digit}{{2}{n}}
+\def\brl@math_cmd@#1#2{\@firstoftwo#2\empty}% used for cmd{digit}{{2}{n}} and cmd{letterrU}{G} etc.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% main :
@@ -1833,28 +1833,28 @@
 
 \def\brl@mecab_exec{%
   % write the replaced text.
-  % \show\brl@mecab@cmd_tab
   \immediate\openout\brl@mecab@sourcefile=\jobname.mcb\relax%
   \immediate\write\brl@mecab@sourcefile{\brl@mecab@text%
     EOS%
   }%
   \immediate\closeout\brl@mecab@sourcefile%
-  % \show\brl@mecab@cmd_tab
+  % 
+  \brl@option@exec{\brl@mecab@translator}%
   %
-  \immediate\write18{\brl@mecab@translator}%
   % read the wakachi gaki.
-  \immediate\openin\brl@mecab@resultfile=\jobname.mrt\relax%
+  %
   {%
     \catcode`\^\active%
     \catcode`\ \active%
     \catcode`\<\active%
     \catcode`\>\active%
     \endlinechar\m@ne% avoid space after {-1}
-    \immediate\global\read\brl@mecab@resultfile to\brl@mecab@result%
+    %
+    \@@input{\jobname.mrt}%
+    %
   }%
-  \immediate\closein\brl@mecab@resultfile%
+  %
 }%
-
 
 %%
 %%
@@ -1902,7 +1902,8 @@
     \catcode`\<\active%
     \catcode`\>\active%
     \message{mecab:\brl@mecab@text}%
-    \expandafter\brl@mecab_exec_\directlua{%
+    %
+    \directlua{%
       local handle = io.popen([==[% quotation
       echo \brl@mecab@quote\brl@mecab@text%
       EOS\brl@mecab@quote | \brl@mecab@translator]==]) % quotation
@@ -1920,15 +1921,13 @@
     \catcode`\ \active%
     \catcode`\<\active%
     \catcode`\>\active%
-    \expandafter\brl@mecab_exec_\@@input{|echo \brl@mecab@quote\brl@mecab@text%
+    %
+    \@@input{|echo \brl@mecab@quote\brl@mecab@text%
       EOS\brl@mecab@quote | \brl@mecab@translator}%
   }%
 }%
 \fi%
 
-\def\brl@mecab_exec_#1\f{%
-  \gdef\brl@mecab@result{#1{-1}}%
-}
 \fi% \ifbrl@option@file%
 
 {\catcode`\^\active\protected\gdef^{}}% default: this is used for erasing ^ in multiple readings.
@@ -2020,10 +2019,11 @@
     \let\brl@text_cmd_eqquote\brl@text_cmd_eqquote@%
     \let\brl@text_cmd_phrase\brl@text_cmd_phrase@%
     \let\brl@text_cmd_alphabet\brl@text_cmd_alphabet@%
+    \let\brl@text_cmd_unit\brl@text_cmd_alphabet@%
     \let\brl@text_cmd_number\brl@text_cmd_number@%
     %
     \let\brl@math_cmd_env\brl@math_cmd_env@% orig
-%    \let\brl@math_cmd_digit\brl@math_cmd_digit@%
+    % \let\brl@math_cmd_digit\brl@math_cmd_digit@%
     \let\brl@math_cmd\brl@math_cmd@%
     %
     \let\BrailleRemark\BrailleRemark@%
@@ -2948,7 +2948,7 @@
 }
 
 % OK
-\@namedef{brl@mecab_item_\brl@mecab@idnum_alone}{% (偶数|奇数|有限|無限|可算|半|零|数千|何千|幾千|連千)
+\@namedef{brl@mecab_item_\brl@mecab@idnum_alone}{% (少数|多数|偶数|奇数|有限|無限|可算|半|零|数千|何千|幾千|連千)
   \brl@mecab_get@dat{\the\brl@mecab@linenum}{\brl@mecab@yomi}{\brl@mecab@orig}%
   \advance\brl@mecab@linenum\@ne%
   \brl@mecab_get@id{\the\brl@mecab@linenum}{\brl@mecab@nextid}%
@@ -4497,7 +4497,7 @@
   \def\brl@mecab@yomi{\brl@text_cmd_transopen\brl@text_cmd_unkb やくふめい\brl@text_cmd_unke\brl@text_cmd_transclose}%
   \def\brl@mecab@yomiothersed{未定義}%
   %
-  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig {\brl@char@cmd_yomiothers{\brl@mecab@yomiothersed}}}%
+  \edef\brl@tmp{{\brl@char@cmd_print{\brl@mecab@orig{\brl@char@cmd_yomiothers{\brl@mecab@yomiothersed}}}%
     }}%
   %
   %
@@ -4875,6 +4875,8 @@
 \@namedef{brl@mecab_num@digit_何}{-1}
 \@namedef{brl@mecab_num@digit_幾}{-2}
 \@namedef{brl@mecab_num@digit_数}{-2}
+\@namedef{brl@mecab_num@digit_少数}{-2}
+\@namedef{brl@mecab_num@digit_多数}{-2}
 \@namedef{brl@mecab_num@digit_偶数}{-2}
 \@namedef{brl@mecab_num@digit_奇数}{-2}
 \@namedef{brl@mecab_num@digit_有限}{-2}

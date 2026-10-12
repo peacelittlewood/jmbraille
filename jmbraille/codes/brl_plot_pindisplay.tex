@@ -1,4 +1,4 @@
-% Time-stamp: <2026-10-11 10:55:39 komori>
+% Time-stamp: <2026-10-11 15:32:18 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -24,7 +24,7 @@
 % files
 
 
-\ifbrl@option@fullpindisplay% unicode
+\ifbrl@option@unicode% unicode
 
 \def\brl@plot@ext{txt}
 \def\brl@plot@mod{4}
@@ -100,7 +100,14 @@
   }
 \fi
 
-\let\brl@plot_writeinit\empty
+\def\brl@plot_writeinit{%
+  \brl@plot_sclinedef{0}%
+  \brl@plot_sclinedef{1}%
+  \brl@plot_sclinedef{2}%
+  \brl@plot_sclinedef{3}%
+}
+
+
 
 \else% brl
 
@@ -157,6 +164,9 @@
 \def\brl@plot_writeinit{%
   \def\brl@bc@bascii_singleq{'}% '
   \let\brl@bc@bascii_bs\brl@@bs% \
+  \brl@plot_sclinedef{0}%
+  \brl@plot_sclinedef{1}%
+  \brl@plot_sclinedef{2}%
 }
 
 \fi
@@ -238,17 +248,11 @@
   %
   % write points in the file txt or brl
   %
-  \brl@plot@liney\brl@plot@start%
-  \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
-  \brl@plot_sclinedef{0}%
-  \brl@plot_sclinedef{1}%
-  \brl@plot_sclinedef{2}%
-  \ifnum\brl@plot@start=\thr@@%
-    \brl@plot_sclinedef{3}%
-  \fi%
   % 
   \immediate\openout\brl@plot@file=\jobname-\brl@figure@figurenum_plot.\brl@plot@ext\relax%
   {%
+    \brl@plot@liney\brl@plot@start%
+    \def\brl@plot_maxcmd{\brl@plot_maxcmd_a}%
     \brl@plot_writeinit%
     \expandafter\brl@plot_determiney\the\brl@plot@pintoks{-1}%
   }%
@@ -461,10 +465,10 @@
   \ifnum\brl@plot@width>\brl@plot@linex%
     \advance\count@\@ne%
     \ifnum\brl@plot@width_single=\count@%
-      % \aftergroup⠀% ??
+      %
       \expandafter\aftergroup\brl@plot@tick%
-      % \expandafter\aftergroup#1%
-      % \expandafter\aftergroup\brl@plot@tick%
+      %
+      %
       \count@\z@%
     \fi%
     % 

@@ -1,4 +1,4 @@
-% Time-stamp: <2026-10-02 10:58:37 komori>
+% Time-stamp: <2026-10-12 21:56:32 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -162,52 +162,6 @@
   \fi%
 \fi%
 
-% \ifbrl@option@oslin%
-%   \def\brl@init_arch#1!{\edef\brl@option@os{lin_#1}}%
-%   \expandafter\brl@init_arch\@@input{|echo `uname -m`!}%
-% \fi%
-
-
-
-
-% old system
-%
-% \ifbrl@option@oswin% in echo of windows
-%   \edef\brl@ueb@backslash{\brl@@bs}%
-%   \edef\brl@ueb@prog{.\brl@@bs jmbraille\brl@@bs ueb\brl@@bs brl_translate .\brl@@bs jmbraille\brl@@bs ueb\brl@@bs brl_en-ueb-\brl@option@ueb.ctb}%
-% \else% in echo of unix
-%   \edef\brl@ueb@backslash{\brl@@bs\brl@@bs}%
-%   \edef\brl@ueb@prog{./jmbraille/ueb/brl_translate_\brl@option@os\brl@@space ./jmbraille/ueb/brl_en-ueb-\brl@option@ueb.ctb}%
-% \fi%
-
-% \ifbrl@option@oswin%
-%   \def\brl@atbegdoc_setmecabprog{%
-%     \edef\brl@mecab@prog{"C:\brl@@bs Mecab\brl@@bs bin\brl@@bs mecab.exe" }%
-%     \IfFileExists{\brl@mecab@prog}{}%
-%     {\edef\brl@mecab@prog{"C:\brl@@bs Program Files\brl@@bs mecab\brl@@bs bin\brl@@bs mecab.exe" }%
-%       \IfFileExists{\brl@mecab@prog}{}%
-%       {\PackageError{jmbraille}{mecab.exe can not be found. Specify it by \string\BrailleSetMecabProgram{"C:\brl@@bs path\brl@@bs to\brl@@bs mecab.exe"}}{}%
-%       }%
-%     }%
-%   }%
-%   \def\brl@atbegdoc_setmecabsysdir{%
-%     \edef\brl@mecab@sysdic{-d .\brl@@bs jmbraille\brl@@bs dic }%
-%   }%
-% \else%
-%   \def\brl@atbegdoc_setmecabprog{%
-%     \def\brl@mecab@prog{mecab }%
-%   }%
-%   \def\brl@atbegdoc_setmecabsysdir{%
-%     \def\brl@mecab@sysdic{-d ./jmbraille/dic }%
-%   }%
-% \fi%
-
-
-% \ifbrl@option@file% in file.
-%   \edef\brl@mecab@backslash{\brl@@bs}%
-% \else% in echo of unix
-%   \edef\brl@mecab@backslash{\brl@@bs\brl@@bs}%
-% \fi%
 
 
 \ifbrl@option@oswin% in echo of windows
@@ -225,17 +179,15 @@
 \fi%
 
 \ifbrl@option@file%
-  \def\brl@option@serverflag{ -m "-r ./jmbraille/dic/mecabrc -Obraille-file -p"}%
   \def\brl@mecab@clientflag{ < \jobname.mcb > \jobname.mrt}
 \else
-  \let\brl@option@serverflag\empty%
   \let\brl@mecab@clientflag\empty%
 \fi%
 
 
 \edef\brl@mecab@translator{.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator client_\brl@option@os\brl@@space J \brl@mecab@clientflag}
 
-\edef\brl@option@startserver{\brl@option@serverstart.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator server_\brl@option@os\brl@@space -t 1 \brl@option@serverflag\brl@option@serverend}
+\edef\brl@option@startserver{\brl@option@serverstart.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator server_\brl@option@os\brl@@space -t 1 \brl@option@serverend}
 
 \edef\brl@ueb@translator{.\brl@option@separator jmbraille\brl@option@separator exec\brl@option@separator client_\brl@option@os\brl@@space\brl@option@ueb}
 

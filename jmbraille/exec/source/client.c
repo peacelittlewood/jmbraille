@@ -194,7 +194,9 @@ static int communication(socket_t sock, char type) {
     if (type == 'X') {
         printf("Exited from the connection to a server\n");
     } else {
+        printf("\\gdef\\brl@mecab@result{");
         fwrite(resp, 1, rlen, stdout);
+	printf("}");
         fflush(stdout);
     }
     rc = 0;
