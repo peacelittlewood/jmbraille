@@ -194,9 +194,13 @@ static int communication(socket_t sock, char type) {
     if (type == 'X') {
         printf("Exited from the connection to a server\n");
     } else {
-        printf("\\gdef\\brl@mecab@result{");
+        if (type == 'J') {
+	    printf("\\gdef\\brl@mecab@result{");
+        }
         fwrite(resp, 1, rlen, stdout);
-	printf("}");
+	if (type == 'J') {
+	    printf("}");
+	}
         fflush(stdout);
     }
     rc = 0;

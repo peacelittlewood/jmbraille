@@ -1,4 +1,4 @@
-% Time-stamp: <2026-09-15 16:48:11 komori>
+% Time-stamp: <2026-10-17 14:13:32 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -752,6 +752,7 @@
   %
   \brl@ueb_postproc_insertorig%
   %
+  % \expandafter\brl@ueb_postproc\brl@ueb@result\brl@end%
   \expandafter\brl@ueb_postproc\brl@ueb@result\brl@end%
 }
 
@@ -929,12 +930,13 @@
     \catcode`\%=12\relax%
     \catcode`\&=12\relax%
     \catcode`\_=12\relax%
-%    \catcode`\\=12\relax% unused
+    % \catcode`\\=12\relax% unused
     \catcode`\{=12\relax%
     \catcode`\}=12\relax%
     \catcode`\~=12\relax%
     \catcode`\^^7f=12\relax%
     \catcode`\ =12\relax%
+    % \makeatletter%
     % \catcode`\@=11\relax%
     % \catcode`\^\active%
     % \catcode`\ \active%
@@ -943,9 +945,10 @@
     \edef\brl@tmp{\the\brl@ueb@toks}%
     \message{ueb:\brl@tmp}%
     \ifx\brl@tmp\empty% this is especially for windows, since "echo" without argument yields the message "ECHO ON" etc.
+      % \global\let\brl@ueb@result\empty%
       \global\let\brl@ueb@result\empty%
     \else%
-    \expandafter\brl@ueb_exec_\directlua{%
+      \expandafter\brl@ueb_exec_\directlua{%
       local handle = io.popen([==[% quotation
       echo \brl@ueb@quote\brl@tmp%
       \brl@ueb@quote | \brl@ueb@translator]==]) % quotation
@@ -965,12 +968,13 @@
     \catcode`\%=12\relax%
     \catcode`\&=12\relax%
     \catcode`\_=12\relax%
-%    \catcode`\\=12\relax% unused
+    % \catcode`\\=12\relax% unused
     \catcode`\{=12\relax%
     \catcode`\}=12\relax%
     \catcode`\~=12\relax%
     \catcode`\^^7f=12\relax%
     \catcode`\ =12\relax%
+    % \makeatletter%
     % \catcode`\@=11\relax%
     % 
     %

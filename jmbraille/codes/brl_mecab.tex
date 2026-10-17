@@ -1,4 +1,4 @@
-% Time-stamp: <2026-10-12 21:55:08 komori>
+% Time-stamp: <2026-10-17 14:07:32 komori>
 % Copyright (c) 2021 Yasushi Komori
 % All rights reserved.
 
@@ -1848,6 +1848,7 @@
     \catcode`\ \active%
     \catcode`\<\active%
     \catcode`\>\active%
+    \makeatletter%
     \endlinechar\m@ne% avoid space after {-1}
     %
     \@@input{\jobname.mrt}%
@@ -1901,6 +1902,7 @@
     \catcode`\ \active%
     \catcode`\<\active%
     \catcode`\>\active%
+    \makeatletter%
     \message{mecab:\brl@mecab@text}%
     %
     \directlua{%
@@ -1921,9 +1923,12 @@
     \catcode`\ \active%
     \catcode`\<\active%
     \catcode`\>\active%
+    \makeatletter%
     %
     \@@input{|echo \brl@mecab@quote\brl@mecab@text%
       EOS\brl@mecab@quote | \brl@mecab@translator}%
+    %
+    %
   }%
 }%
 \fi%
